@@ -13,7 +13,9 @@ def test_machine_output_stem_uses_finished_preform_and_machine_name() -> None:
         "双头机（上下）",
     )
 
-    assert stem == "R20.15×7×41×1.65（41×7（+0.01／-0.01）×1.7（+0.02／+0））双头机（上下）"
+    assert stem == "R20.15×7×41×1.65（41×7×1.7）双头机（上下）"
+    assert "+0.01" not in stem
+    assert "-0.01" not in stem
 
 
 def test_explicit_input_cannot_override_required_output_name() -> None:
