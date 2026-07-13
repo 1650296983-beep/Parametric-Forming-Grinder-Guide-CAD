@@ -109,22 +109,22 @@ dual-spec tasks.  It calls `src.web_api` so calculation, validation, and the
 release gate remain in the existing Python domain layer; the browser does not
 reimplement process formulas.
 
-Start the API from the repository root:
+First-time environment setup:
 
 ```bash
-python3 -m pip install -r requirements.txt
-python3 -m uvicorn src.web_api:app --reload
+python3 -m venv .venv
+./.venv/bin/python -m pip install -r requirements.txt
+cd frontend && npm ci
 ```
 
-Then start the frontend in a second terminal:
+Then start both the API and frontend from the repository root with one command:
 
 ```bash
-cd frontend
-npm install
-npm run dev
+./scripts/start_web.sh
 ```
 
-Open `http://127.0.0.1:5173`. Generated Web tasks are written under
+Open `http://127.0.0.1:5173`. Press `Ctrl+C` in that terminal to stop the
+frontend and any API process started by the script. Generated Web tasks are written under
 `output/web_tasks/<task_id>/`. The frontend will show a formal release download
 only when the Python report marks `release_allowed` as `true`.
 
