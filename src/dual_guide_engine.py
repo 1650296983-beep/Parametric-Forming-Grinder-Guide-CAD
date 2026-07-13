@@ -199,15 +199,15 @@ class DualGuideTemplateEngine:
         parsed_spec: DualGuideParsedSpec,
         output_dir: Path,
         input_rule: dict[str, Any] | None = None,
+        artifact_stem: str | None = None,
     ) -> dict[str, Any]:
         output_dir.mkdir(parents=True, exist_ok=True)
-        debug_path = output_dir / "debug.dxf"
-        release_path = output_dir / "release.dxf"
-        release_candidate_path = output_dir / "release.candidate.dxf"
-        report_path = output_dir / "report.json"
-        dimension_audit_path = (
-            output_dir / "dimension_definition_point_audit.json"
-        )
+        filenames = _artifact_filenames(artifact_stem)
+        debug_path = output_dir / filenames["debug_dxf"]
+        release_path = output_dir / filenames["release_dxf"]
+        release_candidate_path = output_dir / filenames["release_candidate_dxf"]
+        report_path = output_dir / filenames["report_json"]
+        dimension_audit_path = output_dir / filenames["dimension_audit_json"]
         release_path.unlink(missing_ok=True)
         release_candidate_path.unlink(missing_ok=True)
         debug_result = self.write_dxf(profile, debug_path, output_mode="debug")
@@ -2114,6 +2114,24 @@ def _text_matches_number(text: str, expected: float) -> bool:
 
 def _public_section_result(section: dict[str, Any]) -> dict[str, Any]:
     return {key: value for key, value in section.items() if key != "geometry"}
+
+
+def _artifact_filenames(artifact_stem: str | None) -> dict[str, str]:
+    if artifact_stem is None:
+        return {
+            "debug_dxf": "debug.dxf",
+            "release_dxf": "release.dxf",
+            "release_candidate_dxf": "release.candidate.dxf",
+            "report_json": "report.json",
+            "dimension_audit_json": "dimension_definition_point_audit.json",
+        }
+    return {
+        "debug_dxf": f"{artifact_stem}（调试）.dxf",
+        "release_dxf": f"{artifact_stem}.dxf",
+        "release_candidate_dxf": f"{artifact_stem}（正式候选）.dxf",
+        "report_json": f"{artifact_stem}_report.json",
+        "dimension_audit_json": f"{artifact_stem}_dimension_definition_point_audit.json",
+    }
 
 
 def _machine_template_payload(template: MachineTemplate) -> dict[str, Any]:

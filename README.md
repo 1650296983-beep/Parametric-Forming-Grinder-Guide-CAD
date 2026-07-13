@@ -128,6 +128,12 @@ frontend and any API process started by the script. Generated Web tasks are writ
 `output/web_tasks/<task_id>/`. The frontend will show a formal release download
 only when the Python report marks `release_allowed` as `true`.
 
+The Web workbench supports single-guide machines and the synchronized
+three-head dual-guide machines (`triple_double_down_up_up` and
+`triple_double_up_up_up`). Dual-guide jobs are generated only through
+`DualGuideTemplateEngine`; both sections must pass synchronization and dimension
+definition-point audits before a formal DXF is exposed.
+
 For explicit dual-spec tasks, the formal DXF filename is fixed as
 `成品规格（磨前规格）机台类型.dxf`. Tolerance annotations are deliberately excluded
 from the filename, while remaining in the drawing and validation report. To

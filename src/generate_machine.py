@@ -19,7 +19,7 @@ from .geometry import (
 )
 from .machine_config import load_machine_config
 from .output_naming import build_machine_output_stem
-from .preview import write_png_preview
+from .preview import write_block_png_preview, write_png_preview
 from .spec_parser import (
     BlockSpec,
     FinishedSpec,
@@ -128,7 +128,7 @@ def main() -> int:
             machine_name=f"{machine.machine_id} {machine.guide_length:.0f}mm",
         )
     else:
-        write_block_png_preview(profile, machine.machine_id, png_path)
+        write_block_png_preview(profile, machine, png_path)
     report = write_validation_report_json(
         profile,
         parsed_spec,
@@ -219,56 +219,6 @@ def write_machine_report(
     report_path.parent.mkdir(parents=True, exist_ok=True)
     report_path.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
     return report_path
-
-
-def write_block_png_preview(profile: BlockGuideSection, machine_id: str, path: Path) -> Path:
-    import matplotlib.pyplot as plt
-    from matplotlib.patches import Arc
-
-    machine = load_machine_config(machine_id)
-    guide = profile.guide_spec
-    side = build_side_view_geometry(profile, layout=machine.side_layout)  # type: ignore[arg-type]
-    path.parent.mkdir(parents=True, exist_ok=True)
-    fig, (ax_section, ax_side) = plt.subplots(1, 2, figsize=(11, 4.5))
-
-    slot_w = guide.guide_slot_width
-    thickness = guide.guide_thickness
-    r = guide.relief.relief_size / 2.0
-    left = -slot_w / 2.0
-    right = slot_w / 2.0
-    bottom = 0.0
-    top = thickness
-    ax_section.plot([left + r, right - r], [bottom, bottom], color="#1f77b4")
-    ax_section.plot([right, right], [bottom + r, top - r], color="#1f77b4")
-    ax_section.plot([right - r, left + r], [top, top], color="#1f77b4")
-    ax_section.plot([left, left], [top - r, bottom + r], color="#1f77b4")
-    for cx, cy, a0, a1 in (
-        (left + r, bottom + r, 180, 270),
-        (right - r, bottom + r, 270, 360),
-        (right - r, top - r, 0, 90),
-        (left + r, top - r, 90, 180),
-    ):
-        ax_section.add_patch(Arc((cx, cy), 2 * r, 2 * r, theta1=a0, theta2=a1, color="#1f77b4"))
-    ax_section.set_aspect("equal", adjustable="box")
-    ax_section.set_title(f"slot {slot_w:.2f} x {thickness:.2f}")
-    ax_section.grid(True, linewidth=0.3)
-
-    layout = side.layout
-    ax_side.plot([layout.left_x, layout.right_x], [layout.lower_y, layout.lower_y], color="#444444")
-    ax_side.plot([layout.left_x, layout.right_x], [layout.upper_y, layout.upper_y], color="#444444")
-    for x in (layout.left_x, layout.center_a_x, layout.center_b_x, layout.right_x):
-        ax_side.plot([x, x], [layout.lower_y, layout.upper_y], color="#777777", linewidth=0.8)
-    upper_center_y = layout.upper_y - side.derived.side_clearance_height + side.template.wheel_radius
-    for x in (layout.center_a_x, layout.center_b_x):
-        ax_side.add_patch(Arc((x, upper_center_y), 160, 160, theta1=200, theta2=340, color="#1f77b4"))
-    ax_side.set_aspect("equal", adjustable="box")
-    ax_side.set_title(f"{machine.machine_id} {machine.guide_length:.0f} mm")
-    ax_side.grid(True, linewidth=0.3)
-
-    fig.tight_layout()
-    fig.savefig(path, dpi=180)
-    plt.close(fig)
-    return path
 
 
 def _build_profile(

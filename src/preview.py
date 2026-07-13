@@ -10,8 +10,11 @@ import matplotlib
 
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
+from matplotlib.patches import Arc
 
+from .block_geometry import BlockGuideSection
 from .geometry import Point, SectionProfile, TileSection, sample_profile
+from .machine_config import MachineConfig
 from .side_view import build_side_view_geometry
 from .side_view_config import SideViewLayoutConfig
 
@@ -95,6 +98,67 @@ def write_png_preview(
     ax.grid(True, color="#d0d0d0", linewidth=0.7)
     fig.tight_layout()
     fig.savefig(output_path)
+    plt.close(fig)
+    return output_path
+
+
+def write_block_png_preview(
+    profile: BlockGuideSection,
+    machine: MachineConfig,
+    path: str | Path,
+) -> Path:
+    """Render the block-guide section and side view for a generated task."""
+    output_path = Path(path)
+    guide = profile.guide_spec
+    side = build_side_view_geometry(profile, layout=machine.side_layout)  # type: ignore[arg-type]
+    output_path.parent.mkdir(parents=True, exist_ok=True)
+    fig, (ax_section, ax_side) = plt.subplots(1, 2, figsize=(11, 4.5))
+
+    slot_width = guide.guide_slot_width
+    thickness = guide.guide_thickness
+    radius = guide.relief.relief_size / 2.0
+    left = -slot_width / 2.0
+    right = slot_width / 2.0
+    bottom = 0.0
+    top = thickness
+    ax_section.plot([left + radius, right - radius], [bottom, bottom], color="#1f77b4")
+    ax_section.plot([right, right], [bottom + radius, top - radius], color="#1f77b4")
+    ax_section.plot([right - radius, left + radius], [top, top], color="#1f77b4")
+    ax_section.plot([left, left], [top - radius, bottom + radius], color="#1f77b4")
+    for center_x, center_y, start_angle, end_angle in (
+        (left + radius, bottom + radius, 180, 270),
+        (right - radius, bottom + radius, 270, 360),
+        (right - radius, top - radius, 0, 90),
+        (left + radius, top - radius, 90, 180),
+    ):
+        ax_section.add_patch(
+            Arc(
+                (center_x, center_y),
+                2 * radius,
+                2 * radius,
+                theta1=start_angle,
+                theta2=end_angle,
+                color="#1f77b4",
+            )
+        )
+    ax_section.set_aspect("equal", adjustable="box")
+    ax_section.set_title(f"slot {slot_width:.2f} x {thickness:.2f}")
+    ax_section.grid(True, linewidth=0.3)
+
+    layout = side.layout
+    ax_side.plot([layout.left_x, layout.right_x], [layout.lower_y, layout.lower_y], color="#444444")
+    ax_side.plot([layout.left_x, layout.right_x], [layout.upper_y, layout.upper_y], color="#444444")
+    for center_x in (layout.left_x, layout.center_a_x, layout.center_b_x, layout.right_x):
+        ax_side.plot([center_x, center_x], [layout.lower_y, layout.upper_y], color="#777777", linewidth=0.8)
+    upper_center_y = layout.upper_y - side.derived.side_clearance_height + side.template.wheel_radius
+    for center_x in (layout.center_a_x, layout.center_b_x):
+        ax_side.add_patch(Arc((center_x, upper_center_y), 160, 160, theta1=200, theta2=340, color="#1f77b4"))
+    ax_side.set_aspect("equal", adjustable="box")
+    ax_side.set_title(f"{machine.machine_id} {machine.guide_length:.0f} mm")
+    ax_side.grid(True, linewidth=0.3)
+
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=180)
     plt.close(fig)
     return output_path
 

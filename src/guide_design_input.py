@@ -178,7 +178,7 @@ def build_single_guide_profile_from_input(
         machine_type=machine.machine_id,
         guide_rail_type=machine.guide_type,
         wheel_sequence=machine.wheel_positions,
-        template_rules=_machine_template_rules(machine),
+        template_rules=machine_template_rules(machine),
         finished_radii=radii,
         first_wheel_side=first_wheel_side,
     )
@@ -402,7 +402,8 @@ def _legacy_pre_grinding_shape(shape: str) -> str:
     )
 
 
-def _machine_template_rules(machine: MachineConfig) -> dict[str, Any]:
+def machine_template_rules(machine: MachineConfig) -> dict[str, Any]:
+    """Expose template-owned orientation rules to every input adapter."""
     return {
         "block_to_tile_groove_profile": machine.block_to_tile_groove_profile,
         "block_to_bread_groove_profile": machine.block_to_bread_groove_profile,

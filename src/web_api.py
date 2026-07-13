@@ -19,8 +19,16 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
-from .guide_design_input import build_single_guide_profile_from_input
+from .block_geometry import BlockGuideSection
+from .dual_guide_engine import DualGuideTemplateEngine
+from .dual_guide_input import build_dual_guide_profile_from_input
+from .geometry import TileSection
+from .groove_profile import determine_groove_profile, normalize_shape
+from .guide_design_input import build_single_guide_profile_from_input, machine_template_rules
 from .machine_config import MachineConfig, load_machine_config
+from .output_naming import build_machine_output_stem
+from .preview import write_block_png_preview, write_png_preview
+from .spec_parser import parse_company_bread_spec, parse_company_tile_spec
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -78,16 +86,14 @@ def validate_design(design: DesignInput) -> dict[str, Any]:
     """Parse and calculate a design without writing any DXF artifacts."""
     machine = _load_matching_machine(design)
     try:
-        _, _, profile, decision = build_single_guide_profile_from_input(
-            design.model_dump(), machine
-        )
+        _, _, profile, decision = _build_profile_for_design(design, machine)
     except (TypeError, ValueError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
     guide = profile.guide_spec
     return {
         "machine": _machine_payload(machine),
-        "decision": decision.as_dict(),
+        "decision": decision,
         "derived": {
             "slot_width": guide.guide_slot_width,
             "slot_width_tolerance": guide.slot_width_tolerance,
@@ -108,11 +114,8 @@ def validate_design(design: DesignInput) -> dict[str, Any]:
 def generate_design(request: GenerationRequest) -> dict[str, Any]:
     """Run the existing release-gated generator in an isolated task directory."""
     machine = _load_matching_machine(request.design)
-    if machine.guide_sections != 1:
-        raise HTTPException(
-            status_code=409,
-            detail="该机台的双导轨生成流程尚未接入 Web 任务适配层。",
-        )
+    if machine.guide_sections == 2:
+        return _generate_dual_guide_design(request.design, machine)
 
     # Validate before starting a generator subprocess so malformed data never
     # produces an output directory that looks like a legitimate task.
@@ -186,7 +189,168 @@ def _load_matching_machine(design: DesignInput) -> MachineConfig:
         raise HTTPException(status_code=422, detail="导轨类型与所选机台配置不一致。")
     if list(machine.wheel_positions) != design.wheel_sequence:
         raise HTTPException(status_code=422, detail="砂轮顺序与所选机台配置不一致。")
+    expected_first_side = _first_wheel_side(machine)
+    if design.first_wheel_side != expected_first_side:
+        raise HTTPException(
+            status_code=422,
+            detail=f"第一砂轮方向与机台配置不一致，应为 {expected_first_side}。",
+        )
+    if design.template_coordinate_system != machine.template_coordinate_system:
+        raise HTTPException(status_code=422, detail="模板坐标系与所选机台配置不一致。")
     return machine
+
+
+def _build_profile_for_design(
+    design: DesignInput,
+    machine: MachineConfig,
+) -> tuple[Any, Any, TileSection | BlockGuideSection, dict[str, Any]]:
+    if machine.guide_sections == 1:
+        finished, pre_grinding, profile, decision = build_single_guide_profile_from_input(
+            design.model_dump(), machine
+        )
+        return finished, pre_grinding, profile, decision.as_dict()
+    if machine.guide_sections == 2:
+        return _build_dual_profile_for_web_design(design, machine)
+    raise ValueError(f"Web generation does not support guide_sections={machine.guide_sections}.")
+
+
+def _build_dual_profile_for_web_design(
+    design: DesignInput,
+    machine: MachineConfig,
+) -> tuple[Any, Any, TileSection | BlockGuideSection, dict[str, Any]]:
+    """Translate Web's canonical input into the existing dual-guide contract."""
+    if design.tolerance:
+        raise ValueError("双导轨任务不接受独立 tolerance 字段；请仅在磨前规格中填写公差。")
+    finished_shape = normalize_shape(design.product_shape_after)
+    pre_grinding_shape = normalize_shape(design.product_shape_before)
+    shape_map = {"bread_shape": "bread", "tile_shape": "tile"}
+    preform_map = {"rectangular_block": "block", "same_r_tile": "same_r_tile"}
+    if finished_shape not in shape_map or pre_grinding_shape not in preform_map:
+        raise ValueError("双导轨仅支持馒头/瓦型成品与方块/同 R 瓦型磨前形态。")
+    finished_radii = _finished_radii_for_web_design(design.finished_spec, finished_shape)
+    groove = determine_groove_profile(
+        product_shape_before=pre_grinding_shape,
+        product_shape_after=finished_shape,
+        finished_radius_count=len(finished_radii),
+        machine_type=machine.machine_id,
+        guide_rail_type=machine.guide_type,
+        wheel_sequence=machine.wheel_positions,
+        template_rules=machine_template_rules(machine),
+        finished_radii=finished_radii,
+        first_wheel_side=design.first_wheel_side,
+    )
+    if groove.groove_profile == "manual_review" or groove.guide_profile_source is None:
+        raise ValueError("; ".join(groove.warnings) or "当前双导轨输入需要人工确认。")
+    dual_input = {
+        "finished_product_spec": design.finished_spec,
+        "pre_grinding_spec": design.pre_grinding_spec,
+        "finished_product_shape": shape_map[finished_shape],
+        "pre_grinding_shape": preform_map[pre_grinding_shape],
+        "guide_profile_source": groove.guide_profile_source,
+        "relief": design.relief,
+    }
+    finished, pre_grinding, profile, dual_decision = build_dual_guide_profile_from_input(
+        dual_input,
+        machine,
+    )
+    input_rule = {
+        **dual_decision.as_dict(),
+        **groove.as_dict(),
+        "finished_spec": design.finished_spec,
+        "product_shape_before": pre_grinding_shape,
+        "product_shape_after": finished_shape,
+        "machine_type": machine.machine_id,
+        "guide_rail_type": machine.guide_type,
+        "wheel_sequence": list(machine.wheel_positions),
+        "first_wheel_side": design.first_wheel_side,
+        "template_coordinate_system": machine.template_coordinate_system,
+        "input_rule_valid": True,
+        "input_mode": "web_explicit_input",
+    }
+    return finished, pre_grinding, profile, input_rule
+
+
+def _finished_radii_for_web_design(finished_spec: str, finished_shape: str) -> tuple[float, ...]:
+    if finished_shape == "bread_shape":
+        return (parse_company_bread_spec(finished_spec).R_outer_finished,)
+    tile_spec = parse_company_tile_spec(finished_spec, require_chord_tolerance=False)
+    return (tile_spec.R_outer_finished, tile_spec.R_inner_finished)
+
+
+def _generate_dual_guide_design(
+    design: DesignInput,
+    machine: MachineConfig,
+) -> dict[str, Any]:
+    """Generate dual guides through DualGuideTemplateEngine and preserve its gate."""
+    try:
+        _, pre_grinding, profile, input_rule = _build_profile_for_design(design, machine)
+    except (TypeError, ValueError) as error:
+        raise HTTPException(status_code=422, detail=str(error)) from error
+
+    task_id = uuid4().hex[:12]
+    task_dir = WEB_OUTPUT_ROOT / task_id
+    task_dir.mkdir(parents=True, exist_ok=False)
+    (task_dir / "input.json").write_text(
+        json.dumps(design.model_dump(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    artifact_stem = build_machine_output_stem(
+        design.finished_spec,
+        design.pre_grinding_spec,
+        machine.machine_name,
+    )
+    try:
+        result = DualGuideTemplateEngine(machine).write_debug_release_and_report(
+            profile,
+            pre_grinding,
+            task_dir / "artifacts",
+            input_rule=input_rule,
+            artifact_stem=artifact_stem,
+        )
+    except (OSError, TypeError, ValueError) as error:
+        return {
+            "task_id": task_id,
+            "task_directory": str(task_dir),
+            "ok": False,
+            "stdout": "",
+            "stderr": str(error),
+        }
+
+    preview_path = task_dir / "artifacts" / f"{artifact_stem}.png"
+    if isinstance(profile, TileSection):
+        write_png_preview(
+            profile,
+            preview_path,
+            side_layout=machine.side_layout,
+            machine_name=f"{machine.machine_id} {machine.guide_length:.0f}mm",
+        )
+    else:
+        write_block_png_preview(profile, machine, preview_path)
+    report = result["report"]
+    report["paths"] = {
+        "debug_dxf": str(result["debug_dxf"]),
+        "release_dxf": str(result["release_dxf"]),
+        "preview_png": str(preview_path),
+    }
+    report_path = result["report_json"]
+    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    return {
+        "task_id": task_id,
+        "task_directory": str(task_dir),
+        "ok": bool(report.get("release_allowed")),
+        "stdout": "",
+        "stderr": "" if report.get("release_allowed") else "双导轨 release 校验未通过。",
+        "release_allowed": bool(report.get("release_allowed")),
+        "report": report,
+        "files": _task_file_payload(task_id, task_dir, report),
+    }
+
+
+def _first_wheel_side(machine: MachineConfig) -> str:
+    try:
+        return {"上": "upper", "下": "lower", "左": "left", "右": "right"}[machine.wheel_positions[0]]
+    except (IndexError, KeyError) as error:
+        raise HTTPException(status_code=500, detail="机台配置的首砂轮方向无效。") from error
 
 
 def _machine_payload(machine: MachineConfig) -> dict[str, Any]:
@@ -201,7 +365,7 @@ def _machine_payload(machine: MachineConfig) -> dict[str, Any]:
         "section_center_opening": machine.section_center_opening,
         "section_slot_base_height": machine.section_slot_base_height,
         "template_coordinate_system": machine.template_coordinate_system,
-        "supported_by_web_generation": machine.guide_sections == 1,
+        "supported_by_web_generation": machine.guide_sections in {1, 2},
     }
 
 
