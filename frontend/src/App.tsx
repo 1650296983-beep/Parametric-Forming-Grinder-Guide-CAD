@@ -108,7 +108,7 @@ export default function App() {
     setIsGenerating(true);
     setStep(3);
     try {
-      const result = await api.generate(design, "guide");
+      const result = await api.generate(design);
       setGenerationResult(result);
       setGenerationState(result.ok && result.release_allowed ? "passed" : "failed");
       if (!result.ok || !result.release_allowed) {

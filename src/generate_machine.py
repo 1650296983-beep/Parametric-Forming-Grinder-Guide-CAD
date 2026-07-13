@@ -18,6 +18,7 @@ from .geometry import (
     build_tile_section,
 )
 from .machine_config import load_machine_config
+from .output_naming import build_machine_output_stem
 from .preview import write_png_preview
 from .spec_parser import (
     BlockSpec,
@@ -74,20 +75,10 @@ def main() -> int:
         if args.input_json is not None
         else None
     )
-    name_source = (
-        str(
-            explicit_input.get(
-                "finished_spec",
-                explicit_input.get("finished_product_spec"),
-            )
-        )
-        if explicit_input is not None
-        else str(args.spec)
-    )
-    name = args.name or _artifact_name(name_source)
-    debug_dxf = dxf_dir / f"{name}_debug.dxf"
-    release_dxf = dxf_dir / f"{name}_release.dxf"
-    release_candidate_dxf = dxf_dir / f"{name}_release.candidate.dxf"
+    name = _resolve_output_name(args.name, explicit_input, machine.machine_name, args.spec)
+    debug_dxf = dxf_dir / f"{name}（调试）.dxf"
+    release_dxf = dxf_dir / f"{name}.dxf"
+    release_candidate_dxf = dxf_dir / f"{name}（正式候选）.dxf"
     png_path = preview_dir / f"{name}.png"
     report_json = report_dir / f"{name}_report.json"
     dimension_audit_json = report_dir / f"{name}_dimension_definition_point_audit.json"
@@ -477,6 +468,41 @@ def _r80_arc_count(doc) -> int:
 
 def _artifact_name(raw_spec: str) -> str:
     return raw_spec.replace("*", "_").replace("x", "_").replace("X", "_").replace(".", "p").replace("R", "R")
+
+
+def _resolve_output_name(
+    requested_name: str | None,
+    explicit_input: dict[str, object] | None,
+    machine_name: str,
+    legacy_spec: str | None,
+) -> str:
+    """Use the mandatory dual-spec naming rule whenever explicit input is used."""
+    if explicit_input is None:
+        return requested_name or _artifact_name(str(legacy_spec))
+    if requested_name:
+        raise ValueError("显式双规格输入不支持 --name；输出文件名由规格和机台类型固定生成。")
+    finished_spec = _required_input_spec(
+        explicit_input,
+        "finished_spec",
+        "finished_product_spec",
+    )
+    pre_grinding_spec = _required_input_spec(
+        explicit_input,
+        "pre_grinding_spec",
+        "preform_spec",
+    )
+    return build_machine_output_stem(finished_spec, pre_grinding_spec, machine_name)
+
+
+def _required_input_spec(
+    explicit_input: dict[str, object],
+    canonical_key: str,
+    compatibility_key: str,
+) -> str:
+    value = explicit_input.get(canonical_key, explicit_input.get(compatibility_key))
+    if not isinstance(value, str) or not value.strip():
+        raise ValueError(f"显式输入缺少 {canonical_key}，无法生成输出文件名。")
+    return value
 
 
 if __name__ == "__main__":

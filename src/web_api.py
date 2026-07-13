@@ -46,7 +46,6 @@ class DesignInput(BaseModel):
 
 class GenerationRequest(BaseModel):
     design: DesignInput
-    task_name: str | None = Field(default=None, max_length=100)
 
 
 app = FastAPI(title="Forming Grinder Guide CAD API", version="0.1.0")
@@ -136,8 +135,6 @@ def generate_design(request: GenerationRequest) -> dict[str, Any]:
         str(input_path),
         "--output-dir",
         str(task_dir / "artifacts"),
-        "--name",
-        _safe_task_name(request.task_name or "guide"),
     ]
     completed = subprocess.run(
         command,
@@ -206,14 +203,6 @@ def _machine_payload(machine: MachineConfig) -> dict[str, Any]:
         "template_coordinate_system": machine.template_coordinate_system,
         "supported_by_web_generation": machine.guide_sections == 1,
     }
-
-
-def _safe_task_name(value: str) -> str:
-    normalized = "".join(
-        character if character.isalnum() or character in {"-", "_"} else "_"
-        for character in value
-    ).strip("_")
-    return normalized[:80] or "guide"
 
 
 def _task_file_payload(

@@ -41,8 +41,7 @@ match the decision or generation stops.
 python3 -m src.generate_machine \
   --machine-id triple_single_down_up \
   --input-json examples/dual_spec/example_3.json \
-  --output-dir output/dual_spec_examples \
-  --name example_3
+  --output-dir output/dual_spec_examples
 ```
 
 ## Shape Model
@@ -128,6 +127,15 @@ npm run dev
 Open `http://127.0.0.1:5173`. Generated Web tasks are written under
 `output/web_tasks/<task_id>/`. The frontend will show a formal release download
 only when the Python report marks `release_allowed` as `true`.
+
+For explicit dual-spec tasks, the formal DXF filename is fixed as
+`成品规格（磨前规格）机台类型.dxf`. To keep a downloaded file portable on macOS
+and Windows, specification separators are displayed as `×` instead of `*` and
+`／` instead of `/`; for example:
+
+```text
+R20.15×7×41×1.65（41×7（+0.01／-0.01）×1.7（+0.02／+0））双头机（上下）.dxf
+```
 
 ## Generate Output
 

@@ -27,12 +27,12 @@ export const api = {
       method: "POST",
       body: JSON.stringify(canonicalDesignPayload(design)),
     }),
-  generate: (design: DesignInput, taskName: string) =>
+  generate: (design: DesignInput) =>
     request<GenerationResult>(
       "/api/designs/generate",
       {
         method: "POST",
-        body: JSON.stringify({ design: canonicalDesignPayload(design), task_name: taskName }),
+        body: JSON.stringify({ design: canonicalDesignPayload(design) }),
       },
     ),
 };
