@@ -1,0 +1,9 @@
+{
+  "machine_id": "double_head_up_down",
+  "template_version": "v1.0.1",
+  "source_template_file": "section_template.dxf; side_template.dxf",
+  "sha256": "74115f5e565f088b76ed5b04da13d8dee92089bed12c410dcc72cc5998f1cb57",
+  "change_reason": "用户确认双规格规则：双R的R面跟随第一砂轮方向；单R成品加方块磨前采用矩形槽；槽宽和厚度继续按QG公式；同步修正尺寸定义点到真实几何及实例实测固定开口。",
+  "approved_by": "生产图纸规则确认",
+  "approved_date": "2026-07-11"
+}

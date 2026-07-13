@@ -1,0 +1,11 @@
+{
+  "machine_id": "triple_double_down_up_up",
+  "finished_product_spec": "R30*9.1*4*3",
+  "pre_grinding_spec": "9.1*4*3",
+  "finished_product_shape": "bread",
+  "pre_grinding_shape": "block",
+  "guide_profile_source": "pre_grinding_spec",
+  "relief": "4-1",
+  "slot_reference": "length",
+  "block_slot_clearance": 0.05
+}

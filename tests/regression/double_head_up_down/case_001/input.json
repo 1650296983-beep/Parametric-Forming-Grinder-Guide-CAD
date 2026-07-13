@@ -1,0 +1,7 @@
+{
+  "machine_id": "double_head_up_down",
+  "spec": "R13.73*R17.13*4.50(-0.02/-0.05)*9.6*1.6",
+  "relief": "4-1",
+  "slot_reference": "length",
+  "block_slot_clearance": 0.05
+}

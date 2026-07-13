@@ -1,0 +1,7 @@
+{
+  "machine_id": "triple_double_up_up_up",
+  "spec": "9.1*4*3",
+  "relief": "4-1",
+  "slot_reference": "length",
+  "block_slot_clearance": 0.05
+}

@@ -1,0 +1,41 @@
+machine_id: triple_single_down_up
+machine_name: 三头机单导轨（下上）
+guide_type: single_guide
+guide_length: 379.0
+wheel_positions: ["下", "上"]
+guide_sections: 1
+side_fixed_spans: [99.0, 180.0, 100.0]
+section_template: section_template.dxf
+side_template: side_template.dxf
+section_style: triple_single_down_up_flat_arc
+section_outer_width: 40.0
+section_center_opening: 2.0
+section_slot_base_height: 12.0
+block_thickness_clearance_mid: 0.12
+template_coordinate_system: section_xy_y_up
+template_axis_rotation_deg: 0.0
+template_mirror_x: false
+template_mirror_y: false
+flat_arc_surface_side: lower
+flat_surface_side: upper
+flat_arc_center_side: upper
+block_to_tile_groove_profile: flat_arc_groove
+block_to_bread_groove_profile: rectangular_groove
+approved_reference_overrides: ["slot_width", "guide_thickness"]
+layout:
+  left_x: 3368.210203854037
+  center_a_x: 3467.210203854038
+  center_b_x: 3647.210203854038
+  right_x: 3747.210203854036
+  lower_y: 35.84968472437504
+  upper_y: 62.84968472437504
+  template_min_x: 3360.0
+  template_min_y: -120.0
+  template_max_y: 150.0
+  fixed_tile_side_projected_slot_height: 12.0
+  tile_upper_wheel_cut_in_ratio: 0.6
+  block_to_tile_lower_wheel_cut_in: 0.1
+  block_to_tile_upper_wheel_cut_in: 0.45
+  block_side_mode: "slot_base_plus_wheel_cut_in"
+  block_lower_wheel_cut_in: 0.3
+  block_upper_wheel_cut_in: 0.3

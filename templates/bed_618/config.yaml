@@ -1,0 +1,28 @@
+machine_id: bed_618
+machine_name: 618磨床
+guide_type: single_guide
+guide_length: 300.0
+wheel_positions: ["上"]
+guide_sections: 1
+side_fixed_spans: [170.0, 130.0]
+section_template: section_template.dxf
+side_template: side_template.dxf
+section_style: bed_618_fixed_base
+section_outer_width: 40.0
+section_center_opening: 2.0
+section_slot_base_height: 20.9
+layout:
+  left_x: 3390.483328096916
+  center_a_x: 3560.483328096917
+  center_b_x: 3560.483328096917
+  right_x: 3690.483328096916
+  lower_y: 34.42083240508352
+  upper_y: 61.42083240508352
+  template_min_x: 3380.0
+  template_min_y: 0.0
+  template_max_y: 150.0
+  fixed_tile_side_projected_slot_height: 20.9
+  block_side_mode: "fixed_projected_height"
+  block_side_projected_slot_height: 20.9
+  block_to_tile_lower_wheel_cut_in_ratio: 0.6
+  block_to_tile_upper_wheel_cut_in: 0.2

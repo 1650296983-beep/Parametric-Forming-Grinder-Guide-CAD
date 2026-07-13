@@ -1,0 +1,18 @@
+{
+  "machine_type": "triple_single_down_up",
+  "guide_rail_type": "single_guide",
+  "wheel_sequence": ["下", "上"],
+  "first_wheel_side": "lower",
+  "template_coordinate_system": "section_xy_y_up",
+  "finished_spec": "R24.7*12*46*2.1",
+  "pre_grinding_spec": "46*12.2(-0.09/-0.11)*2.1(+0.01/-0.01)",
+  "product_shape_after": "bread_shape",
+  "product_shape_before": "rectangular_block",
+  "tolerance": {
+    "width_upper_deviation": -0.09,
+    "width_lower_deviation": -0.11,
+    "thickness_upper_deviation": 0.01,
+    "thickness_lower_deviation": -0.01
+  },
+  "relief": "4-1"
+}

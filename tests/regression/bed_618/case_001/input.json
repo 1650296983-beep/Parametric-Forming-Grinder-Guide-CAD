@@ -1,0 +1,7 @@
+{
+  "machine_id": "bed_618",
+  "spec": "R17.45*R15.8*6.20(-0.02/-0.04)*15.5*1.65",
+  "relief": "4-1",
+  "slot_reference": "length",
+  "block_slot_clearance": 0.05
+}

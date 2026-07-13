@@ -1,0 +1,31 @@
+machine_id: triple_double_down_up_up
+machine_name: 三头机双导轨（下上上）
+guide_type: double_guide
+guide_length: 590.0
+wheel_positions: ["下", "上", "上"]
+guide_sections: 2
+dual_section_mode: synchronized
+side_fixed_spans: [99.0, 90.0, 90.0, 180.0, 131.0]
+section_template: full_template.dxf
+side_template: full_template.dxf
+block_outer_width: 40.0
+block_thickness_clearance_mid: 0.09
+section_style: triple_double_down_up_up
+section_outer_width: 40.0
+section_center_opening: 4.0
+section_slot_base_height: 12.0
+supported_section_profiles: ["rectangular_block", "bread_big_r_block_preform", "same_r_tile"]
+layout:
+  left_x: 3389.453899716404
+  center_a_x: 3488.453899716404
+  center_b_x: 3668.453899716405
+  right_x: 3979.453899716404
+  lower_y: -617.4786720491897
+  upper_y: -590.4786720491897
+  template_min_x: 3180.0
+  template_min_y: -710.0
+  template_max_y: -10.0
+  block_side_mode: "fixed_projected_height"
+  block_side_projected_slot_height: 18.0
+  block_to_tile_lower_wheel_cut_in_ratio: 0.6
+  block_to_tile_upper_wheel_cut_in: 0.2

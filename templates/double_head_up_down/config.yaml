@@ -1,0 +1,23 @@
+machine_id: double_head_up_down
+machine_name: 双头机（上下）
+guide_length: 435.0
+wheel_positions: ["上", "下"]
+guide_sections: 1
+section_slot_base_height: 12.0
+side_fixed_spans: [90.0, 200.0, 145.0]
+section_template: section_template.dxf
+side_template: side_template.dxf
+layout:
+  left_x: 3354.438679920512
+  center_a_x: 3444.438679920512
+  center_b_x: 3644.438679920512
+  right_x: 3789.438679920512
+  lower_y: 35.84968457837181
+  upper_y: 62.84968457837181
+  template_min_x: 3350.0
+  template_min_y: -120.0
+  template_max_y: 150.0
+  block_side_mode: "fixed_projected_height"
+  block_side_projected_slot_height: 18.0
+  block_to_tile_lower_wheel_cut_in_ratio: 0.6
+  block_to_tile_upper_wheel_cut_in: 0.2

@@ -1,0 +1,8 @@
+{
+  "machine_id": "triple_single_down_up",
+  "spec": "R15.9*R14.25*5.6*12.4*1.65",
+  "preform_spec": "12.4*5.6(-0.035/-0.055)*1.96(+0.01/-0.01)",
+  "relief": "4-1",
+  "slot_reference": "length",
+  "block_slot_clearance": 0.05
+}
