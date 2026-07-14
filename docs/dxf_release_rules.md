@@ -31,6 +31,7 @@ release 模式允许：
 - `SIDE_TEMPLATE`
 - `SIDE_DERIVED`
 - `SIDE_DERIVED_RELEASE`
+- `SIDE_CAVITY`
 - `SIDE_DIMENSION`
 - `SIDE_CENTER`
 
@@ -55,7 +56,9 @@ release 模式禁止：
 - 截面图中心线必须使用红色点画线：`SECTION_CENTER`，颜色 `1`，线型 `CENTER`。
 - 侧面投影图中心线必须使用红色点画线：`SIDE_CENTER`，颜色 `1`，线型 `CENTER`。
 - 既有单导轨机型按各自模板规则使用 `SIDE_DERIVED`。
-- `triple_double_down_up_up` 的正式侧面投影轮廓线和工作线必须使用 `SIDE_DERIVED_RELEASE`，颜色 `3`，线型 `Continuous`。
+- 双导轨机型的机台外轮廓必须使用 `SIDE_TEMPLATE`，颜色 `7`，线型 `Continuous`；型腔投影线必须使用 `SIDE_CAVITY`，颜色 `3`，线型 `DASHED`。
+- `SIDE_CAVITY` 中禁止存在端点完全相同的重复线；618 与双头机（上下）的型腔虚线禁止穿过 R80 砂轮弧。
+- R80 半径尺寸必须定义到真实弧顶；吃入量和关键高度尺寸必须使用与弧顶同 X 的真实几何基准点。
 - 该双导轨机型的隐藏辅助线和 debug 线使用 `SIDE_DEBUG`，线型 `DASHED`，不得作为正式 release 轮廓。
 
 这些规范来自干净模板，适用于所有机型模板；复制模板时不得把中心线或内部槽线压成普通实线层。

@@ -8,7 +8,7 @@ from typing import Any
 from .block_geometry import BlockGuideSection
 from .geometry import TileSection
 from .machine_config import MachineConfig
-from .side_view_writer import SIDE_DERIVED_RELEASE_LAYER
+from .side_view_writer import SIDE_CAVITY_LAYER, SIDE_DERIVED_RELEASE_LAYER
 
 
 POINT_TOLERANCE = 0.01
@@ -16,6 +16,7 @@ FORMAL_GEOMETRY_LAYERS = {
     "FIXED_TEMPLATE",
     "PARAM_SLOT",
     "SIDE_TEMPLATE",
+    SIDE_CAVITY_LAYER,
     SIDE_DERIVED_RELEASE_LAYER,
     "SIDE_CENTER",
 }
@@ -196,17 +197,34 @@ def build_release_line_type_audit(dxf_path: str | Path) -> dict[str, Any]:
 
     doc = ezdxf.readfile(dxf_path)
     modelspace = doc.modelspace()
-    release_lines = [
+    cavity_lines = [
+        entity
+        for entity in modelspace.query("LINE")
+        if entity.dxf.layer == SIDE_CAVITY_LAYER
+    ]
+    derived_release_lines = [
         entity
         for entity in modelspace.query("LINE")
         if entity.dxf.layer == SIDE_DERIVED_RELEASE_LAYER
+    ]
+    invalid_cavity_lines = [
+        {
+            "handle": entity.dxf.handle,
+            "linetype": entity.dxf.linetype,
+            "effective_linetype": _effective_linetype(doc, entity),
+            "effective_color": _effective_color(doc, entity),
+        }
+        for entity in cavity_lines
+        if _effective_linetype(doc, entity).upper() != "DASHED"
+        or _effective_color(doc, entity) != 3
     ]
     invalid_release_lines = [
         {
             "handle": entity.dxf.handle,
             "linetype": entity.dxf.linetype,
+            "effective_linetype": _effective_linetype(doc, entity),
         }
-        for entity in release_lines
+        for entity in derived_release_lines
         if _effective_linetype(doc, entity).upper() != "CONTINUOUS"
     ]
     legacy_formal_lines = [
@@ -221,24 +239,52 @@ def build_release_line_type_audit(dxf_path: str | Path) -> dict[str, Any]:
             "linetype": _effective_linetype(doc, entity),
         }
         for entity in modelspace.query("LINE")
-        if entity.dxf.layer
-        in {SIDE_DERIVED_RELEASE_LAYER, "SIDE_TEMPLATE"}
+        if entity.dxf.layer in {SIDE_DERIVED_RELEASE_LAYER, "SIDE_TEMPLATE"}
         and _effective_linetype(doc, entity).upper() == "DASHED"
     ]
+    duplicate_cavity_lines = _duplicate_line_handles(cavity_lines)
     release_allowed = (
-        bool(release_lines)
+        bool(cavity_lines)
+        and not invalid_cavity_lines
+        and not duplicate_cavity_lines
         and not invalid_release_lines
         and not legacy_formal_lines
         and not dashed_formal_lines
     )
     return {
-        "release_layer": SIDE_DERIVED_RELEASE_LAYER,
-        "release_line_count": len(release_lines),
+        "release_layer": SIDE_CAVITY_LAYER,
+        "release_line_count": len(cavity_lines),
+        "cavity_line_count": len(cavity_lines),
+        "invalid_cavity_lines": invalid_cavity_lines,
+        "duplicate_cavity_lines": duplicate_cavity_lines,
+        "derived_release_line_count": len(derived_release_lines),
         "invalid_release_lines": invalid_release_lines,
         "legacy_SIDE_DERIVED_lines": legacy_formal_lines,
         "dashed_formal_lines": dashed_formal_lines,
         "release_allowed": release_allowed,
     }
+
+
+def _duplicate_line_handles(lines: list[Any]) -> list[list[str]]:
+    handles_by_geometry: dict[
+        tuple[tuple[float, float], tuple[float, float]], list[str]
+    ] = {}
+    for line in lines:
+        start = (
+            round(float(line.dxf.start.x), 6),
+            round(float(line.dxf.start.y), 6),
+        )
+        end = (
+            round(float(line.dxf.end.x), 6),
+            round(float(line.dxf.end.y), 6),
+        )
+        key = tuple(sorted((start, end)))
+        handles_by_geometry.setdefault(key, []).append(str(line.dxf.handle))
+    return [
+        handles
+        for handles in handles_by_geometry.values()
+        if len(handles) > 1
+    ]
 
 
 def _dimension_role(
@@ -542,6 +588,13 @@ def _effective_linetype(doc: Any, entity: Any) -> str:
     if linetype.upper() == "BYLAYER":
         return doc.layers.get(entity.dxf.layer).dxf.linetype
     return linetype
+
+
+def _effective_color(doc: Any, entity: Any) -> int:
+    color = int(entity.dxf.color)
+    if color == 256:
+        return int(doc.layers.get(entity.dxf.layer).dxf.color)
+    return color
 
 
 def _measurement(dimension: Any) -> float | None:

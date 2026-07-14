@@ -1,4 +1,5 @@
 from dataclasses import replace
+from math import sqrt
 
 import ezdxf
 import pytest
@@ -33,12 +34,19 @@ def test_double_head_up_up_block_spec_uses_selected_slot_reference(tmp_path):
     assert profile.guide_spec.guide_slot_width == pytest.approx(9.01)
     assert profile.guide_spec.guide_thickness == pytest.approx(2.09)
     assert side.derived.side_projected_slot_height == pytest.approx(18.0)
-    assert side.derived.side_clearance_height == pytest.approx(7.8)
+    expected_opening = spec.length - 0.2
+    expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
+    assert side.derived.side_clearance_height == pytest.approx(
+        profile.guide_spec.outer_height - 18.0 - expected_cut_in
+    )
     assert measurements["9.01±0.01"][0] == pytest.approx(9.01)
     assert measurements["2.09"][0] == pytest.approx(2.09)
     assert measurements["2-<>"][0] == pytest.approx(0.5)
     assert measurements["4-<>"][0] == pytest.approx(1.0)
-    assert measurements["7.80"] == pytest.approx([7.8, 7.8])
+    clearance_label = f"{side.derived.side_clearance_height:.2f}"
+    assert measurements[clearance_label] == pytest.approx(
+        [side.derived.side_clearance_height] * 2
+    )
     assert "18.00" not in measurements
     assert _section_dimension_block_text(doc, "9.01±0.01").startswith("9.01{\\H0.7x;\\S+0.01^ -0.01;}")
 
@@ -51,7 +59,9 @@ def test_double_head_up_up_block_spec_uses_selected_slot_reference(tmp_path):
     ]
     assert len(r80_centers) == 2
     assert r80_centers[0].y == pytest.approx(r80_centers[1].y)
-    assert r80_centers[0].y - 80.0 == pytest.approx(machine.side_layout.upper_y - 7.8)
+    assert r80_centers[0].y - 80.0 == pytest.approx(
+        machine.side_layout.upper_y - side.derived.side_clearance_height
+    )
     _assert_r80_top_gaps_match_arcs(doc, machine.side_layout.upper_y)
     _assert_section_has_standard_2mm_neck(doc)
     assert not any("DEBUG" in entity.dxf.layer for entity in doc.modelspace())
@@ -127,7 +137,11 @@ def test_double_head_up_up_side_r80_closes_for_variable_thickness(tmp_path):
     write_dxf(profile, release_path, output_mode="release", machine_id="double_head_up_up")
     doc = ezdxf.readfile(release_path)
 
-    assert side.derived.side_clearance_height == pytest.approx(7.2)
+    expected_opening = spec.length - 0.2
+    expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
+    assert side.derived.side_clearance_height == pytest.approx(
+        profile.guide_spec.outer_height - 18.0 - expected_cut_in
+    )
     _assert_r80_top_gaps_match_arcs(doc, machine.side_layout.upper_y)
     working_y = machine.side_layout.upper_y - side.derived.side_clearance_height
     working_lines = [

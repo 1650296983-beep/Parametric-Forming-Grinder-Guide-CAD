@@ -69,13 +69,27 @@ class MachineConfig:
             raise ValueError(
                 f"Machine '{self.machine_id}' requires block_side_projected_slot_height."
             )
+        if self.side_layout.block_projected_top_mode not in {
+            "wheel_cut_depth",
+            "guide_thickness",
+        }:
+            raise ValueError(
+                f"Machine '{self.machine_id}' has invalid block_projected_top_mode "
+                f"{self.side_layout.block_projected_top_mode!r}."
+            )
         if mode == "fixed_top_gap" and self.side_layout.block_fixed_top_gap is None:
             raise ValueError(
                 f"Machine '{self.machine_id}' requires block_fixed_top_gap."
             )
         if mode == "slot_base_plus_wheel_cut_in" and (
-            self.side_layout.block_lower_wheel_cut_in is None
-            or self.side_layout.block_upper_wheel_cut_in is None
+            (
+                self.side_layout.block_lower_wheel_cut_in is None
+                and self.side_layout.block_lower_wheel_cut_in_ratio is None
+            )
+            or (
+                self.side_layout.block_upper_wheel_cut_in is None
+                and self.side_layout.block_upper_wheel_cut_in_ratio is None
+            )
         ):
             raise ValueError(
                 f"Machine '{self.machine_id}' requires lower and upper block wheel cut-ins."
@@ -125,12 +139,21 @@ def load_machine_config(machine_id: str) -> MachineConfig:
             block_side_projected_slot_height=_optional_float(
                 layout_raw.get("block_side_projected_slot_height")
             ),
+            block_projected_top_mode=str(
+                layout_raw.get("block_projected_top_mode", "wheel_cut_depth")
+            ),
             block_fixed_top_gap=_optional_float(layout_raw.get("block_fixed_top_gap")),
             block_lower_wheel_cut_in=_optional_float(
                 layout_raw.get("block_lower_wheel_cut_in")
             ),
             block_upper_wheel_cut_in=_optional_float(
                 layout_raw.get("block_upper_wheel_cut_in")
+            ),
+            block_lower_wheel_cut_in_ratio=_optional_float(
+                layout_raw.get("block_lower_wheel_cut_in_ratio")
+            ),
+            block_upper_wheel_cut_in_ratio=_optional_float(
+                layout_raw.get("block_upper_wheel_cut_in_ratio")
             ),
             fixed_tile_side_projected_slot_height=float(
                 layout_raw.get("fixed_tile_side_projected_slot_height", 0.0)

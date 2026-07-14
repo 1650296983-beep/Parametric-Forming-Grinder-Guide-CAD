@@ -85,7 +85,7 @@ side_clearance_height = guide_outer_height - 20.9 - guide_thickness + wheel_cut_
 
 618 不套用普通瓦型的 `slot_base_height + 0.50` 作为型腔下沿投影高度。
 
-既有单导轨模板继续按各自规则使用 `SIDE_DERIVED`。`triple_double_down_up_up` 的正式导轨轮廓线和工作线必须放在 `SIDE_DERIVED_RELEASE` 层，颜色为绿色 `3`，线型为 `Continuous`；中心线使用 `SIDE_CENTER`。该双导轨机型的隐藏辅助线或 debug 线单独放在 `SIDE_DEBUG` 层并使用 `DASHED`。
+既有单导轨模板继续按各自规则使用 `SIDE_DERIVED`，型腔投影线统一继承绿色 `3` 和 `DASHED`。双导轨机型的机台外轮廓放在 `SIDE_TEMPLATE`，颜色 `7`、线型 `Continuous`；型腔投影线放在 `SIDE_CAVITY`，颜色 `3`、线型 `DASHED`；中心线使用 `SIDE_CENTER`。隐藏辅助线或 debug 线单独放在 `SIDE_DEBUG` 层并使用 `DASHED`。
 
 ## 派生尺寸
 
@@ -96,14 +96,23 @@ side_projected_slot_height = slot_base_height + side_cut_in_allowance
 side_clearance_height = guide_outer_height - slot_base_height - guide_thickness + wheel_cut_allowance
 ```
 
-方块导轨侧面尺寸：
+方块导轨侧面砂轮吃入统一使用成型磨前厚度中值：
 
 ```text
-side_projected_slot_height = block_side_projected_slot_height
-side_clearance_height = guide_outer_height - side_projected_slot_height - block_thickness * 0.6
+requested_cut_in_depth = preform_block_thickness_mid * 0.6
+natural_opening = 2 * sqrt(80^2 - (80 - requested_cut_in_depth)^2)
+opening_limit = product_length - 0.2
+actual_opening = min(natural_opening, opening_limit)
+effective_cut_in_depth = 80 - sqrt(80^2 - (actual_opening / 2)^2)
 ```
 
-`block_side_projected_slot_height` 由机台模板配置控制，双头机上上默认为 `18.0`。
+当自然开口未超限时，`effective_cut_in_depth` 必须等于 `preform_block_thickness_mid * 0.6`；超限时不得修改目标吃入公式，而应移动 R80 圆心，使最终开口不大于 `product_length - 0.2`。`block_side_projected_slot_height` 仍由机台模板配置控制，双头机上上默认为 `18.0`。
+
+双头机（上下）方块磨前侧视图只保留型腔上下两条虚线。下边界在下 R80 处断开，上边界在上 R80 处断开；不得保留模板中的平行偏移副本形成重影。下、上 R80 的冠点分别进入型腔 `effective_cut_in_depth`，两条边界随当前导轨厚度同步重建。
+
+618 的型腔上下两条绿色虚线均必须在 R80 缺口范围内断开，任何 `SIDE_DERIVED` 线段不得穿过砂轮弧。
+
+R80 相关尺寸的定义点规则：半径标注为“圆心 → 真实弧顶”；吃入量和关键高度为“同 X 基准点 → 真实弧顶”。文字位置允许为避让而偏移，但 `defpoint2`、`defpoint3` 或半径目标点不得落在圆弧肩点、切点或历史模板坐标。
 
 三头机单导轨（上上）不同：截面中的 `3` 为固定上口余量，不固定型腔底部高度：
 
@@ -148,8 +157,7 @@ upper_wheel_key_height = outer_height - slot_base_height - guide_thickness
                          + block_upper_wheel_cut_in
 ```
 
-当前机台配置的上下吃入均为 `0.30 mm`。下、上 R80 圆心必须分别从上述两项关键高度
-派生；release 同时校验槽底基准、R80 圆心、关键高度和对应 DIMENSION 定义点。
+上下吃入均按 `preform_block_thickness_mid * 0.6` 计算。下、上 R80 圆心必须分别从上述两项关键高度派生；release 同时校验槽底基准、R80 圆心、关键高度和对应 DIMENSION 定义点。
 
 `preview.png` 是供生成结果页快速复核的截面预览，应能看到：
 

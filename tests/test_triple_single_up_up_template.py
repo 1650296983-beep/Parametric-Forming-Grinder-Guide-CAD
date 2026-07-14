@@ -1,3 +1,5 @@
+from math import sqrt
+
 import ezdxf
 import pytest
 
@@ -42,11 +44,21 @@ def test_triple_single_up_up_block_release_updates_native_dimensions(tmp_path):
     assert profile.guide_spec.guide_slot_width == pytest.approx(9.15)
     assert profile.guide_spec.guide_thickness == pytest.approx(2.59)
     assert side.derived.side_projected_slot_height == pytest.approx(21.41)
-    assert side.derived.side_clearance_height == pytest.approx(4.09)
+    expected_opening = spec.length - 0.2
+    expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
+    expected_clearance = (
+        profile.guide_spec.outer_height
+        - side.derived.side_projected_slot_height
+        - expected_cut_in
+    )
+    assert side.derived.side_clearance_height == pytest.approx(expected_clearance)
     assert measurements["9.15±0.01"][0] == pytest.approx(9.15)
     assert measurements["2.59"][0] == pytest.approx(2.59)
     assert measurements["3"][0] == pytest.approx(3.0)
-    assert measurements["4.09"] == pytest.approx([4.09, 4.09])
+    clearance_label = f"{expected_clearance:.2f}"
+    assert measurements[clearance_label] == pytest.approx(
+        [expected_clearance, expected_clearance]
+    )
     _assert_r80_bottom_matches_clearance(doc, machine.side_layout.upper_y, side.derived.side_clearance_height)
     assert not any("DEBUG" in entity.dxf.layer for entity in doc.modelspace())
 

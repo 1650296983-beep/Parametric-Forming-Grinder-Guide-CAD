@@ -44,6 +44,9 @@
 - 侧面投影保留面端 `R15` 上料缺口和一个上砂轮 `R80` 缺口
 - 618机型为磨较小产品，退刀槽按 `D0.5` 方式；默认避空仍按项目通用 `4-1`
 - 侧面投影中型腔下沿按固定 `20.9` 输出，不套用普通瓦型的 `slot_base_height + 0.50`
+- 侧面型腔投影线使用绿色虚线；上砂轮吃入按成型磨前厚度中值的 `0.6` 倍计算
+
+双头机（上下）的方块磨前侧视图只保留型腔上下两条绿色虚线；每条虚线在对应 R80 砂轮处断开，不得复制为带偏移的重影线。上下 R80 均按成型磨前厚度中值的 `0.6` 倍吃入，圆心和两条型腔边界随当前导轨厚度同步更新。
 
 三头机单导轨（上上）使用独立模板：
 
@@ -78,7 +81,7 @@
 - 五个尺寸必须按当前最终几何重算，不得照抄标准样本中的 `13.8`、`12.6`、`13.5`、`1.26`
 - 成型磨前方块厚度只作为工艺计算输入，不在 release 中单独标注
 
-双头机（上上）同样属于磨单边，方块厚度间隙默认 `block_thickness_clearance_mid = 0.09`。该规则只适用于两个砂轮在同一边的上上模板，不得同步到上下砂轮模板。
+双头机（上上）同样属于磨单边，方块厚度间隙默认 `block_thickness_clearance_mid = 0.09`。该规则只适用于两个砂轮在同一边的上上模板，不得同步到上下砂轮模板。侧面型腔投影线必须继承绿色 `3` 和 `DASHED`，不得保留模板图元的显式青色。
 
 三头机双导轨完整图纸中包含两套局部导轨节和一套 590 mm 合并投影视图：
 三头机双导轨使用 `DualGuideTemplateEngine` 生成，`dual_section_mode = synchronized`，不得在两节导轨之间使用不同的产品参数或截面参数。
@@ -86,6 +89,10 @@
 - `triple_double_down_up_up` 使用 `guide_length = 590.0`，`wheel_positions = ["下", "上", "上"]`，`guide_sections = 2`
 - `triple_double_down_up_up` 支持 `rectangular_block`、`bread_big_r_block_preform` 和 `same_r_tile` 三种截面。
 - `triple_double_up_up_up` 使用 `guide_length = 590.0`，`wheel_positions = ["上", "上", "上"]`，`guide_sections = 2`
+- 两种双导轨机型的外轮廓均为白色实线，型腔投影线均为绿色虚线
+- `triple_double_up_up_up` 的 R80 圆弧端点必须连接外轮廓，冠点按有效吃入量进入型腔，不得把型腔虚线误作圆弧端点
+- 两种双导轨机型的 R80 半径标注必须以圆心和真实弧顶为定义点；关键高度与吃入量标注必须以真实弧顶和同 X 基准点为定义点
+- 双导轨侧视图不得保留端点完全相同的重复 `SIDE_CAVITY` 线
 - 590 mm 合并固定分段为 `99 + 90 + 90 + 180 + 131`
 - `section_1` 局部分段为 `99 + 90 = 189`
 - `section_2` 局部分段为 `90 + 180 + 131 = 401`
@@ -118,7 +125,7 @@ flat_arc_center_side: upper
 
 上下砂轮 R80 侧面缺口均按三头机单导轨（下上）的规则处理：
 
-- `natural_cut_in_depth = product_thickness * 0.6`
+- `natural_cut_in_depth = preform_thickness_mid * 0.6`
 - `opening_limit = product_length - 0.2`
 - `lower_cavity_notch_opening = min(natural_opening, opening_limit)`
 - `upper_cavity_notch_opening = min(upper_natural_opening, opening_limit)`

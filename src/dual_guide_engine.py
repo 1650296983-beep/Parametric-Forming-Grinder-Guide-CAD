@@ -46,6 +46,7 @@ from .dual_guide_release_audit import (
     write_dimension_definition_point_audit,
 )
 from .side_view_writer import (
+    SIDE_CAVITY_LAYER,
     SIDE_CENTER_LAYER,
     SIDE_DERIVED_RELEASE_LAYER,
     SIDE_DIMENSION_LAYER,
@@ -290,6 +291,9 @@ class DualGuideTemplateEngine:
                 _add_slot_width_dimension(modelspace, profile, geometry)
 
         self._update_assembly_side_view(modelspace, profile)
+        removed_side_cavity_duplicates = _deduplicate_exact_side_cavity_lines(
+            modelspace
+        )
         self._update_side_dimensions(doc, modelspace, profile)
         self._bind_fixed_span_dimensions(modelspace)
         self._bind_r80_radius_dimensions(modelspace)
@@ -303,9 +307,12 @@ class DualGuideTemplateEngine:
         if output_mode == "release":
             cleanup_summary = self._remove_unexplained_release_side_dimensions(doc, modelspace)
         side_view_dimension_audit = _side_view_dimension_audit(modelspace)
+        r80_radius_dimension_audit = _r80_radius_dimension_audit(modelspace)
         release_side_dimensions_match_report = _release_side_dimensions_match_report(modelspace, side_view_dimension_audit)
         if output_mode == "release" and not (
             all(item["is_bound_to_wheel_crown"] for item in side_view_dimension_audit)
+            and bool(r80_radius_dimension_audit)
+            and all(item["is_bound_to_wheel_crown"] for item in r80_radius_dimension_audit)
             and cleanup_summary.get("no_legacy_4p29_dimension", False)
             and cleanup_summary.get("no_unexplained_1p80_dimension", False)
             and release_side_dimensions_match_report
@@ -321,6 +328,8 @@ class DualGuideTemplateEngine:
             "machine_template": _machine_template_payload(template),
             "section_results": section_results,
             "side_view_dimension_audit": side_view_dimension_audit,
+            "r80_radius_dimension_audit": r80_radius_dimension_audit,
+            "removed_side_cavity_duplicates": removed_side_cavity_duplicates,
             "release_cleanup": cleanup_summary,
             "release_side_dimensions_match_report": release_side_dimensions_match_report,
             "synchronized": True,
@@ -333,6 +342,7 @@ class DualGuideTemplateEngine:
         _ensure_layer(doc, DIMENSION_LAYER, color=3)
         _ensure_layer(doc, SIDE_TEMPLATE_LAYER, color=7)
         _ensure_layer(doc, SIDE_DERIVED_RELEASE_LAYER, color=3, linetype="Continuous")
+        _ensure_layer(doc, SIDE_CAVITY_LAYER, color=3, linetype="DASHED")
         _ensure_layer(doc, SIDE_DEBUG_LAYER, color=3, linetype="DASHED")
         _ensure_layer(doc, SIDE_DIMENSION_LAYER, color=3)
         _ensure_layer(doc, SIDE_CENTER_LAYER, color=1, linetype="CENTER")
@@ -350,6 +360,10 @@ class DualGuideTemplateEngine:
                 entity.dxf.layer = SIDE_CENTER_LAYER
             elif _is_cross_section_centerline(entity):
                 entity.dxf.layer = SECTION_CENTER_LAYER
+            elif _is_side_cavity_line(entity):
+                entity.dxf.layer = SIDE_CAVITY_LAYER
+                entity.dxf.color = 256
+                entity.dxf.linetype = "BYLAYER"
             elif _is_side_derived_line(entity):
                 entity.dxf.layer = SIDE_DERIVED_RELEASE_LAYER
                 entity.dxf.linetype = "BYLAYER"
@@ -442,7 +456,11 @@ class DualGuideTemplateEngine:
         if thickness_dim is None:
             thickness_dim = _find_dual_guide_thickness_dimension(dimensions)
         slot_base_dim = _find_dual_slot_base_dimension(dimensions, geometry)
-        opening_dim = _find_dual_opening_dimension(dimensions)
+        opening_dim = _find_dual_opening_dimension(
+            dimensions,
+            geometry,
+            excluded={slot_width_dim} if slot_width_dim is not None else set(),
+        )
         relief_size_dim = _find_dimension_by_text(dimensions, "4-<>")
         relief_radius_dim = _find_dimension_by_text(dimensions, "2-<>")
         radius_dim = next(
@@ -635,14 +653,16 @@ class DualGuideTemplateEngine:
             if old_base_y is not None and abs(y - old_base_y) <= 0.8:
                 entity.dxf.start = (entity.dxf.start.x, base_y, entity.dxf.start.z)
                 entity.dxf.end = (entity.dxf.end.x, base_y, entity.dxf.end.z)
-                entity.dxf.layer = SIDE_DERIVED_RELEASE_LAYER
+                entity.dxf.layer = SIDE_CAVITY_LAYER
+                entity.dxf.color = 256
                 entity.dxf.linetype = "BYLAYER"
                 for center_x in lower_centers:
                     _split_lower_cavity_line(entity, center_x, lower_opening)
             elif old_top_y is not None and abs(y - old_top_y) <= 0.8:
                 entity.dxf.start = (entity.dxf.start.x, slot_top_y, entity.dxf.start.z)
                 entity.dxf.end = (entity.dxf.end.x, slot_top_y, entity.dxf.end.z)
-                entity.dxf.layer = SIDE_DERIVED_RELEASE_LAYER
+                entity.dxf.layer = SIDE_CAVITY_LAYER
+                entity.dxf.color = 256
                 entity.dxf.linetype = "BYLAYER"
             elif abs(y - bottom_y) <= 0.001:
                 for center_x in lower_centers:
@@ -770,20 +790,21 @@ class DualGuideTemplateEngine:
         arc.dxf.layer = SIDE_TEMPLATE_LAYER
 
     def _side_derived(self, profile: DualGuideProfile, section: GuideSectionInstance) -> dict[str, float]:
+        fixed_top_gap = self.machine.side_layout.block_fixed_top_gap
+        if fixed_top_gap is None:
+            raise ValueError(
+                f"Machine '{self.machine.machine_id}' requires block_fixed_top_gap."
+            )
         side_projected_slot_height = (
             profile.guide_spec.outer_height
-            - self.machine.side_layout.block_fixed_top_gap
+            - fixed_top_gap
             - profile.guide_spec.guide_thickness
         )
-        side_clearance_height = (
-            profile.guide_spec.outer_height
-            - side_projected_slot_height
-            - self._upper_wheel_safety_payload(profile)["effective_cut_in_depth"]
-        )
+        upper_cut_in = self._upper_wheel_safety_payload(profile)["effective_cut_in_depth"]
         return {
             "side_projected_slot_height": round(side_projected_slot_height, 6),
-            "side_clearance_height": round(side_clearance_height, 6),
-            "working_depth": round(self._process_thickness(profile) * 0.6, 6),
+            "side_clearance_height": round(fixed_top_gap, 6),
+            "working_depth": round(upper_cut_in, 6),
         }
 
     def _update_side_lines(
@@ -820,12 +841,14 @@ class DualGuideTemplateEngine:
             if abs(y - old_working_y) <= 0.01:
                 entity.dxf.start = (entity.dxf.start.x, working_y, entity.dxf.start.z)
                 entity.dxf.end = (entity.dxf.end.x, working_y, entity.dxf.end.z)
-                entity.dxf.layer = SIDE_DERIVED_RELEASE_LAYER
+                entity.dxf.layer = SIDE_CAVITY_LAYER
+                entity.dxf.color = 256
                 entity.dxf.linetype = "BYLAYER"
             elif abs(y - old_projected_y) <= 0.01:
                 entity.dxf.start = (entity.dxf.start.x, projected_y, entity.dxf.start.z)
                 entity.dxf.end = (entity.dxf.end.x, projected_y, entity.dxf.end.z)
-                entity.dxf.layer = SIDE_DERIVED_RELEASE_LAYER
+                entity.dxf.layer = SIDE_CAVITY_LAYER
+                entity.dxf.color = 256
                 entity.dxf.linetype = "BYLAYER"
 
     def _update_side_r80_arcs(
@@ -839,26 +862,43 @@ class DualGuideTemplateEngine:
         safety = self._upper_wheel_safety_payload(profile)
         radius = 80.0
         effective_depth = safety["effective_cut_in_depth"]
-        half_chord = safety["upper_cavity_notch_opening"] / 2.0
+        cavity_half_chord = safety["upper_cavity_notch_opening"] / 2.0
         for center_x in center_x_values:
             old_arc = _find_r80_arc_for_center(modelspace, center_x, top_y)
             if old_arc is None:
                 continue
-            opening_y = top_y - side_clearance_height
-            old_half_chord = sqrt(
-                max(0.0, float(old_arc.dxf.radius) ** 2 - (opening_y - float(old_arc.dxf.center.y)) ** 2)
+            cavity_top_y = top_y - side_clearance_height
+            old_outer_half_chord = sqrt(
+                max(0.0, float(old_arc.dxf.radius) ** 2 - (top_y - float(old_arc.dxf.center.y)) ** 2)
             )
-            center_y = opening_y + radius - effective_depth
+            old_cavity_half_chord = sqrt(
+                max(
+                    0.0,
+                    float(old_arc.dxf.radius) ** 2
+                    - (cavity_top_y - float(old_arc.dxf.center.y)) ** 2,
+                )
+            )
+            center_y = cavity_top_y + radius - effective_depth
+            outer_half_chord = sqrt(
+                max(0.0, radius * radius - (top_y - center_y) ** 2)
+            )
             old_arc.dxf.center = (center_x, center_y, old_arc.dxf.center.z)
-            old_arc.dxf.start_angle = _angle_deg(-half_chord, opening_y - center_y)
-            old_arc.dxf.end_angle = _angle_deg(half_chord, opening_y - center_y)
+            old_arc.dxf.start_angle = _angle_deg(-outer_half_chord, top_y - center_y)
+            old_arc.dxf.end_angle = _angle_deg(outer_half_chord, top_y - center_y)
             old_arc.dxf.layer = SIDE_TEMPLATE_LAYER
             self._update_top_surface_connectors(
                 modelspace,
                 center_x,
-                opening_y,
-                old_half_chord,
-                half_chord,
+                top_y,
+                old_outer_half_chord,
+                outer_half_chord,
+            )
+            self._update_top_surface_connectors(
+                modelspace,
+                center_x,
+                cavity_top_y,
+                old_cavity_half_chord,
+                cavity_half_chord,
             )
 
     def _update_top_surface_connectors(
@@ -890,21 +930,45 @@ class DualGuideTemplateEngine:
                 measurement = float(dimension.get_measurement())
             except Exception:
                 continue
-            if abs(measurement - 1.2) <= 0.05:
-                measured = self._process_thickness(profile) * 0.6
-                _set_vertical_dimension_measurement(dimension, measured)
-                _set_dimension_actual_measurement(dimension, measured)
-                dimension.dxf.text = f"{measured:.2f}"
-                _set_dimension_block_text(doc, dimension, dimension.dxf.text)
-                continue
             if 0.1 <= measurement <= 20.0:
                 crown = _nearest_r80_crown_for_dimension(modelspace, dimension)
                 if crown is not None:
                     crown_x, crown_y, surface_y = crown
+                    if abs(measurement - 1.2) <= 0.05:
+                        arc = _r80_arc_at_crown(
+                            modelspace,
+                            crown_x,
+                            crown_y,
+                        )
+                        if arc is not None:
+                            is_upper_wheel = crown_y < float(
+                                arc.dxf.center.y
+                            )
+                            measured = (
+                                self._upper_wheel_safety_payload(profile)[
+                                    "effective_cut_in_depth"
+                                ]
+                                if is_upper_wheel
+                                else self._lower_wheel_safety_payload(profile)[
+                                    "effective_cut_in_depth"
+                                ]
+                            )
+                            surface_y = (
+                                crown_y + measured
+                                if is_upper_wheel
+                                else crown_y - measured
+                            )
                     measured = abs(surface_y - crown_y)
                     _bind_dimension_to_wheel_crown(dimension, crown_x, crown_y, surface_y)
                     _set_dimension_actual_measurement(dimension, measured)
                     dimension.dxf.text = f"{measured:.2f}"
+                    try:
+                        dimension.render()
+                    except Exception:
+                        # Some historical template dimensions have incomplete
+                        # association data; their definition points and block
+                        # text are still updated deterministically below.
+                        pass
                     _set_dimension_block_text(doc, dimension, dimension.dxf.text)
                     continue
 
@@ -917,6 +981,7 @@ class DualGuideTemplateEngine:
                     DIMENSION_LAYER,
                     SIDE_TEMPLATE_LAYER,
                     SIDE_DERIVED_RELEASE_LAYER,
+                    SIDE_CAVITY_LAYER,
                     SIDE_DIMENSION_LAYER,
                     SIDE_CENTER_LAYER,
                     SECTION_CENTER_LAYER,
@@ -1078,18 +1143,22 @@ class DualGuideTemplateEngine:
                 ),
             )
             center = arc.dxf.center
-            angle = radians(float(arc.dxf.start_angle))
+            crown_y = _r80_expected_crown_y(arc)
             dimension.dxf.defpoint = (
                 center.x,
                 center.y,
                 old_center.z,
             )
             dimension.dxf.defpoint4 = (
-                float(center.x) + 80.0 * cos(angle),
-                float(center.y) + 80.0 * sin(angle),
+                float(center.x),
+                crown_y,
                 old_center.z,
             )
             _set_dimension_actual_measurement(dimension, 80.0)
+            try:
+                dimension.render()
+            except Exception:
+                pass
 
     def _bind_section_radius_dimensions(self, modelspace: Any) -> None:
         """Bind R-form dimensions to an actual regenerated slot-arc endpoint."""
@@ -1223,6 +1292,9 @@ class DualGuideTemplateEngine:
         template = self.build_template()
         release_sections = release_result["section_results"]
         side_view_dimension_audit = release_result["side_view_dimension_audit"]
+        r80_radius_dimension_audit = release_result[
+            "r80_radius_dimension_audit"
+        ]
         release_cleanup = release_result["release_cleanup"]
         lower_wheel_safety = self._lower_wheel_safety_payload(profile)
         upper_wheel_safety = self._upper_wheel_safety_payload(profile)
@@ -1317,10 +1389,16 @@ class DualGuideTemplateEngine:
                 "upper_effective_cut_in_depth": upper_wheel_safety["effective_cut_in_depth"],
             },
             "side_derived_layer_policy": {
-                "formal_release_geometry": "SIDE_DERIVED_RELEASE contains only Continuous side-view projected slot/working lines.",
+                "machine_outline": "SIDE_TEMPLATE contains the white Continuous machine outline.",
+                "cavity_geometry": "SIDE_CAVITY contains green DASHED projected cavity lines.",
+                "formal_release_geometry": "SIDE_DERIVED_RELEASE is reserved for other green Continuous derived geometry.",
                 "auxiliary_geometry": "Hidden or debug helpers use SIDE_DEBUG and are not promoted into release geometry.",
             },
             "side_view_dimension_audit": side_view_dimension_audit,
+            "r80_radius_dimension_audit": r80_radius_dimension_audit,
+            "removed_side_cavity_duplicates": release_result[
+                "removed_side_cavity_duplicates"
+            ],
             "release_cleanup": release_cleanup,
             "dimension_definition_point_audit": dimension_audit,
             "release_line_type_audit": line_type_audit,
@@ -1355,6 +1433,13 @@ class DualGuideTemplateEngine:
                 "release_hides_unqualified_product_thickness": True,
                 "side_view_dimensions_bound_to_r80_wheel_crowns": all(
                     item["is_bound_to_wheel_crown"] for item in side_view_dimension_audit
+                ),
+                "r80_radius_dimensions_bound_to_wheel_crowns": bool(
+                    r80_radius_dimension_audit
+                )
+                and all(
+                    item["is_bound_to_wheel_crown"]
+                    for item in r80_radius_dimension_audit
                 ),
                 "no_legacy_4p29_dimension": release_cleanup["no_legacy_4p29_dimension"],
                 "no_unexplained_1p80_dimension": release_cleanup["no_unexplained_1p80_dimension"],
@@ -1558,8 +1643,16 @@ def _find_dual_slot_base_dimension(dimensions: list[Any], geometry: Any):
     return None
 
 
-def _find_dual_opening_dimension(dimensions: list[Any]):
+def _find_dual_opening_dimension(
+    dimensions: list[Any],
+    geometry: Any,
+    *,
+    excluded: set[Any],
+):
+    candidates: list[tuple[float, Any]] = []
     for dimension in dimensions:
+        if dimension in excluded:
+            continue
         if not (
             dimension.dxf.hasattr("defpoint2")
             and dimension.dxf.hasattr("defpoint3")
@@ -1573,9 +1666,11 @@ def _find_dual_opening_dimension(dimensions: list[Any]):
             measurement = float(dimension.get_measurement())
         except Exception:
             continue
-        if 1.0 <= measurement <= 4.0:
-            return dimension
-    return None
+        if 0.5 <= measurement <= 4.0:
+            candidates.append((abs(measurement - geometry.center_opening), dimension))
+    if not candidates:
+        return None
+    return min(candidates, key=lambda item: item[0])[1]
 
 
 def _bind_slot_width_dimension_to_geometry(dimension: Any, geometry: Any) -> None:
@@ -1786,12 +1881,26 @@ def _is_side_centerline(entity: Any) -> bool:
     return entity.dxftype() == "LINE" and entity.dxf.layer == "3中心线层"
 
 
+def _is_side_cavity_line(entity: Any) -> bool:
+    if entity.dxftype() != "LINE":
+        return False
+    if abs(float(entity.dxf.start.y) - float(entity.dxf.end.y)) > 0.001:
+        return False
+    if min(float(entity.dxf.start.x), float(entity.dxf.end.x)) < 3300.0:
+        return False
+    linetype = str(entity.dxf.linetype).upper()
+    layer = str(entity.dxf.layer)
+    return linetype == "DASHED" or "虚线" in layer
+
+
 def _is_side_derived_line(entity: Any) -> bool:
     if entity.dxftype() != "LINE":
         return False
     if abs(float(entity.dxf.start.y) - float(entity.dxf.end.y)) > 0.001:
         return False
     if min(float(entity.dxf.start.x), float(entity.dxf.end.x)) < 3300.0:
+        return False
+    if int(entity.dxf.color) != 3:
         return False
     y = float(entity.dxf.start.y)
     return any(
@@ -1862,24 +1971,25 @@ def _nearest_r80_crown_for_dimension(modelspace: Any, dimension: Any) -> tuple[f
     return crown_x, crown_y, surface_y
 
 
+def _r80_arc_at_crown(modelspace: Any, crown_x: float, crown_y: float):
+    candidates = [
+        arc
+        for arc in modelspace.query("ARC")
+        if abs(float(arc.dxf.radius) - 80.0) <= 0.001
+        and abs(float(arc.dxf.center.x) - crown_x) <= 0.001
+        and abs(_r80_expected_crown_y(arc) - crown_y) <= 0.001
+    ]
+    return candidates[0] if candidates else None
+
+
 def _bind_dimension_to_wheel_crown(dimension: Any, crown_x: float, crown_y: float, top_y: float) -> None:
     if dimension.dxf.hasattr("defpoint2"):
         p2 = dimension.dxf.defpoint2
         dimension.dxf.defpoint2 = (crown_x, crown_y, p2.z)
     if dimension.dxf.hasattr("defpoint3"):
         p3 = dimension.dxf.defpoint3
-        radius = 80.0
-        center_y = (
-            crown_y - radius
-            if crown_y > top_y
-            else crown_y + radius
-        )
-        half_chord = sqrt(
-            max(0.0, radius * radius - (top_y - center_y) ** 2)
-        )
-        sign = 1.0 if float(p3.x) >= crown_x else -1.0
         dimension.dxf.defpoint3 = (
-            crown_x + sign * half_chord,
+            crown_x,
             top_y,
             p3.z,
         )
@@ -1901,24 +2011,110 @@ def _side_view_dimension_audit(modelspace: Any) -> list[dict[str, Any]]:
         crown = (round(float(arc.dxf.center.x), 3), round(crown_y, 3))
         dimension = _dimension_bound_to_crown(modelspace, crown)
         dimension_defpoint = None
+        datum_defpoint = None
         measured_value = None
         is_bound = False
         if dimension is not None:
             p2 = dimension.dxf.defpoint2
+            p3 = dimension.dxf.defpoint3
             dimension_defpoint = (round(float(p2.x), 3), round(float(p2.y), 3))
+            datum_defpoint = (round(float(p3.x), 3), round(float(p3.y), 3))
             measured_value = round(float(dimension.get_measurement()), 3)
-            is_bound = abs(dimension_defpoint[0] - crown[0]) <= 0.001 and abs(dimension_defpoint[1] - crown[1]) <= 0.001
+            is_bound = (
+                abs(dimension_defpoint[0] - crown[0]) <= 0.001
+                and abs(dimension_defpoint[1] - crown[1]) <= 0.001
+                and abs(datum_defpoint[0] - crown[0]) <= 0.001
+            )
         audit.append(
             {
                 "wheel_center": list(wheel_center),
                 "wheel_radius": wheel_radius,
                 "expected_wheel_crown_point": list(crown),
                 "dimension_defpoint": list(dimension_defpoint) if dimension_defpoint is not None else None,
+                "datum_defpoint": list(datum_defpoint) if datum_defpoint is not None else None,
                 "measured_value": measured_value,
                 "is_bound_to_wheel_crown": is_bound,
             }
         )
     return audit
+
+
+def _r80_radius_dimension_audit(modelspace: Any) -> list[dict[str, Any]]:
+    arcs = [
+        entity
+        for entity in modelspace.query("ARC")
+        if abs(float(entity.dxf.radius) - 80.0) <= 0.001
+        and entity.dxf.layer == SIDE_TEMPLATE_LAYER
+    ]
+    audit = []
+    for dimension in modelspace.query("DIMENSION"):
+        if not (
+            dimension.dxf.hasattr("defpoint")
+            and dimension.dxf.hasattr("defpoint4")
+        ):
+            continue
+        try:
+            measurement = float(dimension.get_measurement())
+        except Exception:
+            continue
+        if abs(measurement - 80.0) > 0.01 or not arcs:
+            continue
+        center = dimension.dxf.defpoint
+        target = dimension.dxf.defpoint4
+        arc = min(
+            arcs,
+            key=lambda entity: hypot(
+                float(entity.dxf.center.x) - float(center.x),
+                float(entity.dxf.center.y) - float(center.y),
+            ),
+        )
+        expected = (
+            float(arc.dxf.center.x),
+            _r80_expected_crown_y(arc),
+        )
+        error = hypot(
+            float(target.x) - expected[0],
+            float(target.y) - expected[1],
+        )
+        audit.append(
+            {
+                "dimension_handle": dimension.dxf.handle,
+                "expected_wheel_crown_point": [
+                    round(expected[0], 3),
+                    round(expected[1], 3),
+                ],
+                "radius_target_point": [
+                    round(float(target.x), 3),
+                    round(float(target.y), 3),
+                ],
+                "point_error": round(error, 6),
+                "is_bound_to_wheel_crown": error <= 0.001,
+            }
+        )
+    return audit
+
+
+def _deduplicate_exact_side_cavity_lines(modelspace: Any) -> list[str]:
+    seen: set[tuple[tuple[float, float], tuple[float, float]]] = set()
+    removed: list[str] = []
+    for entity in list(modelspace.query("LINE")):
+        if entity.dxf.layer != SIDE_CAVITY_LAYER:
+            continue
+        start = (
+            round(float(entity.dxf.start.x), 6),
+            round(float(entity.dxf.start.y), 6),
+        )
+        end = (
+            round(float(entity.dxf.end.x), 6),
+            round(float(entity.dxf.end.y), 6),
+        )
+        key = tuple(sorted((start, end)))
+        if key in seen:
+            removed.append(str(entity.dxf.handle))
+            modelspace.delete_entity(entity)
+            continue
+        seen.add(key)
+    return removed
 
 
 def _release_side_dimensions_match_report(modelspace: Any, audit: list[dict[str, Any]]) -> bool:

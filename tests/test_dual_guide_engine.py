@@ -78,7 +78,22 @@ def test_dual_guide_engine_updates_both_sections_synchronously(tmp_path):
     assert measurements["9.15±0.01"] == pytest.approx([9.15, 9.15])
     assert measurements["3.09"] == pytest.approx([3.09, 3.09])
     assert "4.29" not in measurements
-    assert measurements["6.09"] == pytest.approx([6.09] * 6)
+    expected_wheel_dimension = (
+        machine.side_layout.block_fixed_top_gap
+        + report["upper_wheel_notch_safety"]["effective_cut_in_depth"]
+    )
+    wheel_dimension_label = f"{expected_wheel_dimension:.2f}"
+    assert measurements[wheel_dimension_label] == pytest.approx(
+        [expected_wheel_dimension] * 6,
+        abs=0.001,
+    )
+    effective_cut_in_label = (
+        f"{report['upper_wheel_notch_safety']['effective_cut_in_depth']:.2f}"
+    )
+    assert measurements[effective_cut_in_label] == pytest.approx(
+        [report["upper_wheel_notch_safety"]["effective_cut_in_depth"]] * 2,
+        abs=0.01,
+    )
     assert "1.80" not in measurements
     assert "3" not in measurements
     assert "PRODUCT_REFERENCE" not in {entity.dxf.layer for entity in release_doc.modelspace()}
@@ -88,15 +103,15 @@ def test_dual_guide_engine_updates_both_sections_synchronously(tmp_path):
     for item in report["side_view_dimension_audit"]:
         assert item["wheel_radius"] == pytest.approx(80.0)
         assert item["dimension_defpoint"] == pytest.approx(item["expected_wheel_crown_point"])
-        assert item["measured_value"] == pytest.approx(6.09)
+        assert item["measured_value"] == pytest.approx(
+            expected_wheel_dimension,
+            abs=0.001,
+        )
         assert item["is_bound_to_wheel_crown"] is True
     assert report["checks"]["no_legacy_4p29_dimension"] is True
     assert report["checks"]["no_unexplained_1p80_dimension"] is True
     assert report["checks"]["release_side_dimensions_match_report"] is True
-    assert report["release_cleanup"]["removed_unexplained_side_dimensions"] == [
-        {"handle": "203CE44", "text": "1.80", "measurement": 1.8, "block_texts": ["1.80"]},
-        {"handle": "203D034", "text": "1.80", "measurement": 1.8, "block_texts": ["1.80"]},
-    ]
+    assert report["release_cleanup"]["removed_unexplained_side_dimensions"] == []
     assert not _legacy_text_in_dimension_blocks(release_doc)
 
     debug_doc = ezdxf.readfile(result["debug_dxf"])
@@ -190,8 +205,8 @@ def test_dual_guide_engine_down_up_up_enforces_lower_wheel_notch_safety(tmp_path
     ]
     assert (3459.205, -187.871) in lower_arc_centers
     assert (3488.454, -685.355) in lower_arc_centers
-    assert _side_gap_width_at_center(release_doc, -107.995, 3459.205, "SIDE_DERIVED_RELEASE") == pytest.approx(8.9)
-    assert _side_gap_width_at_center(release_doc, -605.479, 3488.454, "SIDE_DERIVED_RELEASE") == pytest.approx(8.9)
+    assert _side_gap_width_at_center(release_doc, -107.995, 3459.205, "SIDE_CAVITY") == pytest.approx(8.9)
+    assert _side_gap_width_at_center(release_doc, -605.479, 3488.454, "SIDE_CAVITY") == pytest.approx(8.9)
 
 
 def test_dual_guide_engine_down_up_up_supports_same_r_tile(tmp_path):
@@ -249,16 +264,17 @@ def test_dual_guide_engine_down_up_up_supports_same_r_tile(tmp_path):
         ("R23.57", "6.6", "2.4", "2.46"),
     )
     assert not list(release_doc.modelspace().query('*[layer=="SIDE_DERIVED"]'))
-    release_lines = list(
+    cavity_lines = list(
         release_doc.modelspace().query(
-            'LINE[layer=="SIDE_DERIVED_RELEASE"]'
+            'LINE[layer=="SIDE_CAVITY"]'
         )
     )
-    assert release_lines
+    assert cavity_lines
     assert all(
         release_doc.layers.get(entity.dxf.layer).dxf.linetype
-        == "Continuous"
-        for entity in release_lines
+        == "DASHED"
+        and release_doc.layers.get(entity.dxf.layer).dxf.color == 3
+        for entity in cavity_lines
     )
     dimension_audit = json.loads(
         result["dimension_definition_point_audit_json"].read_text(
@@ -324,7 +340,7 @@ def _dimension_measurements_by_text(doc) -> dict[str, list[float]]:
 
 def _side_derived_min_x(doc) -> float:
     min_x = None
-    for entity in doc.modelspace().query('*[layer=="SIDE_DERIVED_RELEASE"]'):
+    for entity in doc.modelspace().query('*[layer=="SIDE_CAVITY"]'):
         if entity.dxftype() != "LINE":
             continue
         entity_min = min(entity.dxf.start.x, entity.dxf.end.x)

@@ -71,7 +71,7 @@
 1. 截面图中心线必须为红色点画线：`SECTION_CENTER`，颜色 `1`，线型 `CENTER`。
 2. 侧面投影图中心线必须为红色点画线：`SIDE_CENTER`，颜色 `1`，线型 `CENTER`。
 3. 既有单导轨机型继续按各自模板规则使用 `SIDE_DERIVED`；机型专用例外必须写入对应 config、docs 和 tests。
-4. `triple_double_down_up_up` 的正式侧面投影轮廓线和工作线必须放在 `SIDE_DERIVED_RELEASE`，颜色 `3`，线型 `Continuous`；隐藏辅助线或 debug 线放在 `SIDE_DEBUG`，线型 `DASHED`。
+4. 双导轨机型的机台外轮廓必须放在 `SIDE_TEMPLATE`，颜色 `7`，线型 `Continuous`；导轨型腔投影线必须放在 `SIDE_CAVITY`，颜色 `3`，线型 `DASHED`。隐藏辅助线或 debug 线放在 `SIDE_DEBUG`，线型 `DASHED`。
 
 ## 三头机双导轨（下上上）
 

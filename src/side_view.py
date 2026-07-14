@@ -103,29 +103,56 @@ def _build_block_side_view_geometry(
     guide = section.guide_spec
     mode = layout.block_side_mode
     process_thickness = section.process_thickness
+    opening_limit = max(section.process_length - 0.2, 0.1)
+    lower_requested_cut_in = _configured_block_cut_in(
+        layout.block_lower_wheel_cut_in,
+        layout.block_lower_wheel_cut_in_ratio,
+        process_thickness,
+    )
+    upper_requested_cut_in = _configured_block_cut_in(
+        layout.block_upper_wheel_cut_in,
+        layout.block_upper_wheel_cut_in_ratio,
+        process_thickness,
+    )
+    lower_opening, effective_lower_cut_in = _limited_r80_opening(
+        template.wheel_radius,
+        lower_requested_cut_in,
+        opening_limit,
+    )
+    upper_opening, effective_upper_cut_in = _limited_r80_opening(
+        template.wheel_radius,
+        upper_requested_cut_in,
+        opening_limit,
+    )
 
     if mode == "fixed_projected_height":
         projected_height = _require_layout_value(
             layout.block_side_projected_slot_height,
             "block_side_projected_slot_height",
         )
-        wheel_depth = process_thickness * 0.6
-        side_clearance = guide.outer_height - projected_height - wheel_depth
+        projected_top_height = (
+            guide.guide_thickness
+            if layout.block_projected_top_mode == "guide_thickness"
+            else effective_upper_cut_in
+        )
+        side_clearance = guide.outer_height - projected_height - projected_top_height
+        if layout.block_projected_top_mode == "guide_thickness":
+            side_clearance += effective_upper_cut_in
         derived = SideViewDerivedSpec(
             slot_base_height=projected_height,
             side_cut_in_allowance=0.0,
             side_projected_slot_height=projected_height,
             guide_outer_height=guide.outer_height,
-            guide_thickness=wheel_depth,
-            wheel_cut_allowance=0.0,
+            guide_thickness=projected_top_height,
+            wheel_cut_allowance=effective_upper_cut_in,
             side_clearance_height=side_clearance,
-            wheel_notch_depth=wheel_depth,
-            wheel_cut_in_depth=wheel_depth,
-            wheel_notch_opening=0.0,
-            wheel_notch_opening_limit=None,
-            lower_cavity_notch_opening=0.0,
-            upper_cavity_notch_opening=0.0,
-            upper_cavity_notch_opening_limit=None,
+            wheel_notch_depth=projected_height + effective_lower_cut_in,
+            wheel_cut_in_depth=effective_lower_cut_in,
+            wheel_notch_opening=lower_opening,
+            wheel_notch_opening_limit=opening_limit,
+            lower_cavity_notch_opening=lower_opening,
+            upper_cavity_notch_opening=upper_opening,
+            upper_cavity_notch_opening_limit=opening_limit,
         )
         return SideViewGeometry(template=template, layout=layout, derived=derived)
 
@@ -135,7 +162,7 @@ def _build_block_side_view_geometry(
             "block_fixed_top_gap",
         )
         projected_height = guide.outer_height - fixed_top_gap - guide.guide_thickness
-        wheel_depth = process_thickness * 0.6
+        wheel_depth = effective_upper_cut_in
         side_clearance = guide.outer_height - projected_height - wheel_depth
         derived = SideViewDerivedSpec(
             slot_base_height=projected_height,
@@ -147,46 +174,38 @@ def _build_block_side_view_geometry(
             side_clearance_height=side_clearance,
             wheel_notch_depth=wheel_depth,
             wheel_cut_in_depth=wheel_depth,
-            wheel_notch_opening=0.0,
-            wheel_notch_opening_limit=None,
-            lower_cavity_notch_opening=0.0,
-            upper_cavity_notch_opening=0.0,
-            upper_cavity_notch_opening_limit=None,
+            wheel_notch_opening=lower_opening,
+            wheel_notch_opening_limit=opening_limit,
+            lower_cavity_notch_opening=lower_opening,
+            upper_cavity_notch_opening=upper_opening,
+            upper_cavity_notch_opening_limit=opening_limit,
         )
         return SideViewGeometry(template=template, layout=layout, derived=derived)
 
     if mode == "slot_base_plus_wheel_cut_in":
-        lower_cut_in = _require_layout_value(
-            layout.block_lower_wheel_cut_in,
-            "block_lower_wheel_cut_in",
-        )
-        upper_cut_in = _require_layout_value(
-            layout.block_upper_wheel_cut_in,
-            "block_upper_wheel_cut_in",
-        )
         slot_base_height = guide.slot_base_height
-        lower_key_height = slot_base_height + lower_cut_in
+        lower_key_height = slot_base_height + effective_lower_cut_in
         upper_key_height = (
             guide.outer_height
             - slot_base_height
             - guide.guide_thickness
-            + upper_cut_in
+            + effective_upper_cut_in
         )
         derived = SideViewDerivedSpec(
             slot_base_height=slot_base_height,
-            side_cut_in_allowance=lower_cut_in,
+            side_cut_in_allowance=effective_lower_cut_in,
             side_projected_slot_height=slot_base_height,
             guide_outer_height=guide.outer_height,
             guide_thickness=guide.guide_thickness,
-            wheel_cut_allowance=upper_cut_in,
+            wheel_cut_allowance=effective_upper_cut_in,
             side_clearance_height=upper_key_height,
             wheel_notch_depth=lower_key_height,
-            wheel_cut_in_depth=lower_cut_in,
-            wheel_notch_opening=0.0,
-            wheel_notch_opening_limit=None,
-            lower_cavity_notch_opening=0.0,
-            upper_cavity_notch_opening=0.0,
-            upper_cavity_notch_opening_limit=None,
+            wheel_cut_in_depth=effective_lower_cut_in,
+            wheel_notch_opening=lower_opening,
+            wheel_notch_opening_limit=opening_limit,
+            lower_cavity_notch_opening=lower_opening,
+            upper_cavity_notch_opening=upper_opening,
+            upper_cavity_notch_opening_limit=opening_limit,
         )
         return SideViewGeometry(template=template, layout=layout, derived=derived)
 
@@ -196,6 +215,20 @@ def _build_block_side_view_geometry(
         "'slot_base_plus_wheel_cut_in', got "
         f"{mode!r}."
     )
+
+
+def _configured_block_cut_in(
+    fixed_value: float | None,
+    ratio: float | None,
+    process_thickness: float,
+) -> float:
+    if fixed_value is not None:
+        return fixed_value
+    if ratio is not None:
+        return process_thickness * ratio
+    # Existing configurations without a dedicated block value use the shared
+    # process rule rather than a product-specific magic number.
+    return process_thickness * 0.6
 
 
 def _require_layout_value(value: float | None, name: str) -> float:

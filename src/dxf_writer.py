@@ -27,6 +27,7 @@ from .geometry import ArcSegment, LineSegment, SectionProfile, TileSection
 from .machine_config import MachineConfig, load_machine_config
 from .side_view_config import DEFAULT_SIDE_VIEW_TEMPLATE
 from .side_view_writer import (
+    SIDE_CAVITY_LAYER,
     SIDE_CENTER_LAYER,
     SIDE_DEBUG_LAYER,
     SIDE_DERIVED_LAYER,
@@ -895,7 +896,11 @@ def _write_block_template_based_dxf(
         output_mode=output_mode,
         template_path=machine_config.side_template_path,
         layout=machine_config.side_layout,
-        side_style=("triple_single_down_up" if is_triple_down_up else "standard"),
+        side_style=(
+            "triple_single_down_up"
+            if is_triple_down_up
+            else _side_style_for_machine(machine_config)
+        ),
     )
     if output_mode == "release":
         _simplify_release_layers(doc)
@@ -2011,6 +2016,7 @@ def _simplify_release_layers(doc) -> None:
         SIDE_TEMPLATE_LAYER,
         SIDE_DERIVED_LAYER,
         SIDE_DERIVED_RELEASE_LAYER,
+        SIDE_CAVITY_LAYER,
         SIDE_DIMENSION_LAYER,
         SIDE_CENTER_LAYER,
     })
@@ -2028,6 +2034,7 @@ def _simplify_release_layers(doc) -> None:
             SIDE_TEMPLATE_LAYER,
             SIDE_DERIVED_LAYER,
             SIDE_DERIVED_RELEASE_LAYER,
+            SIDE_CAVITY_LAYER,
             SIDE_DIMENSION_LAYER,
             SIDE_CENTER_LAYER,
         }:
@@ -2037,6 +2044,9 @@ def _simplify_release_layers(doc) -> None:
     used_layers = {entity.dxf.layer for entity in _iter_all_entities(doc)}
     for layer in list(doc.layers):
         name = layer.dxf.name
+        if name == SIDE_CAVITY_LAYER and name not in used_layers:
+            doc.layers.remove(name)
+            continue
         if name in keep_layers:
             continue
         if name not in used_layers:

@@ -88,7 +88,11 @@ release 中不得残留旧规格参数化槽口图元。检查对象包括：
 
 `triple_double_down_up_up` 还必须审计 release 中全部 DIMENSION 的定义点，并输出 `dimension_definition_point_audit.json`。每项必须包含 `dimension_role`、`measurement`、`display_text`、`defpoint2`、`defpoint3`、两个预期几何点、`point_error` 和 `bound_to_geometry`；`point_error > 0.01 mm` 时禁止 release。
 
-该机型的 `release_allowed = true` 必须同时满足：显式输入规则正确、正式侧投影线为 Continuous、全部尺寸定义点绑定真实几何、上下砂轮缺口安全规则通过、双导轨两节参数同步。
+双导轨机型的 `release_allowed = true` 必须同时满足：显式输入规则正确、机台外轮廓为白色 Continuous、型腔投影线为绿色 DASHED、全部尺寸定义点绑定真实几何、上下砂轮缺口安全规则通过、双导轨两节参数同步。
+
+所有方块磨前机型的砂轮目标吃入量为 `preform_block_thickness_mid * 0.6`。若由此得到的 R80 自然开口大于 `product_length - 0.2`，校验必须确认生成器通过移动圆心限制开口，并使报告值、圆心、圆弧端点和相关 DIMENSION 定义点一致。
+
+618 和双头机（上下）必须校验两条型腔边界都在相应砂轮开口内断开；双头机（上下）还必须校验侧视图只有两个型腔高度，不得出现四线重影。双导轨机型必须拒绝端点完全相同的重复 `SIDE_CAVITY` 线，并分别审计 R80 半径标注的目标点、吃入量和关键高度标注的弧顶定义点及同 X 基准点。
 
 ## report.json
 

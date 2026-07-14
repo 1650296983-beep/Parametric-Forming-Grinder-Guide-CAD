@@ -26,6 +26,7 @@ from .side_view_config import DEFAULT_SIDE_VIEW_TEMPLATE
 SIDE_TEMPLATE_LAYER = "SIDE_TEMPLATE"
 SIDE_DERIVED_LAYER = "SIDE_DERIVED"
 SIDE_DERIVED_RELEASE_LAYER = "SIDE_DERIVED_RELEASE"
+SIDE_CAVITY_LAYER = "SIDE_CAVITY"
 SIDE_DIMENSION_LAYER = "SIDE_DIMENSION"
 SIDE_DEBUG_LAYER = "SIDE_DEBUG"
 SIDE_CENTER_LAYER = "SIDE_CENTER"
@@ -223,6 +224,7 @@ def _format_dimension_value(value: float, digits: int = 2) -> str:
 def _ensure_side_layers(doc, output_mode: str) -> None:
     _ensure_layer(doc, SIDE_TEMPLATE_LAYER, color=7)
     _ensure_layer(doc, SIDE_DERIVED_LAYER, color=3, linetype="DASHED")
+    _ensure_layer(doc, SIDE_CAVITY_LAYER, color=3, linetype="DASHED")
     _ensure_layer(doc, SIDE_DIMENSION_LAYER, color=3)
     _ensure_layer(doc, SIDE_CENTER_LAYER, color=1, linetype="CENTER")
     if output_mode == "debug":
@@ -259,6 +261,12 @@ def _copy_side_template_entities(
             _update_bed_618_side_geometry(copied, geometry)
         else:
             _update_side_template_geometry(copied, geometry)
+        if copied.dxf.layer in {SIDE_DERIVED_LAYER, SIDE_CAVITY_LAYER}:
+            # Template hidden lines often carry explicit colors.  Once mapped
+            # to a controlled cavity layer they must inherit the configured
+            # green/dashed appearance instead of retaining stale cyan values.
+            copied.dxf.color = 256
+            copied.dxf.linetype = "BYLAYER"
         derived_dimension_updated = False
         if copied.dxftype() == "DIMENSION":
             derived_dimension_updated = _update_derived_dimension(copied, geometry, side_style=side_style)
@@ -272,6 +280,7 @@ def _copy_side_template_entities(
             except Exception:
                 pass
             _sync_dimension_block_text(copied)
+    _finalize_side_cavity_lines(modelspace, geometry, side_style)
     _bind_r80_dimensions_to_formal_arcs(modelspace, geometry)
 
 
@@ -446,6 +455,101 @@ def _update_bed_618_slot_projection_lines(entity, geometry: SideViewGeometry) ->
         entity.dxf.layer = SIDE_DERIVED_LAYER
 
 
+def _finalize_side_cavity_lines(
+    modelspace,
+    geometry: SideViewGeometry,
+    side_style: str,
+) -> None:
+    if side_style == "bed_618":
+        base_y = geometry.layout.lower_y + geometry.derived.slot_base_height
+        top_y = base_y + geometry.derived.guide_thickness
+        opening = geometry.derived.upper_cavity_notch_opening
+        _rebuild_two_boundary_cavity_lines(
+            modelspace,
+            geometry,
+            (
+                (base_y, geometry.layout.center_a_x, opening),
+                (top_y, geometry.layout.center_a_x, opening),
+            ),
+        )
+        return
+
+    is_block_up_down = (
+        side_style == "double_head_up_down"
+        and abs(
+            geometry.derived.side_projected_slot_height
+            - geometry.derived.slot_base_height
+        )
+        <= 0.001
+    )
+    if not is_block_up_down:
+        return
+    base_y = geometry.layout.lower_y + geometry.derived.slot_base_height
+    top_y = base_y + geometry.derived.guide_thickness
+    _rebuild_two_boundary_cavity_lines(
+        modelspace,
+        geometry,
+        (
+            (
+                base_y,
+                geometry.layout.center_b_x,
+                geometry.derived.lower_cavity_notch_opening,
+            ),
+            (
+                top_y,
+                geometry.layout.center_a_x,
+                geometry.derived.upper_cavity_notch_opening,
+            ),
+        ),
+    )
+
+
+def _rebuild_two_boundary_cavity_lines(
+    modelspace,
+    geometry: SideViewGeometry,
+    boundaries: tuple[tuple[float, float, float], ...],
+) -> None:
+    layout = geometry.layout
+    y_values = tuple(boundary[0] for boundary in boundaries)
+    lower_y = min(y_values) - 0.6
+    upper_y = max(y_values) + 0.6
+    for entity in list(modelspace.query("LINE")):
+        if entity.dxf.layer != SIDE_DERIVED_LAYER:
+            continue
+        if abs(float(entity.dxf.start.y) - float(entity.dxf.end.y)) > 0.001:
+            continue
+        y = float(entity.dxf.start.y)
+        if not lower_y <= y <= upper_y:
+            continue
+        if max(float(entity.dxf.start.x), float(entity.dxf.end.x)) < layout.left_x - 0.01:
+            continue
+        if min(float(entity.dxf.start.x), float(entity.dxf.end.x)) > layout.right_x + 0.01:
+            continue
+        modelspace.delete_entity(entity)
+
+    attributes = {
+        "layer": SIDE_DERIVED_LAYER,
+        "color": 256,
+        "linetype": "BYLAYER",
+    }
+    for y, center_x, opening in boundaries:
+        half_opening = max(opening, 0.0) / 2.0
+        left_gap = center_x - half_opening
+        right_gap = center_x + half_opening
+        if layout.left_x < left_gap:
+            modelspace.add_line(
+                (layout.left_x, y),
+                (left_gap, y),
+                dxfattribs=attributes,
+            )
+        if right_gap < layout.right_x:
+            modelspace.add_line(
+                (right_gap, y),
+                (layout.right_x, y),
+                dxfattribs=attributes,
+            )
+
+
 def _update_down_up_r80_arc(entity, geometry: SideViewGeometry) -> None:
     layout = geometry.layout
     radius = geometry.template.wheel_radius
@@ -564,6 +668,29 @@ def _update_down_up_slot_projection_lines(entity, geometry: SideViewGeometry) ->
 def _update_double_head_up_down_slot_projection_lines(entity, geometry: SideViewGeometry) -> None:
     if abs(entity.dxf.start.y - entity.dxf.end.y) > 1e-6:
         return
+    if abs(
+        geometry.derived.side_projected_slot_height
+        - geometry.derived.slot_base_height
+    ) > 0.001:
+        _update_double_head_up_down_tile_slot_projection_lines(entity, geometry)
+        return
+    if str(entity.dxf.linetype).upper() != "DASHED":
+        return
+    layout = geometry.layout
+    base_y = layout.lower_y + geometry.derived.slot_base_height
+    top_y = base_y + geometry.derived.guide_thickness
+    y = float(entity.dxf.start.y)
+    if not base_y - 0.1 <= y <= top_y + 0.6:
+        return
+    entity.dxf.layer = SIDE_DERIVED_LAYER
+    entity.dxf.color = 256
+    entity.dxf.linetype = "BYLAYER"
+
+
+def _update_double_head_up_down_tile_slot_projection_lines(
+    entity,
+    geometry: SideViewGeometry,
+) -> None:
     layout = geometry.layout
     base_y = layout.lower_y + geometry.derived.slot_base_height
     projected_y = layout.lower_y + geometry.derived.side_projected_slot_height
@@ -742,6 +869,13 @@ def _update_derived_dimension(entity, geometry: SideViewGeometry, side_style: st
         return False
     derived = geometry.derived
     if (
+        side_style == "double_head_up_down"
+        and 10.0 <= measurement <= 16.0
+        and entity.dxf.hasattr("defpoint2")
+        and entity.dxf.hasattr("defpoint3")
+    ):
+        return _bind_double_head_up_down_wheel_dimension(entity, geometry)
+    if (
         side_style == "triple_single_down_up"
         and abs(measurement - geometry.template.wheel_radius) < 0.05
         and entity.dxf.hasattr("defpoint")
@@ -771,6 +905,40 @@ def _update_derived_dimension(entity, geometry: SideViewGeometry, side_style: st
         entity.dxf.text = f"{derived.side_clearance_height:.2f}"
         return True
     return False
+
+
+def _bind_double_head_up_down_wheel_dimension(
+    entity,
+    geometry: SideViewGeometry,
+) -> bool:
+    layout = geometry.layout
+    p2 = entity.dxf.defpoint2
+    p3 = entity.dxf.defpoint3
+    lower_distance = min(
+        abs(float(p2.x) - layout.center_b_x),
+        abs(float(p3.x) - layout.center_b_x),
+    )
+    upper_distance = min(
+        abs(float(p2.x) - layout.center_a_x),
+        abs(float(p3.x) - layout.center_a_x),
+    )
+    if lower_distance <= upper_distance:
+        center_x = layout.center_b_x
+        crown_y = layout.lower_y + geometry.derived.wheel_notch_depth
+        datum_y = layout.lower_y
+    else:
+        center_x = layout.center_a_x
+        crown_y = layout.upper_y - geometry.derived.side_clearance_height
+        datum_y = layout.upper_y
+    measured = abs(datum_y - crown_y)
+    entity.dxf.defpoint2 = (center_x, crown_y, p2.z)
+    entity.dxf.defpoint3 = (center_x, datum_y, p3.z)
+    if entity.dxf.hasattr("defpoint"):
+        dimline = entity.dxf.defpoint
+        entity.dxf.defpoint = (dimline.x, datum_y, dimline.z)
+    _set_actual_measurement(entity, measured)
+    entity.dxf.text = f"{measured:.2f}"
+    return True
 
 
 def _bind_down_up_r80_dimension_to_arc(entity, geometry: SideViewGeometry) -> None:
