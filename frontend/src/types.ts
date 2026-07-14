@@ -65,10 +65,16 @@ export interface GeneratedFile {
   url: string;
 }
 
+export interface UserSession {
+  username: string;
+  role: "administrator" | "operator";
+}
+
 export interface GenerationResult {
   task_id: string;
   ok: boolean;
   stderr: string;
   release_allowed?: boolean;
+  preview?: GeneratedFile | null;
   files?: Record<string, GeneratedFile>;
 }

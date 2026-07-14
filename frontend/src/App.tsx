@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
-import type { Dispatch, SetStateAction } from "react";
+import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { api } from "./api";
-import type { DesignInput, GenerationResult, Machine, ValidationResult } from "./types";
+import type { DesignInput, GenerationResult, Machine, UserSession, ValidationResult } from "./types";
 
 type Page = "workspace" | "history" | "templates" | "rules";
 type Step = 1 | 2 | 3;
@@ -51,19 +51,43 @@ export default function App() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationState, setGenerationState] = useState<"idle" | "passed" | "failed">("idle");
   const [generationResult, setGenerationResult] = useState<GenerationResult | null>(null);
+  const [session, setSession] = useState<UserSession | null>(null);
+  const [isAuthLoading, setIsAuthLoading] = useState(true);
 
   useEffect(() => {
-    api.machines()
-      .then((items) => {
-        setIsServiceOnline(true);
-        setMachines(items);
-        const preferred = items.find((item) => item.id === initialDesign.machine_type) ?? items[0];
-        if (preferred) {
-          applyMachine(preferred, setDesign);
-        }
-      })
-      .catch((error: Error) => { setApiError(error.message); setIsServiceOnline(false); });
+    void api.health()
+      .then(() => setIsServiceOnline(true))
+      .catch(() => setIsServiceOnline(false));
+    void api.me()
+      .then((user) => { setSession(user); return loadMachines(setMachines, setDesign); })
+      .catch(() => setSession(null))
+      .finally(() => setIsAuthLoading(false));
   }, []);
+
+  const login = async (username: string, password: string) => {
+    setApiError(null);
+    const user = await api.login(username, password);
+    setSession(user);
+    setIsServiceOnline(true);
+    await loadMachines(setMachines, setDesign);
+  };
+
+  const logout = async () => {
+    try { await api.logout(); } catch { /* Session is cleared locally even after an expired server session. */ }
+    setSession(null);
+    setMachines([]);
+    setValidation(null);
+    setGenerationResult(null);
+    setGenerationState("idle");
+    setStep(1);
+  };
+
+  const returnToDashboard = () => {
+    resetWorkspace(setDesign, setStep, setValidation, setGenerationState, setApiError);
+    setGenerationResult(null);
+    setPage("workspace");
+    setIsNewTask(false);
+  };
 
   const selectedMachine = useMemo(
     () => machines.find((machine) => machine.id === design.machine_type) ?? null,
@@ -122,14 +146,17 @@ export default function App() {
     }
   };
 
+  if (isAuthLoading) return <div className="auth-loading">正在确认登录状态…</div>;
+  if (!session) return <LoginPage isServiceOnline={isServiceOnline} onLogin={login} />;
+
   return (
     <div className="app-shell">
       <aside className="sidebar">
         <div className="brand-mark">CAD</div>
-        <div className="brand-text">
+        <button className="brand-text" onClick={returnToDashboard} aria-label="返回导轨工作台首页">
           <strong>成型磨导轨</strong>
           <span>参数化生成器</span>
-        </div>
+        </button>
         <nav>
           {navItems.map((item) => (
             <button
@@ -154,6 +181,8 @@ export default function App() {
           </div>
           <div className="topbar-actions">
             <span className={`status-pill ${isServiceOnline ? "" : "offline"}`}><i />{isServiceOnline ? "服务已连接" : "服务未连接"}</span>
+            <span className={`account-pill ${session.role}`}><b>{session.username}</b>{session.role === "administrator" ? "管理员" : "普通用户"}</span>
+            <button className="button secondary mini" onClick={() => void logout()}>退出登录</button>
             {page === "workspace" && <button className="button primary" onClick={() => { resetWorkspace(setDesign, setStep, setValidation, setGenerationState, setApiError); setGenerationResult(null); setIsNewTask(true); }}>＋ 新建导轨任务</button>}
           </div>
         </header>
@@ -185,6 +214,49 @@ export default function App() {
   );
 }
 
+function LoginPage({ isServiceOnline, onLogin }: { isServiceOnline: boolean; onLogin: (username: string, password: string) => Promise<void> }) {
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const submit = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setError(null);
+    setIsSubmitting(true);
+    try {
+      await onLogin(username, password);
+    } catch (loginError) {
+      setError(loginError instanceof Error ? loginError.message : "登录失败，请重试。");
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return <main className="login-page">
+    <form className="login-card" onSubmit={(event) => void submit(event)}>
+      <p className="eyebrow">成型磨导轨 CAD 参数化生成器</p>
+      <h1>登录工作台</h1>
+      <p>登录后可生成并核对带尺寸标注的导轨截面预览。</p>
+      {error && <div className="alert error">{error}</div>}
+      <label>账户名<input value={username} onChange={(event) => setUsername(event.target.value)} autoComplete="username" required /></label>
+      <label>密码<input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required /></label>
+      <button className="button primary" disabled={isSubmitting || !isServiceOnline}>{isSubmitting ? "正在登录…" : "登录"}</button>
+      <small>{isServiceOnline ? "管理员与普通用户的权限由服务端配置控制。" : "本地生成服务未连接。"}</small>
+    </form>
+  </main>;
+}
+
+async function loadMachines(
+  setMachines: Dispatch<SetStateAction<Machine[]>>,
+  setDesign: Dispatch<SetStateAction<DesignInput>>,
+) {
+  const items = await api.machines();
+  setMachines(items);
+  const preferred = items.find((item) => item.id === initialDesign.machine_type) ?? items[0];
+  if (preferred) applyMachine(preferred, setDesign);
+}
+
 function Dashboard({ onCreate }: { onCreate: () => void }) {
   return <section className="dashboard">
     <div className="metrics">
@@ -206,7 +278,7 @@ function Dashboard({ onCreate }: { onCreate: () => void }) {
           <RuleReminder number="02" title="RELEASE GATE / 正式图纸门禁" text="候选 DXF 未通过几何、图层、旧图元与尺寸定义点审计时，release.dxf 不会输出。" />
           <div className="block-reminder"><strong>BLOCKING / 校验阻断逻辑</strong><p>规格解析失败、关键尺寸不一致或定义点未绑定真实几何时，系统将阻断正式图纸。</p></div>
         </section>
-        <section className="preview-placeholder"><span>◇</span><h3>参数化生成预览</h3><p>创建任务并完成计算后显示截面和侧面预览。</p><button className="button inverse" onClick={onCreate}>进入生成工作区</button></section>
+        <section className="preview-placeholder"><span>◇</span><h3>参数化生成预览</h3><p>创建任务并完成计算后显示带尺寸标注的导轨截面。</p><button className="button inverse" onClick={onCreate}>进入生成工作区</button></section>
       </aside>
     </div>
   </section>;
@@ -243,7 +315,7 @@ function Workspace(props: {
       <Stepper active={props.step} />
       {props.error && <div className="alert error"><strong>需要处理：</strong>{props.error}</div>}
       {props.step === 1 && (
-        <div className="two-column input-layout">
+        <div className="input-layout">
           <div className="form-stack">
             <section className="panel">
               <PanelTitle number="01" title="选择机台" subtitle="机台固定结构参数来自模板配置，不可在任务中修改。" />
@@ -255,14 +327,14 @@ function Workspace(props: {
                     className={`machine-card ${design.machine_type === machine.id ? "selected" : ""} ${machine.supported_by_web_generation ? "" : "unsupported"}`}
                     onClick={() => props.onSelectMachine(machine.id)}
                     disabled={!machine.supported_by_web_generation}
-                  >
-                    <span>{machine.guide_sections === 2 ? "双" : "单"}</span>
-                    <strong>{machine.name}</strong>
-                    <small>{machine.supported_by_web_generation ? `${machine.guide_length} mm · ${machine.wheel_positions.join(" / ")}` : "Web 任务待接入"}</small>
-                  </button>
+                    >
+                      <span>{machine.guide_sections === 2 ? "双" : "单"}</span>
+                      <strong>{machine.name}</strong>
+                      <small>{machine.supported_by_web_generation ? `${machine.guide_length} mm · ${machine.wheel_positions.join(" / ")}` : "Web 任务待接入"}</small>
+                      <small className="machine-fixed">固定：上口 {machine.section_center_opening} mm · 下沿 {machine.section_slot_base_height} mm</small>
+                    </button>
                 ))}
               </div>
-              {selectedMachine && <TemplateStrip machine={selectedMachine} />}
             </section>
             <section className="panel form-panel">
               <PanelTitle number="02" title="输入产品参数" subtitle="成品与成型磨前规格必须独立填写。" />
@@ -275,9 +347,10 @@ function Workspace(props: {
                       <option value="bread_shape">馒头型（单 R）</option>
                     </select>
                   </label>
-                  <label>规格格式
-                    <input className="readonly" value={design.product_shape_after === "tile_shape" ? "R外*R内*弦宽*长度*厚度" : "R*宽度*长度*厚度"} readOnly />
-                  </label>
+                  <div className="format-field">
+                    <span className="field-label">规格格式</span>
+                    <output className="format-hint">{design.product_shape_after === "tile_shape" ? "R外*R内*弦宽*长度*厚度" : "R*宽度*长度*厚度"}</output>
+                  </div>
                 </div>
                 <label>成品规格
                   <input value={design.finished_spec} onChange={(event) => props.onUpdate("finished_spec", event.target.value)} spellCheck={false} />
@@ -309,7 +382,6 @@ function Workspace(props: {
               </div>
             </section>
           </div>
-          <InputGuide machine={selectedMachine} />
         </div>
       )}
       {props.step === 2 && validation && (
@@ -333,37 +405,6 @@ function PanelTitle({ number, title, subtitle }: { number: string; title: string
 
 function GroupTitle({ badge, title, hint }: { badge: string; title: string; hint: string }) {
   return <div className="group-title"><span>{badge}</span><div><h3>{title}</h3><p>{hint}</p></div></div>;
-}
-
-function TemplateStrip({ machine }: { machine: Machine }) {
-  return <div className="template-strip"><span>锁定</span><strong>模板固定参数</strong><p>导轨 {machine.guide_length} mm · {machine.guide_sections} 段 · {machine.wheel_positions.join(" / ")} 砂轮</p></div>;
-}
-
-function InputGuide({ machine }: { machine: Machine | null }) {
-  return <aside className="input-guide">
-    <section className="panel guide-card">
-      <p className="eyebrow">输入规则</p>
-      <h2>参数来源可追踪</h2>
-      <RuleSource title="槽宽" source="成型磨前宽度及公差" tone="orange" />
-      <RuleSource title="导轨厚度" source="成型磨前厚度中值" tone="orange" />
-      <RuleSource title="R_form" source="成品 R 或磨前同 R" tone="blue" />
-      <RuleSource title="机台结构" source="模板配置（只读）" tone="gray" />
-    </section>
-    <section className="panel compact-card">
-      <p className="eyebrow">当前机台</p>
-      <h3>{machine?.name ?? "正在加载"}</h3>
-      <dl>
-        <div><dt>导轨类型</dt><dd>{machine?.guide_type === "double_guide" ? "双导轨" : "单导轨"}</dd></div>
-        <div><dt>模板上口</dt><dd>{machine?.section_center_opening ?? "—"} mm</dd></div>
-        <div><dt>型腔下沿</dt><dd>{machine?.section_slot_base_height ?? "—"} mm</dd></div>
-      </dl>
-    </section>
-    <p className="release-note">release.dxf 必须通过几何、图层、旧图元和尺寸定义点审计后才会输出。</p>
-  </aside>;
-}
-
-function RuleSource({ title, source, tone }: { title: string; source: string; tone: string }) {
-  return <div className="rule-source"><span className={tone} /> <strong>{title}</strong><em>←</em><p>{source}</p></div>;
 }
 
 function Review({ validation, machine, onBack, onGenerate }: { validation: ValidationResult; machine: Machine | null; onBack: () => void; onGenerate: () => void }) {
@@ -404,7 +445,7 @@ function Generation({ isGenerating, state, error, validation, result }: { isGene
   const stages = ["读取机台配置", "解析产品规格", "重建参数化槽口", "生成候选 release DXF", "运行完整校验", "晋级正式 release"];
   const passed = state === "passed";
   const files = result?.files ?? {};
-  return <section className={`generation-view panel ${passed ? "result-passed" : ""}`}><div className={`result-icon ${passed ? "success" : state === "failed" ? "failure" : "running"}`}>{passed ? "✓" : state === "failed" ? "!" : "…"}</div><p className="eyebrow">生成任务</p><h2>{isGenerating ? "正在重建图纸与校验" : passed ? "正式图纸已通过校验" : "正式 release 未输出"}</h2><p>{isGenerating ? "后端正在按固定工作流生成候选文件。" : passed ? "release.dxf 已由候选文件晋级。" : error ?? "任务结束。"}</p>{passed && files.preview_png && <div className="output-preview"><img src={files.preview_png.url} alt="生成图纸预览" /></div>}<ol className="generation-steps">{stages.map((label, index) => <li key={label} className={isGenerating && index > 2 ? "waiting" : passed || (!isGenerating && index < 5) ? "ok" : state === "failed" && index === 4 ? "bad" : "waiting"}><span>{passed || (!isGenerating && index < 5) ? "✓" : index + 1}</span>{label}</li>)}</ol>{validation && <div className="result-summary"><strong>{formatProfile(validation.decision.groove_profile)}</strong><span>槽宽 {validation.derived.slot_width.toFixed(2)} mm</span><span>导轨厚度 {validation.derived.guide_thickness.toFixed(2)} mm</span></div>}{passed && <div className="output-files"><h3>输出文件</h3>{Object.entries(files).map(([key, file]) => <a key={key} href={file.url} target="_blank" rel="noreferrer"><span>▧</span><div><strong>{file.label}</strong><small>{file.name}</small></div><b>下载</b></a>)}</div>}</section>;
+  return <section className={`generation-view panel ${passed ? "result-passed" : ""}`}><div className={`result-icon ${passed ? "success" : state === "failed" ? "failure" : "running"}`}>{passed ? "✓" : state === "failed" ? "!" : "…"}</div><p className="eyebrow">生成任务</p><h2>{isGenerating ? "正在重建图纸与校验" : passed ? "正式图纸已通过校验" : "正式 release 未输出"}</h2><p>{isGenerating ? "后端正在按固定工作流生成候选文件。" : passed ? "release.dxf 已由候选文件晋级。" : error ?? "任务结束。"}</p>{passed && result?.preview && <div className="output-preview"><img src={result.preview.url} alt="带尺寸标注的导轨截面预览" /></div>}<ol className="generation-steps">{stages.map((label, index) => <li key={label} className={isGenerating && index > 2 ? "waiting" : passed || (!isGenerating && index < 5) ? "ok" : state === "failed" && index === 4 ? "bad" : "waiting"}><span>{passed || (!isGenerating && index < 5) ? "✓" : index + 1}</span>{label}</li>)}</ol>{validation && <div className="result-summary"><strong>{formatProfile(validation.decision.groove_profile)}</strong><span>槽宽 {validation.derived.slot_width.toFixed(2)} mm</span><span>导轨厚度 {validation.derived.guide_thickness.toFixed(2)} mm</span></div>}{passed && <div className="output-files"><h3>可下载文件</h3>{Object.entries(files).map(([key, file]) => <a key={key} href={file.url} target="_blank" rel="noreferrer"><span>▧</span><div><strong>{file.label}</strong><small>{file.name}</small></div><b>下载</b></a>)}</div>}</section>;
 }
 
 function History() {

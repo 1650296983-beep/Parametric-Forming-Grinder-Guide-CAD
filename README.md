@@ -123,10 +123,24 @@ Then start both the API and frontend from the repository root with one command:
 ./scripts/start_web.sh
 ```
 
+Before the first start, copy `.env.example` to `.env` and configure the login
+accounts and a long random `CAD_SESSION_SECRET`.  Credentials must remain in
+the local `.env`, never in source control.  `CAD_ADMIN_USERNAME` can be set to
+`sz2026`; set its password in `CAD_ADMIN_PASSWORD`.  Ordinary users are added
+through `CAD_OPERATOR_ACCOUNTS_JSON`, for example
+`{"operator_1":"a-local-password"}`.
+
 Open `http://127.0.0.1:5173`. Press `Ctrl+C` in that terminal to stop the
 frontend and any API process started by the script. Generated Web tasks are written under
 `output/web_tasks/<task_id>/`. The frontend will show a formal release download
 only when the Python report marks `release_allowed` as `true`.
+
+The generated preview is a dimensioned guide-rail section only: it does not
+contain a side view.  It is available in the result page for visual checking,
+but it is not listed as a normal-user download.  Ordinary users can download
+only the validated release DXF.  Administrators can additionally access the
+debug DXF, preview PNG, validation report, and dimension-definition-point
+audit for maintenance and diagnosis.
 
 The Web workbench supports single-guide machines and the synchronized
 three-head dual-guide machines (`triple_double_down_up_up` and

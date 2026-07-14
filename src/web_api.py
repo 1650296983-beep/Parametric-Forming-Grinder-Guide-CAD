@@ -14,12 +14,21 @@ import json
 import subprocess
 import sys
 
-from fastapi import FastAPI, HTTPException
+from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .block_geometry import BlockGuideSection
+from .auth import (
+    SESSION_COOKIE_NAME,
+    SESSION_TTL_SECONDS,
+    AuthenticatedUser,
+    authenticate,
+    create_session_token,
+    require_user,
+    session_cookie_secure,
+)
 from .dual_guide_engine import DualGuideTemplateEngine
 from .dual_guide_input import build_dual_guide_profile_from_input
 from .geometry import TileSection
@@ -56,11 +65,16 @@ class GenerationRequest(BaseModel):
     design: DesignInput
 
 
+class LoginRequest(BaseModel):
+    username: str = Field(min_length=1, max_length=128)
+    password: str = Field(min_length=1, max_length=512)
+
+
 app = FastAPI(title="Forming Grinder Guide CAD API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
-    allow_credentials=False,
+    allow_credentials=True,
     allow_methods=["GET", "POST"],
     allow_headers=["Content-Type"],
 )
@@ -71,7 +85,35 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.get("/api/machines")
+@app.post("/api/auth/login")
+def login(credentials: LoginRequest, response: Response) -> dict[str, str]:
+    user = authenticate(credentials.username, credentials.password)
+    if user is None:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户名或密码错误。")
+    response.set_cookie(
+        key=SESSION_COOKIE_NAME,
+        value=create_session_token(user),
+        max_age=SESSION_TTL_SECONDS,
+        httponly=True,
+        secure=session_cookie_secure(),
+        samesite="strict",
+        path="/",
+    )
+    return {"username": user.username, "role": user.role}
+
+
+@app.post("/api/auth/logout", dependencies=[Depends(require_user)])
+def logout(response: Response) -> dict[str, str]:
+    response.delete_cookie(SESSION_COOKIE_NAME, path="/")
+    return {"status": "ok"}
+
+
+@app.get("/api/auth/me")
+def current_user(user: AuthenticatedUser = Depends(require_user)) -> dict[str, str]:
+    return {"username": user.username, "role": user.role}
+
+
+@app.get("/api/machines", dependencies=[Depends(require_user)])
 def list_machines() -> list[dict[str, Any]]:
     """Expose template-derived machine metadata without making it editable."""
     machines: list[dict[str, Any]] = []
@@ -81,7 +123,7 @@ def list_machines() -> list[dict[str, Any]]:
     return machines
 
 
-@app.post("/api/designs/validate")
+@app.post("/api/designs/validate", dependencies=[Depends(require_user)])
 def validate_design(design: DesignInput) -> dict[str, Any]:
     """Parse and calculate a design without writing any DXF artifacts."""
     machine = _load_matching_machine(design)
@@ -111,11 +153,21 @@ def validate_design(design: DesignInput) -> dict[str, Any]:
 
 
 @app.post("/api/designs/generate")
-def generate_design(request: GenerationRequest) -> dict[str, Any]:
+def generate_design_endpoint(
+    request: GenerationRequest,
+    user: AuthenticatedUser = Depends(require_user),
+) -> dict[str, Any]:
+    return generate_design(request, user)
+
+
+def generate_design(
+    request: GenerationRequest,
+    user: AuthenticatedUser | None = None,
+) -> dict[str, Any]:
     """Run the existing release-gated generator in an isolated task directory."""
     machine = _load_matching_machine(request.design)
     if machine.guide_sections == 2:
-        return _generate_dual_guide_design(request.design, machine)
+        return _generate_dual_guide_design(request.design, machine, user=user)
 
     # Validate before starting a generator subprocess so malformed data never
     # produces an output directory that looks like a legitimate task.
@@ -164,12 +216,17 @@ def generate_design(request: GenerationRequest) -> dict[str, Any]:
         **result,
         "release_allowed": bool(report.get("release_allowed")),
         "report": report,
-        "files": _task_file_payload(task_id, task_dir, report),
+        "preview": _task_preview_payload(task_id, task_dir, report),
+        "files": _task_file_payload(task_id, task_dir, report, user=user),
     }
 
 
 @app.get("/api/tasks/{task_id}/files/{relative_path:path}")
-def read_task_file(task_id: str, relative_path: str) -> FileResponse:
+def read_task_file(
+    task_id: str,
+    relative_path: str,
+    user: AuthenticatedUser = Depends(require_user),
+) -> FileResponse:
     """Serve only files generated inside one Web task directory."""
     if not task_id.isalnum() or len(task_id) != 12:
         raise HTTPException(status_code=404, detail="任务不存在。")
@@ -177,7 +234,13 @@ def read_task_file(task_id: str, relative_path: str) -> FileResponse:
     requested = (task_dir / relative_path).resolve()
     if not requested.is_relative_to(task_dir) or not requested.is_file():
         raise HTTPException(status_code=404, detail="生成文件不存在。")
-    return FileResponse(requested, filename=requested.name)
+    if not user.is_administrator and not _is_operator_visible_file(task_dir, requested):
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="普通用户只能下载正式 release DXF。")
+    return FileResponse(
+        requested,
+        filename=requested.name,
+        content_disposition_type="inline" if requested.suffix.lower() == ".png" else "attachment",
+    )
 
 
 def _load_matching_machine(design: DesignInput) -> MachineConfig:
@@ -280,6 +343,7 @@ def _finished_radii_for_web_design(finished_spec: str, finished_shape: str) -> t
 def _generate_dual_guide_design(
     design: DesignInput,
     machine: MachineConfig,
+    user: AuthenticatedUser | None = None,
 ) -> dict[str, Any]:
     """Generate dual guides through DualGuideTemplateEngine and preserve its gate."""
     try:
@@ -342,7 +406,8 @@ def _generate_dual_guide_design(
         "stderr": "" if report.get("release_allowed") else "双导轨 release 校验未通过。",
         "release_allowed": bool(report.get("release_allowed")),
         "report": report,
-        "files": _task_file_payload(task_id, task_dir, report),
+        "preview": _task_preview_payload(task_id, task_dir, report),
+        "files": _task_file_payload(task_id, task_dir, report, user=user),
     }
 
 
@@ -373,14 +438,17 @@ def _task_file_payload(
     task_id: str,
     task_dir: Path,
     report: dict[str, Any],
+    user: AuthenticatedUser | None = None,
 ) -> dict[str, dict[str, str]]:
-    """Turn report paths into task-scoped, browser-safe download URLs."""
+    """Expose only the artifacts the authenticated role is allowed to download."""
     files: dict[str, dict[str, str]] = {}
-    path_keys = {
-        "debug_dxf": "debug DXF",
-        "release_dxf": "release DXF",
-        "preview_png": "图纸预览",
-    }
+    path_keys = {"release_dxf": "release DXF"}
+    if user is None or user.is_administrator:
+        path_keys = {
+            "debug_dxf": "debug DXF",
+            "release_dxf": "release DXF",
+            "preview_png": "截面预览图",
+        }
     for report_key, label in path_keys.items():
         raw_path = report.get("paths", {}).get(report_key)
         if not raw_path:
@@ -393,6 +461,8 @@ def _task_file_payload(
                 "name": candidate.name,
                 "url": f"/api/tasks/{task_id}/files/{relative_path}",
             }
+    if user is not None and not user.is_administrator:
+        return files
     for candidate in task_dir.glob("**/*dimension_definition_point_audit.json"):
         relative_path = candidate.relative_to(task_dir).as_posix()
         files["dimension_audit"] = {
@@ -409,3 +479,35 @@ def _task_file_payload(
             "url": f"/api/tasks/{task_id}/files/{relative_path}",
         }
     return files
+
+
+def _task_preview_payload(
+    task_id: str,
+    task_dir: Path,
+    report: dict[str, Any],
+) -> dict[str, str] | None:
+    raw_path = report.get("paths", {}).get("preview_png")
+    if not raw_path:
+        return None
+    preview_path = Path(str(raw_path)).resolve()
+    if not preview_path.is_file() or not preview_path.is_relative_to(task_dir.resolve()):
+        return None
+    return {
+        "label": "导轨截面预览",
+        "name": preview_path.name,
+        "url": f"/api/tasks/{task_id}/files/{preview_path.relative_to(task_dir).as_posix()}",
+    }
+
+
+def _is_operator_visible_file(task_dir: Path, requested: Path) -> bool:
+    """Operators may inspect the generated section but download only release DXF."""
+    report_path = next(iter(task_dir.glob("**/*_report.json")), None)
+    if report_path is None:
+        return False
+    try:
+        paths = json.loads(report_path.read_text(encoding="utf-8")).get("paths", {})
+        release_path = Path(str(paths["release_dxf"])).resolve()
+        preview_path = Path(str(paths["preview_png"])).resolve()
+    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
+        return False
+    return requested == release_path or requested == preview_path

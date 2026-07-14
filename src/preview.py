@@ -15,7 +15,6 @@ from matplotlib.patches import Arc
 from .block_geometry import BlockGuideSection
 from .geometry import Point, SectionProfile, TileSection, sample_profile
 from .machine_config import MachineConfig
-from .side_view import build_side_view_geometry
 from .side_view_config import SideViewLayoutConfig
 
 
@@ -25,77 +24,30 @@ def write_png_preview(
     side_layout: SideViewLayoutConfig | None = None,
     machine_name: str | None = None,
 ) -> Path:
+    """Render a dimensioned guide-rail section for operator review.
+
+    The preview intentionally contains no side projection.  Side-view geometry
+    is an implementation detail of the DXF and made the former split preview
+    too small to use as a release check.
+    """
     output_path = Path(path)
     output_path.parent.mkdir(parents=True, exist_ok=True)
-
-    profiles = _profiles_for_preview(profile)
-    all_points: list[Point] = []
-    for item, _, _, _, dx, dy in profiles:
-        all_points.extend(_offset_points(sample_profile(item, arc_samples=128), dx, dy))
-
-    is_bread = isinstance(profile, TileSection) and profile.process_type in {
-        "block_to_tile",
-        "block_to_bread",
-    }
-    fig, ax = plt.subplots(figsize=((10, 6) if is_bread else (7, 7)), dpi=160)
-    for item, label, color, linestyle, dx, dy in profiles:
-        points = _offset_points(sample_profile(item, arc_samples=128), dx, dy)
-        closed_points = points + [points[0]]
-        xs = [point.x for point in closed_points]
-        ys = [point.y for point in closed_points]
-        ax.plot(xs, ys, color=color, linewidth=2.0, linestyle=linestyle, label=label)
-        ax.scatter(
-            [item.outer_left.x, item.outer_right.x, item.inner_right.x, item.inner_left.x],
-            [item.outer_left.y, item.outer_right.y, item.inner_right.y, item.inner_left.y],
-            color=color,
-            s=18,
-            zorder=3,
-        )
-
     if isinstance(profile, TileSection):
+        fig, ax = plt.subplots(figsize=(8.2, 8.0), dpi=180)
         _draw_guide_control(ax, profile)
-        _draw_side_view_preview(ax, profile, side_layout=side_layout)
+        title = _section_title(profile, machine_name)
+    else:
+        fig, ax = plt.subplots(figsize=(7.2, 6.8), dpi=180)
+        _draw_legacy_profile(ax, profile)
+        title = "Guide rail section preview"
 
-    _draw_centerline(ax, all_points)
+    # Kept as optional compatibility arguments for callers outside this
+    # project.  The intentionally section-only preview does not use them.
+    del side_layout
     ax.set_aspect("equal", adjustable="box")
-    ax.set_xlabel("" if is_bread else "X (mm)")
-    ax.set_ylabel("Y (mm)")
-    if isinstance(profile, TileSection):
-        side = build_side_view_geometry(profile, layout=side_layout)
-        title_prefix = (
-            "Block-to-tile guide"
-            if profile.process_type == "block_to_tile"
-            else (
-                "Block-to-bread guide"
-                if profile.process_type == "block_to_bread"
-                else "Tile section profiles"
-            )
-        )
-        ax.set_title(
-            "\n".join(
-                [
-                    title_prefix,
-                    (
-                        f"R_form={profile.forming_spec.R_form:g} mm, "
-                        f"slot_width={profile.guide_spec.guide_slot_width:g} mm, "
-                        f"guide_thickness={profile.guide_spec.guide_thickness:g} mm"
-                    ),
-                    (
-                        f"side_projected={side.derived.side_projected_slot_height:g} mm, "
-                        f"side_clearance={side.derived.side_clearance_height:g} mm"
-                    ),
-                    *([machine_name] if machine_name else []),
-                ]
-            ),
-            fontsize=10,
-        )
-    else:
-        ax.set_title("Tile section profile")
-    if is_bread:
-        ax.legend(loc="upper center", bbox_to_anchor=(0.5, -0.12), ncol=3)
-    else:
-        ax.legend(loc="best")
-    ax.grid(True, color="#d0d0d0", linewidth=0.7)
+    ax.set_axis_off()
+    ax.set_title(title, fontsize=12, fontweight="bold", pad=16)
+    ax.margins(x=0.18, y=0.20)
     fig.tight_layout()
     fig.savefig(output_path)
     plt.close(fig)
@@ -107,81 +59,39 @@ def write_block_png_preview(
     machine: MachineConfig,
     path: str | Path,
 ) -> Path:
-    """Render the block-guide section and side view for a generated task."""
+    """Render the complete dimensioned block-guide section for review."""
     output_path = Path(path)
-    guide = profile.guide_spec
-    side = build_side_view_geometry(profile, layout=machine.side_layout)  # type: ignore[arg-type]
     output_path.parent.mkdir(parents=True, exist_ok=True)
-    fig, (ax_section, ax_side) = plt.subplots(1, 2, figsize=(11, 4.5))
-
-    slot_width = guide.guide_slot_width
-    thickness = guide.guide_thickness
-    radius = guide.relief.relief_size / 2.0
-    left = -slot_width / 2.0
-    right = slot_width / 2.0
-    bottom = 0.0
-    top = thickness
-    ax_section.plot([left + radius, right - radius], [bottom, bottom], color="#1f77b4")
-    ax_section.plot([right, right], [bottom + radius, top - radius], color="#1f77b4")
-    ax_section.plot([right - radius, left + radius], [top, top], color="#1f77b4")
-    ax_section.plot([left, left], [top - radius, bottom + radius], color="#1f77b4")
-    for center_x, center_y, start_angle, end_angle in (
-        (left + radius, bottom + radius, 180, 270),
-        (right - radius, bottom + radius, 270, 360),
-        (right - radius, top - radius, 0, 90),
-        (left + radius, top - radius, 90, 180),
-    ):
-        ax_section.add_patch(
-            Arc(
-                (center_x, center_y),
-                2 * radius,
-                2 * radius,
-                theta1=start_angle,
-                theta2=end_angle,
-                color="#1f77b4",
-            )
-        )
-    ax_section.set_aspect("equal", adjustable="box")
-    ax_section.set_title(f"slot {slot_width:.2f} x {thickness:.2f}")
-    ax_section.grid(True, linewidth=0.3)
-
-    layout = side.layout
-    ax_side.plot([layout.left_x, layout.right_x], [layout.lower_y, layout.lower_y], color="#444444")
-    ax_side.plot([layout.left_x, layout.right_x], [layout.upper_y, layout.upper_y], color="#444444")
-    for center_x in (layout.left_x, layout.center_a_x, layout.center_b_x, layout.right_x):
-        ax_side.plot([center_x, center_x], [layout.lower_y, layout.upper_y], color="#777777", linewidth=0.8)
-    upper_center_y = layout.upper_y - side.derived.side_clearance_height + side.template.wheel_radius
-    for center_x in (layout.center_a_x, layout.center_b_x):
-        ax_side.add_patch(Arc((center_x, upper_center_y), 160, 160, theta1=200, theta2=340, color="#1f77b4"))
-    ax_side.set_aspect("equal", adjustable="box")
-    ax_side.set_title(f"{machine.machine_id} {machine.guide_length:.0f} mm")
-    ax_side.grid(True, linewidth=0.3)
-
+    fig, ax = plt.subplots(figsize=(8.2, 8.0), dpi=180)
+    _draw_block_guide_control(ax, profile)
+    ax.set_aspect("equal", adjustable="box")
+    ax.set_axis_off()
+    ax.set_title(f"Guide rail section preview · {machine.machine_id}", fontsize=12, fontweight="bold", pad=16)
+    ax.margins(x=0.18, y=0.20)
     fig.tight_layout()
     fig.savefig(output_path, dpi=180)
     plt.close(fig)
     return output_path
 
 
-def _profiles_for_preview(profile: SectionProfile | TileSection):
-    if isinstance(profile, TileSection):
-        guide = profile.guide_spec
-        if profile.preform_block_spec is not None:
-            return (
-                (profile.finished_profile, "finished_profile", "#7a7a7a", "--", 0.0, 0.0),
-            )
-        return (
-            (profile.finished_profile, "finished_profile", "#7a7a7a", "--", 0.0, 0.0),
-            (
-                profile.forming_profile,
-                "forming_profile in slot",
-                "#d62728",
-                "-",
-                guide.slot_center_offset,
-                guide.slot_base_height,
-            ),
-        )
-    return ((profile, profile.params.profile_type, "#202020", "-", 0.0, 0.0),)
+def _section_title(profile: TileSection, machine_name: str | None) -> str:
+    title = "Guide rail section preview"
+    if machine_name:
+        return f"{title} · {machine_name}"
+    return title
+
+
+def _draw_legacy_profile(ax: plt.Axes, profile: SectionProfile) -> None:
+    """Retain a useful section-only preview for the legacy single-profile API."""
+    points = sample_profile(profile, arc_samples=128)
+    closed_points = points + [points[0]]
+    ax.plot(
+        [point.x for point in closed_points],
+        [point.y for point in closed_points],
+        color="#1f2937",
+        linewidth=2.0,
+    )
+    _draw_centerline(ax, points)
 
 
 def _draw_guide_control(ax: plt.Axes, tile_section: TileSection) -> None:
@@ -269,16 +179,84 @@ def _draw_guide_control(ax: plt.Axes, tile_section: TileSection) -> None:
     )
 
 
+def _draw_block_guide_control(ax: plt.Axes, block_section: BlockGuideSection) -> None:
+    """Draw the block-preform guide with the same review dimensions as release."""
+    guide = block_section.guide_spec
+    half_outer = guide.outer_width / 2.0
+    half_slot = guide.guide_slot_width / 2.0
+    base_y = guide.slot_base_height
+    top_y = base_y + guide.guide_thickness
+    x_center = guide.slot_center_offset
+    left_x = x_center - half_slot
+    right_x = x_center + half_slot
+    corner_radius = guide.relief.relief_size / 2.0
+    opening_half = guide.center_opening / 2.0
+    outline_color = "#1f2937"
+    cavity_color = "#146c94"
+
+    ax.plot(
+        [-half_outer, half_outer, half_outer, -half_outer, -half_outer],
+        [0.0, 0.0, guide.outer_height, guide.outer_height, 0.0],
+        color=outline_color,
+        linewidth=1.7,
+    )
+    ax.plot([x_center, x_center], [0.0, guide.outer_height], color="#bc3a42", linewidth=0.9, linestyle="--")
+    ax.plot([left_x, left_x], [base_y + corner_radius, top_y - corner_radius], color=cavity_color, linewidth=1.7)
+    ax.plot([right_x, right_x], [base_y + corner_radius, top_y - corner_radius], color=cavity_color, linewidth=1.7)
+    ax.plot([left_x + corner_radius, right_x - corner_radius], [base_y, base_y], color=cavity_color, linewidth=1.7)
+    ax.plot([left_x + corner_radius, right_x - corner_radius], [top_y, top_y], color=cavity_color, linewidth=1.7)
+    for center_x, center_y, start_angle, end_angle in (
+        (left_x + corner_radius, base_y + corner_radius, 180, 270),
+        (right_x - corner_radius, base_y + corner_radius, 270, 360),
+        (right_x - corner_radius, top_y - corner_radius, 0, 90),
+        (left_x + corner_radius, top_y - corner_radius, 90, 180),
+    ):
+        ax.add_patch(
+            Arc(
+                (center_x, center_y),
+                2 * corner_radius,
+                2 * corner_radius,
+                theta1=start_angle,
+                theta2=end_angle,
+                color=cavity_color,
+                linewidth=1.7,
+            )
+        )
+    ax.plot(
+        [x_center - opening_half, x_center - opening_half],
+        [top_y, guide.outer_height],
+        color=cavity_color,
+        linewidth=1.1,
+        linestyle="-.",
+    )
+    ax.plot(
+        [x_center + opening_half, x_center + opening_half],
+        [top_y, guide.outer_height],
+        color=cavity_color,
+        linewidth=1.1,
+        linestyle="-.",
+    )
+    _draw_dimension_annotations(
+        ax,
+        block_section,
+        half_outer=half_outer,
+        half_slot=half_slot,
+        base_y=base_y,
+        top_y=top_y,
+        x_center=x_center,
+    )
+
+
 def _draw_dimension_annotations(
     ax: plt.Axes,
-    tile_section: TileSection,
+    section: TileSection | BlockGuideSection,
     half_outer: float,
     half_slot: float,
     base_y: float,
     top_y: float,
     x_center: float,
 ) -> None:
-    guide = tile_section.guide_spec
+    guide = section.guide_spec
     color = "#0b7f55"
     text_style = {"color": color, "fontsize": 9}
     left_x = x_center - half_slot
@@ -303,7 +281,7 @@ def _draw_dimension_annotations(
     _plot_dimension_line(ax, (thickness_x, base_y), (thickness_x, top_y), color)
     ax.text(thickness_x + 0.45, (base_y + top_y) / 2.0, f"{guide.guide_thickness:.2f}", va="center", **text_style)
 
-    if tile_section.process_type in {"tile", "block_to_tile", "block_to_bread"}:
+    if isinstance(section, TileSection) and section.process_type in {"tile", "block_to_tile", "block_to_bread"}:
         ax.plot(
             [x_center + 1.2, right_x + 3.8],
             [top_y + 0.2, top_y + 3.2],
@@ -313,18 +291,18 @@ def _draw_dimension_annotations(
         ax.text(
             right_x + 4.1,
             top_y + 3.2,
-            f"R{tile_section.forming_spec.R_form:.2f}",
+            f"R{section.forming_spec.R_form:.2f}",
             va="center",
             **text_style,
         )
-    if tile_section.process_type == "tile":
+    if isinstance(section, TileSection) and section.process_type == "tile":
         ax.plot(
             [x_center - 1.2, left_x - 5.2],
             [base_y + 0.2, base_y - 2.2],
             color=color,
             linewidth=1.0,
         )
-        ax.text(left_x - 5.6, base_y - 2.2, f"R{tile_section.forming_spec.R_form:.2f}", ha="right", va="center", **text_style)
+        ax.text(left_x - 5.6, base_y - 2.2, f"R{section.forming_spec.R_form:.2f}", ha="right", va="center", **text_style)
 
     ax.plot([left_x, left_x - 6.4], [top_y - guide.relief.relief_size / 2.0, top_y + 1.0], color=color, linewidth=1.0)
     ax.text(left_x - 6.8, top_y + 1.0, guide.relief.relief_label, ha="right", va="center", **text_style)
@@ -370,59 +348,3 @@ def _draw_centerline(ax: plt.Axes, points: list[Point]) -> None:
         linewidth=1.0,
         linestyle="--",
     )
-
-
-def _draw_side_view_preview(
-    ax: plt.Axes,
-    tile_section: TileSection,
-    side_layout: SideViewLayoutConfig | None = None,
-) -> None:
-    side = build_side_view_geometry(tile_section, layout=side_layout)
-    layout = side.layout
-    derived = side.derived
-    color = "#3b5f9b"
-    dim_color = "#6a3d9a"
-    dx = 45.0 - layout.left_x
-    tx = lambda x: x + dx
-    xs = [tx(layout.left_x), tx(layout.right_x), tx(layout.right_x), tx(layout.left_x), tx(layout.left_x)]
-    ys = [layout.lower_y, layout.lower_y, layout.upper_y, layout.upper_y, layout.lower_y]
-    ax.plot(xs, ys, color=color, linewidth=1.2, label="side_view")
-    ax.plot([tx(layout.center_a_x), tx(layout.center_a_x)], [layout.lower_y - 3.0, layout.upper_y + 3.0], color=color, linestyle=":", linewidth=0.9)
-    ax.plot([tx(layout.center_b_x), tx(layout.center_b_x)], [layout.lower_y - 3.0, layout.upper_y + 3.0], color=color, linestyle=":", linewidth=0.9)
-    ax.plot([tx(layout.left_x), tx(layout.right_x)], [layout.center_y, layout.center_y], color=color, linestyle="--", linewidth=0.9)
-    projected_y = layout.lower_y + derived.side_projected_slot_height
-    clearance_y = layout.upper_y - derived.side_clearance_height
-    spans = (
-        layout.center_a_x - layout.left_x,
-        layout.center_b_x - layout.center_a_x,
-        layout.right_x - layout.center_b_x,
-    )
-    span_centers = (
-        (layout.left_x + layout.center_a_x) / 2.0,
-        (layout.center_a_x + layout.center_b_x) / 2.0,
-        (layout.center_b_x + layout.right_x) / 2.0,
-    )
-    for span, center_x in zip(spans, span_centers):
-        ax.text(
-            tx(center_x),
-            layout.upper_y + 8.0,
-            f"{span:.0f}",
-            color=dim_color,
-            fontsize=8,
-            ha="center",
-        )
-    ax.text(
-        tx((layout.left_x + layout.right_x) / 2.0),
-        layout.lower_y - 10.0,
-        f"{layout.right_x - layout.left_x:.0f}",
-        color=dim_color,
-        fontsize=8,
-        ha="center",
-    )
-    ax.text(tx(layout.center_b_x + 18.0), layout.lower_y - 22.0, "R80", color=dim_color, fontsize=8)
-    ax.text(tx(layout.left_x - 18.0), projected_y, f"{derived.side_projected_slot_height:.2f}", color=dim_color, fontsize=8, va="center")
-    ax.text(tx(layout.right_x + 8.0), clearance_y, f"{derived.side_clearance_height:.2f}", color=dim_color, fontsize=8, va="center")
-
-
-def _offset_points(points: list[Point], dx: float, dy: float) -> list[Point]:
-    return [Point(point.x + dx, point.y + dy) for point in points]

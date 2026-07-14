@@ -1,7 +1,8 @@
-import type { DesignInput, GenerationResult, Machine, ValidationResult } from "./types";
+import type { DesignInput, GenerationResult, Machine, UserSession, ValidationResult } from "./types";
 
 const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
   const response = await fetch(path, {
+    credentials: "include",
     headers: { "Content-Type": "application/json" },
     ...options,
   });
@@ -21,6 +22,14 @@ const canonicalDesignPayload = (design: DesignInput): Omit<DesignInput, "toleran
 };
 
 export const api = {
+  health: () => request<{ status: string }>("/api/health"),
+  login: (username: string, password: string) =>
+    request<UserSession>("/api/auth/login", {
+      method: "POST",
+      body: JSON.stringify({ username, password }),
+    }),
+  logout: () => request<{ status: string }>("/api/auth/logout", { method: "POST" }),
+  me: () => request<UserSession>("/api/auth/me"),
   machines: () => request<Machine[]>("/api/machines"),
   validate: (design: DesignInput) =>
     request<ValidationResult>("/api/designs/validate", {

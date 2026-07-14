@@ -151,16 +151,16 @@ upper_wheel_key_height = outer_height - slot_base_height - guide_thickness
 当前机台配置的上下吃入均为 `0.30 mm`。下、上 R80 圆心必须分别从上述两项关键高度
 派生；release 同时校验槽底基准、R80 圆心、关键高度和对应 DIMENSION 定义点。
 
-`preview.png` 应能看到：
+`preview.png` 是供生成结果页快速复核的截面预览，应能看到：
 
-- 截面图；
-- 侧面投影图；
+- 仅导轨截面图，不绘制侧面投影图；
 - 槽口；
 - `R_form`；
 - `slot_width`；
 - `guide_thickness`；
-- `side_projected_slot_height`；
-- `side_clearance_height`；
-- 关键尺寸标注。
+- 上口、型腔下沿、导轨外形和避空等关键截面尺寸标注。
+
+侧面投影及其 `side_projected_slot_height`、`side_clearance_height` 仍是 release
+DXF 的受控派生几何和校验项，但不进入 PNG 预览，避免缩小截面和干扰操作员复核。
 
 release DXF 中侧面派生尺寸的显示文字、DIMENSION 定义点和几何实测值必须一致。

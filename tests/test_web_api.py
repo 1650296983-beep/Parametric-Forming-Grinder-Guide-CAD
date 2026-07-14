@@ -1,8 +1,12 @@
 from __future__ import annotations
 
+import asyncio
+import json
 from pathlib import Path
+from types import SimpleNamespace
 
 import src.web_api as web_api
+from src.auth import AuthenticatedUser, authenticate, create_session_token, require_user
 from src.web_api import (
     DesignInput,
     GenerationRequest,
@@ -11,6 +15,51 @@ from src.web_api import (
     list_machines,
     validate_design,
 )
+
+
+def _call_asgi(
+    method: str,
+    path: str,
+    *,
+    body: bytes = b"",
+    headers: dict[str, str] | None = None,
+) -> tuple[int, dict[str, str], bytes]:
+    """Exercise FastAPI routes without adding an HTTP client test dependency."""
+    response_messages: list[dict] = []
+    request_consumed = False
+    scope = {
+        "type": "http",
+        "asgi": {"version": "3.0"},
+        "http_version": "1.1",
+        "method": method,
+        "scheme": "http",
+        "path": path,
+        "raw_path": path.encode(),
+        "query_string": b"",
+        "headers": [(key.lower().encode(), value.encode()) for key, value in (headers or {}).items()],
+        "client": ("127.0.0.1", 12345),
+        "server": ("testserver", 80),
+    }
+
+    async def receive() -> dict:
+        nonlocal request_consumed
+        if not request_consumed:
+            request_consumed = True
+            return {"type": "http.request", "body": body, "more_body": False}
+        return {"type": "http.disconnect"}
+
+    async def send(message: dict) -> None:
+        response_messages.append(message)
+
+    asyncio.run(web_api.app(scope, receive, send))
+    start = next(message for message in response_messages if message["type"] == "http.response.start")
+    response_body = b"".join(
+        message.get("body", b"")
+        for message in response_messages
+        if message["type"] == "http.response.body"
+    )
+    response_headers = {key.decode().lower(): value.decode() for key, value in start["headers"]}
+    return start["status"], response_headers, response_body
 
 
 def _triple_single_block_request() -> DesignInput:
@@ -106,3 +155,97 @@ def test_task_file_payload_only_exposes_generated_task_files(tmp_path: Path) -> 
 
     assert payload["preview_png"]["url"].endswith("/artifacts/preview/guide.png")
     assert payload["report_json"]["name"] == "guide_report.json"
+
+
+def test_operator_file_payload_exposes_only_release_dxf(tmp_path: Path) -> None:
+    task_dir = tmp_path / "abc123def456"
+    dxf_dir = task_dir / "artifacts" / "dxf"
+    preview_dir = task_dir / "artifacts" / "preview"
+    report_dir = task_dir / "artifacts" / "reports"
+    dxf_dir.mkdir(parents=True)
+    preview_dir.mkdir(parents=True)
+    report_dir.mkdir(parents=True)
+    release = dxf_dir / "guide.dxf"
+    debug = dxf_dir / "guide（调试）.dxf"
+    preview = preview_dir / "guide.png"
+    audit = report_dir / "guide_dimension_definition_point_audit.json"
+    release.write_bytes(b"release")
+    debug.write_bytes(b"debug")
+    preview.write_bytes(b"preview")
+    audit.write_text("{}", encoding="utf-8")
+    report = {"paths": {"release_dxf": str(release), "debug_dxf": str(debug), "preview_png": str(preview)}}
+
+    payload = _task_file_payload(
+        "abc123def456",
+        task_dir,
+        report,
+        user=AuthenticatedUser(username="operator", role="operator"),
+    )
+
+    assert set(payload) == {"release_dxf"}
+    assert payload["release_dxf"]["name"] == "guide.dxf"
+
+
+def test_environment_configured_session_preserves_server_role(monkeypatch) -> None:
+    monkeypatch.setenv("CAD_ADMIN_USERNAME", "admin")
+    monkeypatch.setenv("CAD_ADMIN_PASSWORD", "admin-password")
+    monkeypatch.setenv("CAD_SESSION_SECRET", "session-signing-secret")
+    monkeypatch.setenv("CAD_OPERATOR_ACCOUNTS_JSON", '{"operator":"operator-password"}')
+
+    administrator = authenticate("admin", "admin-password")
+    operator = authenticate("operator", "operator-password")
+
+    assert administrator == AuthenticatedUser(username="admin", role="administrator")
+    assert operator == AuthenticatedUser(username="operator", role="operator")
+    assert authenticate("operator", "wrong-password") is None
+    token = create_session_token(operator)
+    request = SimpleNamespace(cookies={"cad_session": token})
+    assert require_user(request) == operator
+
+
+def test_http_authentication_and_operator_artifact_guard(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+    monkeypatch.setenv("CAD_ADMIN_USERNAME", "admin")
+    monkeypatch.setenv("CAD_ADMIN_PASSWORD", "admin-password")
+    monkeypatch.setenv("CAD_SESSION_SECRET", "session-signing-secret")
+    monkeypatch.setenv("CAD_OPERATOR_ACCOUNTS_JSON", '{"operator":"operator-password"}')
+    task_dir = tmp_path / "abc123def456" / "artifacts"
+    dxf_dir = task_dir / "dxf"
+    preview_dir = task_dir / "preview"
+    report_dir = task_dir / "reports"
+    dxf_dir.mkdir(parents=True)
+    preview_dir.mkdir(parents=True)
+    report_dir.mkdir(parents=True)
+    release = dxf_dir / "guide.dxf"
+    debug = dxf_dir / "guide-debug.dxf"
+    preview = preview_dir / "guide.png"
+    release.write_bytes(b"release")
+    debug.write_bytes(b"debug")
+    preview.write_bytes(b"preview")
+    (report_dir / "guide_report.json").write_text(
+        json.dumps({"paths": {"release_dxf": str(release), "preview_png": str(preview)}}),
+        encoding="utf-8",
+    )
+
+    unauthorized_status, _, _ = _call_asgi("GET", "/api/machines")
+    login_status, login_headers, login_body = _call_asgi(
+        "POST",
+        "/api/auth/login",
+        body=b'{"username":"operator","password":"operator-password"}',
+        headers={"content-type": "application/json"},
+    )
+    cookie = login_headers["set-cookie"].split(";", 1)[0]
+    machine_status, _, _ = _call_asgi("GET", "/api/machines", headers={"cookie": cookie})
+    release_status, _, _ = _call_asgi(
+        "GET", "/api/tasks/abc123def456/files/artifacts/dxf/guide.dxf", headers={"cookie": cookie}
+    )
+    debug_status, _, _ = _call_asgi(
+        "GET", "/api/tasks/abc123def456/files/artifacts/dxf/guide-debug.dxf", headers={"cookie": cookie}
+    )
+
+    assert unauthorized_status == 401
+    assert login_status == 200
+    assert json.loads(login_body) == {"username": "operator", "role": "operator"}
+    assert machine_status == 200
+    assert release_status == 200
+    assert debug_status == 403

@@ -11,6 +11,7 @@ FRONTEND_HOST="127.0.0.1"
 FRONTEND_PORT="5173"
 API_PID=""
 API_LOG="${TMPDIR:-/tmp}/forming-grinder-guide-api-$$.log"
+ENV_FILE="$PROJECT_ROOT/.env"
 
 cleanup() {
     if [[ -n "$API_PID" ]] && kill -0 "$API_PID" 2>/dev/null; then
@@ -35,6 +36,13 @@ api_is_healthy() {
 trap cleanup EXIT INT TERM
 
 [[ -x "$PYTHON" ]] || fail "未找到 Python 虚拟环境。请先在项目根目录执行：python3 -m venv .venv"
+[[ -f "$ENV_FILE" ]] || fail "未找到 .env。请复制 .env.example 为 .env 并配置账户和会话密钥。"
+set -a
+. "$ENV_FILE"
+set +a
+[[ -n "${CAD_ADMIN_USERNAME:-}" ]] || fail "请设置 CAD_ADMIN_USERNAME。"
+[[ -n "${CAD_ADMIN_PASSWORD:-}" ]] || fail "请设置 CAD_ADMIN_PASSWORD。"
+[[ -n "${CAD_SESSION_SECRET:-}" ]] || fail "请设置 CAD_SESSION_SECRET。"
 "$PYTHON" -c "import fastapi, uvicorn" 2>/dev/null || fail "缺少 Python 依赖。请执行：./.venv/bin/python -m pip install -r requirements.txt"
 command -v npm >/dev/null 2>&1 || fail "未找到 npm。请先安装 Node.js。"
 [[ -x "$FRONTEND_DIR/node_modules/.bin/vite" ]] || fail "未安装前端依赖。请执行：cd frontend && npm ci"
