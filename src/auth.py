@@ -84,20 +84,29 @@ def _configured_accounts() -> dict[str, dict[str, str]]:
     accounts: dict[str, dict[str, str]] = {
         admin_username: {"password": admin_password, "role": "administrator"}
     }
-    raw_accounts = os.getenv("CAD_OPERATOR_ACCOUNTS_JSON", "{}")
+    for setting_name in (
+        "CAD_OPERATOR_ACCOUNTS_JSON",
+        "CAD_ADDITIONAL_OPERATOR_ACCOUNTS_JSON",
+    ):
+        for username, password in _operator_accounts(setting_name).items():
+            if username in accounts:
+                raise _configuration_error("操作员账户不能与管理员或其他操作员账户重名。")
+            accounts[username] = {"password": password, "role": "operator"}
+    return accounts
+
+
+def _operator_accounts(setting_name: str) -> dict[str, str]:
+    raw_accounts = os.getenv(setting_name, "{}")
     try:
         configured_operators = json.loads(raw_accounts)
     except json.JSONDecodeError as error:
-        raise _configuration_error("CAD_OPERATOR_ACCOUNTS_JSON 必须是有效 JSON 对象。") from error
+        raise _configuration_error(f"{setting_name} 必须是有效 JSON 对象。") from error
     if not isinstance(configured_operators, dict):
-        raise _configuration_error("CAD_OPERATOR_ACCOUNTS_JSON 必须是用户名到密码的对象。")
+        raise _configuration_error(f"{setting_name} 必须是用户名到密码的对象。")
     for username, password in configured_operators.items():
         if not isinstance(username, str) or not username or not isinstance(password, str) or not password:
-            raise _configuration_error("CAD_OPERATOR_ACCOUNTS_JSON 的用户名和密码必须为非空字符串。")
-        if username in accounts:
-            raise _configuration_error("操作员账户不能与管理员账户重名。")
-        accounts[username] = {"password": password, "role": "operator"}
-    return accounts
+            raise _configuration_error(f"{setting_name} 的用户名和密码必须为非空字符串。")
+    return configured_operators
 
 
 def _session_secret() -> str:

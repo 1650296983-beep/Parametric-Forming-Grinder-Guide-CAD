@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, FormEvent, SetStateAction } from "react";
 import { api } from "./api";
-import type { DesignInput, GenerationResult, Machine, UserSession, ValidationResult } from "./types";
+import type { DesignInput, GenerationResult, Machine, TaskDetail, TaskHistoryResult, TaskStatus, TaskSummary, UserSession, ValidationResult } from "./types";
 
 type Page = "workspace" | "history" | "templates" | "rules";
 type Step = 1 | 2 | 3;
@@ -12,8 +12,8 @@ const initialDesign: DesignInput = {
   wheel_sequence: ["下", "上"],
   first_wheel_side: "lower",
   template_coordinate_system: "section_xy_y_up",
-  finished_spec: "R9.6*8.6*42.6*2.1",
-  pre_grinding_spec: "42.6*8.6(-0.07/-0.09)*2.1(+0.01/-0.01)",
+  finished_spec: "",
+  pre_grinding_spec: "",
   product_shape_after: "bread_shape",
   product_shape_before: "rectangular_block",
   relief: "4-1",
@@ -57,6 +57,10 @@ export default function App() {
   const [generationResult, setGenerationResult] = useState<GenerationResult | null>(null);
   const [session, setSession] = useState<UserSession | null>(null);
   const [isAuthLoading, setIsAuthLoading] = useState(true);
+  const [taskHistory, setTaskHistory] = useState<TaskHistoryResult | null>(null);
+  const [isTasksLoading, setIsTasksLoading] = useState(false);
+  const [taskHistoryError, setTaskHistoryError] = useState<string | null>(null);
+  const [selectedHistoryTaskId, setSelectedHistoryTaskId] = useState<string | null>(null);
 
   useEffect(() => {
     void api.health()
@@ -67,6 +71,14 @@ export default function App() {
       .catch(() => setSession(null))
       .finally(() => setIsAuthLoading(false));
   }, []);
+
+  useEffect(() => {
+    if (!session) {
+      setTaskHistory(null);
+      return;
+    }
+    void refreshTaskHistory(setTaskHistory, setIsTasksLoading, setTaskHistoryError);
+  }, [session]);
 
   const login = async (username: string, password: string) => {
     setApiError(null);
@@ -84,6 +96,8 @@ export default function App() {
     setGenerationResult(null);
     setGenerationState("idle");
     setStep(1);
+    setTaskHistory(null);
+    setSelectedHistoryTaskId(null);
   };
 
   const returnToDashboard = () => {
@@ -147,6 +161,7 @@ export default function App() {
       setApiError(error instanceof Error ? error.message : "生成任务失败。");
     } finally {
       setIsGenerating(false);
+      void refreshTaskHistory(setTaskHistory, setIsTasksLoading, setTaskHistoryError);
     }
   };
 
@@ -166,7 +181,10 @@ export default function App() {
             <button
               className={`nav-item ${page === item.id ? "active" : ""}`}
               key={item.id}
-              onClick={() => setPage(item.id)}
+              onClick={() => {
+                setPage(item.id);
+                if (item.id === "history") setSelectedHistoryTaskId(null);
+              }}
             >
               <span>{item.icon}</span>{item.label}
             </button>
@@ -190,7 +208,13 @@ export default function App() {
             {page === "workspace" && <button className="button primary" onClick={() => { resetWorkspace(setDesign, setStep, setValidation, setGenerationState, setApiError); setGenerationResult(null); setIsNewTask(true); }}>＋ 新建导轨任务</button>}
           </div>
         </header>
-        {page === "workspace" && !isNewTask && <Dashboard onCreate={() => setIsNewTask(true)} />}
+        {page === "workspace" && !isNewTask && <Dashboard
+          history={taskHistory}
+          isLoading={isTasksLoading}
+          error={taskHistoryError}
+          onCreate={() => setIsNewTask(true)}
+          onViewTask={(taskId) => { setSelectedHistoryTaskId(taskId); setPage("history"); }}
+        />}
         {page === "workspace" && isNewTask && (
           <Workspace
             design={design}
@@ -210,7 +234,13 @@ export default function App() {
             onBack={() => setStep(1)}
           />
         )}
-        {page === "history" && <History />}
+        {page === "history" && <History
+          history={taskHistory}
+          isLoading={isTasksLoading}
+          error={taskHistoryError}
+          initialTaskId={selectedHistoryTaskId}
+          onRefresh={() => refreshTaskHistory(setTaskHistory, setIsTasksLoading, setTaskHistoryError)}
+        />}
         {page === "templates" && <Templates machines={machines} />}
         {page === "rules" && <Rules />}
       </main>
@@ -261,19 +291,30 @@ async function loadMachines(
   if (preferred) applyMachine(preferred, setDesign);
 }
 
-function Dashboard({ onCreate }: { onCreate: () => void }) {
+function Dashboard({ history, isLoading, error, onCreate, onViewTask }: {
+  history: TaskHistoryResult | null;
+  isLoading: boolean;
+  error: string | null;
+  onCreate: () => void;
+  onViewTask: (taskId: string) => void;
+}) {
+  const metrics = history?.metrics;
+  const recentTasks = history?.items.slice(0, 5) ?? [];
   return <section className="dashboard">
     <div className="metrics">
-      <Metric label="今日任务" value="—" note="尚未读取任务记录" />
-      <Metric label="已通过 RELEASE" value="—" note="正式图纸以校验报告为准" tone="success" />
-      <Metric label="待处理失败" value="—" note="阻断任务需要返回修改" tone="error" />
-      <Metric label="草稿" value="—" note="本地草稿功能即将接入" />
+      <Metric label="今日任务" value={metricValue(metrics?.today, isLoading)} note="按本地任务创建时间统计" />
+      <Metric label="已通过 RELEASE" value={metricValue(metrics?.passed, isLoading)} note="正式图纸以校验报告为准" tone="success" />
+      <Metric label="待处理失败" value={metricValue(metrics?.failed, isLoading)} note="缺少报告或校验阻断的任务" tone="error" />
+      <Metric label="全部任务" value={metricValue(metrics?.total, isLoading)} note={metrics?.running ? `${metrics.running} 个任务仍在执行` : "已读取本地任务记录"} />
     </div>
     <div className="dashboard-grid">
       <section className="panel recent-panel">
         <div className="section-heading"><div><p className="eyebrow">本地任务</p><h2>最近任务列表</h2></div><button className="button secondary mini" onClick={onCreate}>新建任务</button></div>
         <div className="table-head"><span>任务名称</span><span>机台</span><span>成品形态</span><span>磨前形态</span><span>状态</span><span>操作</span></div>
-        <div className="empty-table"><span>◷</span><div><strong>暂无任务记录</strong><p>新建一个导轨任务后，这里会显示生成状态和 report.json 摘要。</p></div></div>
+        {error && <div className="table-message error">{error}</div>}
+        {!error && isLoading && <div className="table-message">正在读取本地任务记录…</div>}
+        {!error && !isLoading && recentTasks.length > 0 && <TaskRows tasks={recentTasks} onView={onViewTask} />}
+        {!error && !isLoading && recentTasks.length === 0 && <TaskEmpty />}
       </section>
       <aside className="dashboard-aside">
         <section className="reminder-card">
@@ -286,6 +327,11 @@ function Dashboard({ onCreate }: { onCreate: () => void }) {
       </aside>
     </div>
   </section>;
+}
+
+function metricValue(value: number | undefined, isLoading: boolean) {
+  if (isLoading) return "…";
+  return value === undefined ? "—" : String(value);
 }
 
 function Metric({ label, value, note, tone }: { label: string; value: string; note: string; tone?: "success" | "error" }) {
@@ -357,7 +403,7 @@ function Workspace(props: {
                   </div>
                 </div>
                 <label>成品规格
-                  <input value={design.finished_spec} onChange={(event) => props.onUpdate("finished_spec", event.target.value)} spellCheck={false} />
+                  <input value={design.finished_spec} placeholder={design.product_shape_after === "tile_shape" ? "例如：R30*R28*17.4*23.5*3.95" : "例如：R9.6*8.6*42.6*2.1"} onChange={(event) => props.onUpdate("finished_spec", event.target.value)} spellCheck={false} />
                 </label>
               </div>
               <div className="spec-group preform">
@@ -374,7 +420,7 @@ function Workspace(props: {
                   </label>
                 </div>
                 <label>成型磨前规格
-                  <input value={design.pre_grinding_spec} onChange={(event) => props.onUpdate("pre_grinding_spec", event.target.value)} spellCheck={false} />
+                  <input value={design.pre_grinding_spec} placeholder="例如：42.6*8.6(-0.07/-0.09)*2.1(+0.01/-0.01)" onChange={(event) => props.onUpdate("pre_grinding_spec", event.target.value)} spellCheck={false} />
                 </label>
                 <p className="input-help">方块：长度*宽度(上偏差/下偏差)*厚度(上偏差/下偏差)</p>
                 <div className="process-options">
@@ -397,7 +443,7 @@ function Workspace(props: {
               </div>
               <div className="form-actions">
                 <span>所有尺寸单位：mm</span>
-                <button className="button primary" onClick={props.onValidate} disabled={props.isValidating || !selectedMachine}>
+                <button className="button primary" onClick={props.onValidate} disabled={props.isValidating || !selectedMachine || !design.finished_spec.trim() || !design.pre_grinding_spec.trim()}>
                   {props.isValidating ? "正在解析…" : "确认计算"} <b>→</b>
                 </button>
               </div>
@@ -470,8 +516,217 @@ function Generation({ isGenerating, state, error, validation, result }: { isGene
   return <section className={`generation-view panel ${passed ? "result-passed" : ""}`}><div className={`result-icon ${passed ? "success" : state === "failed" ? "failure" : "running"}`}>{passed ? "✓" : state === "failed" ? "!" : "…"}</div><p className="eyebrow">生成任务</p><h2>{isGenerating ? "正在重建图纸与校验" : passed ? "正式图纸已通过校验" : "正式 release 未输出"}</h2><p>{isGenerating ? "后端正在按固定工作流生成候选文件。" : passed ? "release.dxf 已由候选文件晋级。" : error ?? "任务结束。"}</p>{passed && result?.preview && <div className="output-preview"><img src={result.preview.url} alt="带尺寸标注的导轨截面预览" /></div>}<ol className="generation-steps">{stages.map((label, index) => <li key={label} className={isGenerating && index > 2 ? "waiting" : passed || (!isGenerating && index < 5) ? "ok" : state === "failed" && index === 4 ? "bad" : "waiting"}><span>{passed || (!isGenerating && index < 5) ? "✓" : index + 1}</span>{label}</li>)}</ol>{validation && <div className="result-summary"><strong>{formatProfile(validation.decision.groove_profile)}</strong><span>槽宽 {validation.derived.slot_width.toFixed(2)} mm</span><span>导轨厚度 {validation.derived.guide_thickness.toFixed(2)} mm</span></div>}{passed && <div className="output-files"><h3>可下载文件</h3>{Object.entries(files).map(([key, file]) => <a key={key} href={file.url} target="_blank" rel="noreferrer"><span>▧</span><div><strong>{file.label}</strong><small>{file.name}</small></div><b>下载</b></a>)}</div>}</section>;
 }
 
-function History() {
-  return <section className="panel page-panel"><PanelTitle number="任务" title="历史任务" subtitle="生成记录将以 report.json 为准，当前首版不修改已有图纸。" /><div className="empty-state"><span>◷</span><h2>暂无 Web 任务记录</h2><p>完成一次本地生成后，历史任务会在这里显示输入快照、校验结果和输出文件。</p></div></section>;
+function History({ history, isLoading, error, initialTaskId, onRefresh }: {
+  history: TaskHistoryResult | null;
+  isLoading: boolean;
+  error: string | null;
+  initialTaskId: string | null;
+  onRefresh: () => Promise<void>;
+}) {
+  const [query, setQuery] = useState("");
+  const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(initialTaskId);
+  const [detail, setDetail] = useState<TaskDetail | null>(null);
+  const [detailError, setDetailError] = useState<string | null>(null);
+  const [isDetailLoading, setIsDetailLoading] = useState(false);
+  const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!selectedTaskId) {
+      setDetail(null);
+      return;
+    }
+    setIsDetailLoading(true);
+    setDetailError(null);
+    void api.task(selectedTaskId)
+      .then(setDetail)
+      .catch((loadError) => setDetailError(loadError instanceof Error ? loadError.message : "任务详情读取失败。"))
+      .finally(() => setIsDetailLoading(false));
+  }, [selectedTaskId]);
+
+  const normalizedQuery = query.trim().toLowerCase();
+  const tasks = (history?.items ?? []).filter((task) => {
+    if (statusFilter !== "all" && task.status !== statusFilter) return false;
+    if (!normalizedQuery) return true;
+    return [task.task_id, task.finished_spec, task.pre_grinding_spec, task.machine_name]
+      .some((value) => value.toLowerCase().includes(normalizedQuery));
+  });
+  const selectableTaskIds = tasks.filter((task) => task.can_delete).map((task) => task.task_id);
+  const allSelectableTasksSelected = selectableTaskIds.length > 0
+    && selectableTaskIds.every((taskId) => selectedTaskIds.has(taskId));
+
+  const toggleTaskSelection = (taskId: string, checked: boolean) => {
+    setSelectedTaskIds((previous) => {
+      const next = new Set(previous);
+      if (checked) next.add(taskId);
+      else next.delete(taskId);
+      return next;
+    });
+  };
+
+  const toggleAllVisibleTasks = (checked: boolean) => {
+    setSelectedTaskIds((previous) => {
+      const next = new Set(previous);
+      for (const taskId of selectableTaskIds) {
+        if (checked) next.add(taskId);
+        else next.delete(taskId);
+      }
+      return next;
+    });
+  };
+
+  const deleteHistoryTask = async (task: TaskSummary) => {
+    const confirmed = window.confirm(`确认删除任务 ${task.finished_spec || task.task_id}？\n删除后 DXF、DWG、预览和报告均无法恢复。`);
+    if (!confirmed) return;
+    setDeletingTaskId(task.task_id);
+    setDeleteError(null);
+    setDeleteMessage(null);
+    try {
+      await api.deleteTask(task.task_id);
+      if (selectedTaskId === task.task_id) setSelectedTaskId(null);
+      setSelectedTaskIds((previous) => {
+        const next = new Set(previous);
+        next.delete(task.task_id);
+        return next;
+      });
+      setDeleteMessage("任务已删除。");
+      await onRefresh();
+    } catch (deleteTaskError) {
+      setDeleteError(deleteTaskError instanceof Error ? deleteTaskError.message : "历史任务删除失败。");
+    } finally {
+      setDeletingTaskId(null);
+    }
+  };
+
+  const deleteSelectedTasks = async () => {
+    const taskIds = Array.from(selectedTaskIds);
+    if (taskIds.length === 0) return;
+    const confirmed = window.confirm(`确认批量删除已选择的 ${taskIds.length} 个任务？\n删除后 DXF、DWG、预览和报告均无法恢复。`);
+    if (!confirmed) return;
+    setIsBulkDeleting(true);
+    setDeleteError(null);
+    setDeleteMessage(null);
+    try {
+      const result = await api.deleteTasks(taskIds);
+      const deleted = new Set(result.deleted);
+      setSelectedTaskIds((previous) => new Set(Array.from(previous).filter((taskId) => !deleted.has(taskId))));
+      if (selectedTaskId && deleted.has(selectedTaskId)) setSelectedTaskId(null);
+      const skippedSummary = result.skipped.length > 0
+        ? `，跳过 ${result.skipped.length} 项：${result.skipped.map((item) => `${item.task_id} ${item.reason}`).join("；")}`
+        : "";
+      setDeleteMessage(`已删除 ${result.deleted.length} 个任务${skippedSummary}`);
+      await onRefresh();
+    } catch (bulkDeleteError) {
+      setDeleteError(bulkDeleteError instanceof Error ? bulkDeleteError.message : "批量删除失败。");
+    } finally {
+      setIsBulkDeleting(false);
+    }
+  };
+
+  return <section className="history-page">
+    <section className="panel history-list-panel">
+      <div className="history-heading">
+        <PanelTitle number="任务" title="历史任务" subtitle={`直接读取本地任务输入、校验结果与授权文件；完成任务自动保留 ${history?.retention_days ?? 30} 天。`} />
+        <button className="button secondary mini" onClick={onRefresh} disabled={isLoading}>刷新记录</button>
+      </div>
+      <div className="history-filters">
+        <input aria-label="搜索历史任务" placeholder="搜索规格、机台或任务 ID" value={query} onChange={(event) => { setQuery(event.target.value); setSelectedTaskIds(new Set()); }} />
+        <select aria-label="筛选任务状态" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value as TaskStatus | "all"); setSelectedTaskIds(new Set()); }}>
+          <option value="all">全部状态</option>
+          <option value="passed">已通过</option>
+          <option value="failed">失败 / 阻断</option>
+          <option value="running">执行中</option>
+        </select>
+        <span>共 {tasks.length} 条</span>
+      </div>
+      <div className="history-bulk-actions"><span>已选择 <strong>{selectedTaskIds.size}</strong> 项</span><button className="button danger mini" disabled={selectedTaskIds.size === 0 || isBulkDeleting} onClick={() => void deleteSelectedTasks()}>{isBulkDeleting ? "批量删除中…" : "批量删除"}</button><small>普通用户只能选择自己创建的任务；执行中任务不可删除。</small></div>
+      <div className="table-head selectable"><label className="task-selector"><input type="checkbox" aria-label="全选当前可删除任务" checked={allSelectableTasksSelected} disabled={selectableTaskIds.length === 0} onChange={(event) => toggleAllVisibleTasks(event.target.checked)} /></label><span>任务名称</span><span>机台</span><span>成品形态</span><span>磨前形态</span><span>状态</span><span>操作</span></div>
+      {error && <div className="table-message error">{error}</div>}
+      {deleteError && <div className="history-action-error">{deleteError}</div>}
+      {deleteMessage && <div className="history-action-message">{deleteMessage}</div>}
+      {!error && isLoading && <div className="table-message">正在读取本地任务记录…</div>}
+      {!error && !isLoading && tasks.length > 0 && <TaskRows tasks={tasks} selectedTaskId={selectedTaskId} selectedTaskIds={selectedTaskIds} deletingTaskId={deletingTaskId} onView={setSelectedTaskId} onToggleSelection={toggleTaskSelection} onDelete={(task) => void deleteHistoryTask(task)} />}
+      {!error && !isLoading && tasks.length === 0 && <TaskEmpty filtered={Boolean(query || statusFilter !== "all")} />}
+    </section>
+    {(selectedTaskId || isDetailLoading || detailError) && <TaskDetailDrawer detail={detail} isLoading={isDetailLoading} error={detailError} onClose={() => setSelectedTaskId(null)} />}
+  </section>;
+}
+
+function TaskRows({ tasks, selectedTaskId, selectedTaskIds, deletingTaskId = null, onView, onToggleSelection, onDelete }: { tasks: TaskSummary[]; selectedTaskId?: string | null; selectedTaskIds?: ReadonlySet<string>; deletingTaskId?: string | null; onView: (taskId: string) => void; onToggleSelection?: (taskId: string, checked: boolean) => void; onDelete?: (task: TaskSummary) => void }) {
+  const selectable = Boolean(onToggleSelection);
+  return <div className="task-rows">{tasks.map((task) => <div className={`task-row ${selectable ? "selectable" : ""} ${selectedTaskId === task.task_id ? "selected" : ""}`} key={task.task_id}>
+    {selectable && <label className="task-selector"><input type="checkbox" aria-label={`选择任务 ${task.finished_spec || task.task_id}`} checked={selectedTaskIds?.has(task.task_id) ?? false} disabled={!task.can_delete} onChange={(event) => onToggleSelection?.(task.task_id, event.target.checked)} /></label>}
+    <div className="task-name"><strong>{task.finished_spec || task.task_id}</strong><small>{formatTaskTime(task.created_at)} · {task.task_id}</small></div>
+    <span>{task.machine_name}</span>
+    <span>{shapeLabel(task.finished_shape)}</span>
+    <span>{shapeLabel(task.pre_grinding_shape)}</span>
+    <span><TaskStatusBadge status={task.status} /></span>
+    <div className="task-actions"><button className="link-button" onClick={() => onView(task.task_id)}>查看</button>{task.can_delete && onDelete && <button className="link-button danger" disabled={deletingTaskId === task.task_id} onClick={() => onDelete(task)}>{deletingTaskId === task.task_id ? "删除中" : "删除"}</button>}</div>
+  </div>)}</div>;
+}
+
+function TaskEmpty({ filtered = false }: { filtered?: boolean }) {
+  return <div className="empty-table"><span>◷</span><div><strong>{filtered ? "没有符合条件的任务" : "暂无任务记录"}</strong><p>{filtered ? "请调整搜索词或状态筛选。" : "新建任务后，这里会显示输入快照、生成状态和 report.json 摘要。"}</p></div></div>;
+}
+
+function TaskStatusBadge({ status }: { status: TaskStatus }) {
+  const labels: Record<TaskStatus, string> = { running: "执行中", passed: "已通过", failed: "失败 / 阻断" };
+  return <span className={`task-status ${status}`}>{labels[status]}</span>;
+}
+
+function TaskDetailDrawer({ detail, isLoading, error, onClose }: { detail: TaskDetail | null; isLoading: boolean; error: string | null; onClose: () => void }) {
+  return <div className="task-detail-layer"><button className="task-detail-backdrop" aria-label="关闭任务详情" onClick={onClose} /><aside className="task-detail-drawer" role="dialog" aria-modal="true" aria-label="任务详情"><div className="task-detail-toolbar"><strong>任务详情</strong><button aria-label="关闭任务详情" onClick={onClose}>×</button></div>{isLoading ? <div className="table-message">正在读取任务详情…</div> : error ? <div className="table-message error">{error}</div> : detail ? <TaskDetailContent detail={detail} /> : null}</aside></div>;
+}
+
+function TaskDetailContent({ detail }: { detail: TaskDetail }) {
+  const files = Object.entries(detail.files);
+  return <section className="task-detail">
+    <div className="task-detail-header"><div><p className="eyebrow">任务详情 / {detail.task_id}</p><h2>{detail.finished_spec}</h2><small>{formatTaskTime(detail.created_at)} · {detail.machine_name}</small></div><TaskStatusBadge status={detail.status} /></div>
+    {detail.error && <div className="task-error"><strong>失败原因</strong><span>{detail.error}</span></div>}
+    <div className="task-detail-grid">
+      <div><h3>输入快照</h3><dl><dt>成品规格</dt><dd>{detail.input.finished_spec}</dd><dt>磨前规格</dt><dd>{detail.input.pre_grinding_spec}</dd><dt>成品 / 磨前形态</dt><dd>{shapeLabel(detail.input.product_shape_after)} / {shapeLabel(detail.input.product_shape_before)}</dd><dt>避空 / 砂轮半径</dt><dd>{detail.input.relief} / R{detail.input.wheel_radius.toFixed(2)}</dd></dl></div>
+      <div><h3>计算与门禁</h3><dl><dt>槽宽</dt><dd>{formatMillimeter(detail.derived.slot_width)}</dd><dt>导轨厚度</dt><dd>{formatMillimeter(detail.derived.guide_thickness)}</dd><dt>DXF 几何检查</dt><dd>{auditLabel(detail.audit.inspection_passed)}</dd><dt>尺寸定义点</dt><dd>{auditLabel(detail.audit.dimension_points_passed)}</dd></dl></div>
+      {detail.preview && <div className="task-preview"><h3>截面预览</h3><a href={detail.preview.url} target="_blank" rel="noreferrer"><img src={detail.preview.url} alt={`${detail.finished_spec} 导轨截面预览`} /></a></div>}
+    </div>
+    <div className="task-files"><h3>可用文件</h3>{files.length === 0 ? <p>该任务没有可下载的授权文件。</p> : files.map(([key, file]) => <a key={key} href={file.url} target="_blank" rel="noreferrer"><span>{file.label}</span><small>{file.name}</small><b>下载</b></a>)}</div>
+  </section>;
+}
+
+function formatTaskTime(value: string) {
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+}
+
+function shapeLabel(shape: string) {
+  return ({ tile_shape: "瓦型", bread_shape: "馒头型", rectangular_block: "方块", same_r_tile: "同 R 瓦型" })[shape] ?? shape;
+}
+
+function formatMillimeter(value: number | null) {
+  return value === null ? "—" : `${value.toFixed(2)} mm`;
+}
+
+function auditLabel(passed: boolean) {
+  return passed ? "通过" : "未通过 / 无报告";
+}
+
+async function refreshTaskHistory(
+  setHistory: Dispatch<SetStateAction<TaskHistoryResult | null>>,
+  setLoading: Dispatch<SetStateAction<boolean>>,
+  setError: Dispatch<SetStateAction<string | null>>,
+) {
+  setLoading(true);
+  setError(null);
+  try {
+    setHistory(await api.tasks(200));
+  } catch (loadError) {
+    setError(loadError instanceof Error ? loadError.message : "历史任务读取失败。");
+  } finally {
+    setLoading(false);
+  }
 }
 
 function Templates({ machines }: { machines: Machine[] }) {

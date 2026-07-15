@@ -129,18 +129,42 @@ the local `.env`, never in source control.  `CAD_ADMIN_USERNAME` can be set to
 `sz2026`; set its password in `CAD_ADMIN_PASSWORD`.  Ordinary users are added
 through `CAD_OPERATOR_ACCOUNTS_JSON`, for example
 `{"operator_1":"a-local-password"}`.
+Additional local accounts may be supplied through
+`CAD_ADDITIONAL_OPERATOR_ACCOUNTS_JSON`; both variables remain in the ignored
+`.env` file and are merged by the authentication service.
 
 Open `http://127.0.0.1:5173`. Press `Ctrl+C` in that terminal to stop the
 frontend and any API process started by the script. Generated Web tasks are written under
 `output/web_tasks/<task_id>/`. The frontend will show a formal release download
 only when the Python report marks `release_allowed` as `true`.
 
+The dashboard and **历史任务** page read these task directories directly. Existing
+tasks that predate the history feature are reconstructed from `input.json` and
+`report.json`; new tasks also write `task_status.json` so running state and failure
+reasons remain visible. The history page supports status/specification filtering,
+batch selection, a visible task-detail drawer, validation summaries, previews,
+and the same role-based file permissions as the generation result page.
+Administrators can delete any completed task. Ordinary users can delete only
+tasks created by their authenticated username; legacy tasks without ownership
+metadata remain administrator-only. Batch deletion reports skipped running or
+unauthorized tasks instead of silently failing. Completed tasks older than
+`CAD_TASK_RETENTION_DAYS` (30 days by default) are deleted automatically when
+task history is loaded or a new task starts; running tasks are never purged.
+
 The generated preview is a dimensioned guide-rail section only: it does not
 contain a side view.  It is available in the result page for visual checking,
-but it is not listed as a normal-user download.  Ordinary users can download
-only the validated release DXF.  Administrators can additionally access the
+but it is not listed as a normal-user download. Ordinary users can download the
+validated release DXF and, when conversion succeeds, the AutoCAD 2007/LT 2007
+DWG. Administrators can additionally access the
 debug DXF, preview PNG, validation report, and dimension-definition-point
 audit for maintenance and diagnosis.
+
+After a DXF passes the existing release gate, the Web service uses an installed
+AutoCAD Core Console to create a genuine `AC1021` DWG beside it. AutoCAD 2024 for
+macOS is auto-detected; other installations can be configured with the absolute
+`CAD_AUTOCAD_CORE_CONSOLE` path. DWG conversion does not replace or weaken the
+validated DXF gate. If the converter is unavailable, the report records the
+reason and the validated DXF remains available.
 
 The Web workbench supports single-guide machines and the synchronized
 three-head dual-guide machines (`triple_double_down_up_up` and

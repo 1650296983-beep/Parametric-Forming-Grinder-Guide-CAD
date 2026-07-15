@@ -89,3 +89,61 @@ export interface GenerationResult {
   preview?: GeneratedFile | null;
   files?: Record<string, GeneratedFile>;
 }
+
+export type TaskStatus = "running" | "passed" | "failed";
+
+export interface TaskDerivedSummary {
+  slot_width: number | null;
+  guide_thickness: number | null;
+  groove_profile: string | null;
+}
+
+export interface TaskSummary {
+  task_id: string;
+  task_name: string;
+  created_at: string;
+  updated_at: string;
+  created_by: string | null;
+  can_delete: boolean;
+  status: TaskStatus;
+  error: string | null;
+  machine_id: string;
+  machine_name: string;
+  finished_spec: string;
+  pre_grinding_spec: string;
+  finished_shape: DesignInput["product_shape_after"];
+  pre_grinding_shape: DesignInput["product_shape_before"];
+  release_allowed: boolean;
+  derived: TaskDerivedSummary;
+  preview?: GeneratedFile | null;
+  files: Record<string, GeneratedFile>;
+}
+
+export interface BulkDeleteResult {
+  deleted: string[];
+  skipped: Array<{ task_id: string; reason: string }>;
+}
+
+export interface TaskMetrics {
+  total: number;
+  today: number;
+  passed: number;
+  failed: number;
+  running: number;
+}
+
+export interface TaskHistoryResult {
+  items: TaskSummary[];
+  metrics: TaskMetrics;
+  retention_days: number;
+}
+
+export interface TaskDetail extends TaskSummary {
+  input: DesignInput;
+  audit: {
+    release_allowed: boolean;
+    inspection_passed: boolean;
+    dimension_points_passed: boolean;
+    workflow: string[];
+  };
+}

@@ -8,10 +8,12 @@ the existing Python domain modules.
 from __future__ import annotations
 
 from dataclasses import replace
+from datetime import datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
 import json
+import os
 import subprocess
 import sys
 
@@ -32,6 +34,13 @@ from .auth import (
 )
 from .dual_guide_engine import DualGuideTemplateEngine
 from .dual_guide_input import build_dual_guide_profile_from_input
+from .dwg_converter import (
+    AUTOCAD_2007_DWG_VERSION,
+    AUTOCAD_2007_FORMAT_LABEL,
+    DwgConversionError,
+    convert_release_dxf_to_autocad_2007_dwg,
+    dwg_conversion_available,
+)
 from .geometry import TileSection
 from .groove_profile import determine_groove_profile, normalize_shape
 from .global_rules import DEFAULT_WHEEL_RADIUS
@@ -40,6 +49,7 @@ from .machine_config import MachineConfig, load_machine_config
 from .output_naming import build_machine_output_stem
 from .preview import write_block_png_preview, write_png_preview
 from .spec_parser import parse_company_bread_spec, parse_company_tile_spec
+from .web_task_repository import StoredWebTask, WebTaskRepository
 
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
@@ -76,12 +86,16 @@ class LoginRequest(BaseModel):
     password: str = Field(min_length=1, max_length=512)
 
 
+class BulkDeleteRequest(BaseModel):
+    task_ids: list[str] = Field(min_length=1, max_length=500)
+
+
 app = FastAPI(title="Forming Grinder Guide CAD API", version="0.1.0")
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
     allow_credentials=True,
-    allow_methods=["GET", "POST"],
+    allow_methods=["GET", "POST", "DELETE"],
     allow_headers=["Content-Type"],
 )
 
@@ -166,6 +180,104 @@ def generate_design_endpoint(
     return generate_design(request, user)
 
 
+@app.get("/api/tasks")
+def list_tasks(
+    limit: int = 100,
+    user: AuthenticatedUser = Depends(require_user),
+) -> dict[str, Any]:
+    """List persisted Web tasks and report-derived dashboard metrics."""
+    if not 1 <= limit <= 500:
+        raise HTTPException(status_code=422, detail="历史任务数量必须在 1 到 500 之间。")
+    retention_days = _task_retention_days()
+    repository = WebTaskRepository(WEB_OUTPUT_ROOT)
+    repository.delete_expired(retention_days)
+    records = repository.list()
+    return {
+        "items": [_task_summary_payload(record, user) for record in records[:limit]],
+        "metrics": _task_metrics(records),
+        "retention_days": retention_days,
+    }
+
+
+@app.get("/api/tasks/{task_id}")
+def get_task(
+    task_id: str,
+    user: AuthenticatedUser = Depends(require_user),
+) -> dict[str, Any]:
+    """Return an input snapshot, report summary, preview, and authorized files."""
+    record = WebTaskRepository(WEB_OUTPUT_ROOT).get(task_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="任务不存在。")
+    summary = _task_summary_payload(record, user)
+    report = record.report or {}
+    return {
+        **summary,
+        "input": record.design,
+        "audit": {
+            "release_allowed": bool(report.get("release_allowed")),
+            "inspection_passed": bool(report.get("inspection", {}).get("release_allowed")),
+            "dimension_points_passed": bool(
+                report.get("dimension_definition_point_audit", {}).get("release_allowed")
+            ),
+            "workflow": report.get("workflow", []),
+        },
+    }
+
+
+@app.delete("/api/tasks/{task_id}")
+def delete_task(
+    task_id: str,
+    user: AuthenticatedUser = Depends(require_user),
+) -> dict[str, str]:
+    """Delete a completed task when the current user owns it or is an administrator."""
+    repository = WebTaskRepository(WEB_OUTPUT_ROOT)
+    record = repository.get(task_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="任务不存在。")
+    if record.status == "running":
+        raise HTTPException(status_code=409, detail="执行中的任务不能删除。")
+    if not _user_can_delete_task(record, user):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="普通用户只能删除自己创建的任务；历史遗留任务由管理员处理。",
+        )
+    if not repository.delete(task_id):
+        raise HTTPException(status_code=404, detail="任务不存在。")
+    return {"task_id": task_id, "status": "deleted"}
+
+
+@app.post("/api/tasks/bulk-delete")
+def bulk_delete_tasks(
+    request: BulkDeleteRequest,
+    user: AuthenticatedUser = Depends(require_user),
+) -> dict[str, Any]:
+    """Delete authorized completed tasks and report every skipped item."""
+    repository = WebTaskRepository(WEB_OUTPUT_ROOT)
+    deleted: list[str] = []
+    skipped: list[dict[str, str]] = []
+    for task_id in dict.fromkeys(request.task_ids):
+        record = repository.get(task_id)
+        if record is None:
+            skipped.append({"task_id": task_id, "reason": "任务不存在。"})
+            continue
+        if record.status == "running":
+            skipped.append({"task_id": task_id, "reason": "执行中的任务不能删除。"})
+            continue
+        if not _user_can_delete_task(record, user):
+            skipped.append(
+                {
+                    "task_id": task_id,
+                    "reason": "普通用户只能删除自己创建的任务；历史遗留任务由管理员处理。",
+                }
+            )
+            continue
+        if repository.delete(task_id):
+            deleted.append(task_id)
+        else:
+            skipped.append({"task_id": task_id, "reason": "任务删除时已不存在。"})
+    return {"deleted": deleted, "skipped": skipped}
+
+
 def generate_design(
     request: GenerationRequest,
     user: AuthenticatedUser | None = None,
@@ -178,14 +290,7 @@ def generate_design(
     # Validate before starting a generator subprocess so malformed data never
     # produces an output directory that looks like a legitimate task.
     validate_design(request.design)
-    task_id = uuid4().hex[:12]
-    task_dir = WEB_OUTPUT_ROOT / task_id
-    task_dir.mkdir(parents=True, exist_ok=False)
-    input_path = task_dir / "input.json"
-    input_path.write_text(
-        json.dumps(request.design.model_dump(), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    task_id, task_dir, input_path = _initialize_task(request.design, user)
     command = [
         sys.executable,
         "-m",
@@ -197,13 +302,24 @@ def generate_design(
         "--output-dir",
         str(task_dir / "artifacts"),
     ]
-    completed = subprocess.run(
-        command,
-        cwd=PROJECT_ROOT,
-        capture_output=True,
-        text=True,
-        check=False,
-    )
+    try:
+        completed = subprocess.run(
+            command,
+            cwd=PROJECT_ROOT,
+            capture_output=True,
+            text=True,
+            check=False,
+        )
+    except OSError as error:
+        message = f"生成进程启动失败：{error}"
+        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=message)
+        return {
+            "task_id": task_id,
+            "task_directory": str(task_dir),
+            "ok": False,
+            "stdout": "",
+            "stderr": message,
+        }
     result = {
         "task_id": task_id,
         "task_directory": str(task_dir),
@@ -212,15 +328,36 @@ def generate_design(
         "stderr": completed.stderr,
     }
     if completed.returncode != 0:
+        WebTaskRepository(WEB_OUTPUT_ROOT).finish(
+            task_dir,
+            status="failed",
+            error=completed.stderr or "生成进程未成功完成。",
+        )
         return result
 
     report_path = next((task_dir / "artifacts").glob("**/*_report.json"), None)
     if report_path is None:
-        return {**result, "ok": False, "stderr": "生成未写出 report.json。"}
-    report = json.loads(report_path.read_text(encoding="utf-8"))
+        message = "生成未写出 report.json。"
+        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=message)
+        return {**result, "ok": False, "stderr": message}
+    try:
+        report = json.loads(report_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as error:
+        message = f"report.json 读取失败：{error}"
+        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=message)
+        return {**result, "ok": False, "stderr": message}
+    release_allowed = bool(report.get("release_allowed"))
+    if release_allowed:
+        _add_autocad_2007_dwg_export(report)
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    WebTaskRepository(WEB_OUTPUT_ROOT).finish(
+        task_dir,
+        status="passed" if release_allowed else "failed",
+        error=None if release_allowed else "完整 DXF 校验未通过，release.dxf 未输出。",
+    )
     return {
         **result,
-        "release_allowed": bool(report.get("release_allowed")),
+        "release_allowed": release_allowed,
         "report": report,
         "preview": _task_preview_payload(task_id, task_dir, report),
         "files": _task_file_payload(task_id, task_dir, report, user=user),
@@ -241,7 +378,7 @@ def read_task_file(
     if not requested.is_relative_to(task_dir) or not requested.is_file():
         raise HTTPException(status_code=404, detail="生成文件不存在。")
     if not user.is_administrator and not _is_operator_visible_file(task_dir, requested):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="普通用户只能下载正式 release DXF。")
+        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="普通用户只能下载正式 release DXF 或 DWG。")
     return FileResponse(
         requested,
         filename=requested.name,
@@ -362,13 +499,7 @@ def _generate_dual_guide_design(
     except (TypeError, ValueError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
-    task_id = uuid4().hex[:12]
-    task_dir = WEB_OUTPUT_ROOT / task_id
-    task_dir.mkdir(parents=True, exist_ok=False)
-    (task_dir / "input.json").write_text(
-        json.dumps(design.model_dump(), ensure_ascii=False, indent=2),
-        encoding="utf-8",
-    )
+    task_id, task_dir, _ = _initialize_task(design, user)
     artifact_stem = build_machine_output_stem(
         design.finished_spec,
         design.pre_grinding_spec,
@@ -383,6 +514,7 @@ def _generate_dual_guide_design(
             artifact_stem=artifact_stem,
         )
     except (OSError, TypeError, ValueError) as error:
+        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=str(error))
         return {
             "task_id": task_id,
             "task_directory": str(task_dir),
@@ -391,31 +523,50 @@ def _generate_dual_guide_design(
             "stderr": str(error),
         }
 
-    preview_path = task_dir / "artifacts" / f"{artifact_stem}.png"
-    if isinstance(profile, TileSection):
-        write_png_preview(
-            profile,
-            preview_path,
-            side_layout=machine.side_layout,
-            machine_name=f"{machine.machine_id} {machine.guide_length:.0f}mm",
-        )
-    else:
-        write_block_png_preview(profile, machine, preview_path)
-    report = result["report"]
-    report["paths"] = {
-        "debug_dxf": str(result["debug_dxf"]),
-        "release_dxf": str(result["release_dxf"]),
-        "preview_png": str(preview_path),
-    }
-    report_path = result["report_json"]
-    report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    try:
+        preview_path = task_dir / "artifacts" / f"{artifact_stem}.png"
+        if isinstance(profile, TileSection):
+            write_png_preview(
+                profile,
+                preview_path,
+                side_layout=machine.side_layout,
+                machine_name=f"{machine.machine_id} {machine.guide_length:.0f}mm",
+            )
+        else:
+            write_block_png_preview(profile, machine, preview_path)
+        report = result["report"]
+        report["paths"] = {
+            "debug_dxf": str(result["debug_dxf"]),
+            "release_dxf": str(result["release_dxf"]),
+            "preview_png": str(preview_path),
+        }
+        if bool(report.get("release_allowed")):
+            _add_autocad_2007_dwg_export(report)
+        report_path = result["report_json"]
+        report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
+    except (OSError, TypeError, ValueError) as error:
+        message = f"任务输出整理失败：{error}"
+        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=message)
+        return {
+            "task_id": task_id,
+            "task_directory": str(task_dir),
+            "ok": False,
+            "stdout": "",
+            "stderr": message,
+        }
+    release_allowed = bool(report.get("release_allowed"))
+    WebTaskRepository(WEB_OUTPUT_ROOT).finish(
+        task_dir,
+        status="passed" if release_allowed else "failed",
+        error=None if release_allowed else "双导轨 release 校验未通过。",
+    )
     return {
         "task_id": task_id,
         "task_directory": str(task_dir),
-        "ok": bool(report.get("release_allowed")),
+        "ok": release_allowed,
         "stdout": "",
         "stderr": "" if report.get("release_allowed") else "双导轨 release 校验未通过。",
-        "release_allowed": bool(report.get("release_allowed")),
+        "release_allowed": release_allowed,
         "report": report,
         "preview": _task_preview_payload(task_id, task_dir, report),
         "files": _task_file_payload(task_id, task_dir, report, user=user),
@@ -446,6 +597,103 @@ def _machine_payload(machine: MachineConfig) -> dict[str, Any]:
     }
 
 
+def _initialize_task(
+    design: DesignInput,
+    user: AuthenticatedUser | None,
+) -> tuple[str, Path, Path]:
+    WebTaskRepository(WEB_OUTPUT_ROOT).delete_expired(_task_retention_days())
+    task_id = uuid4().hex[:12]
+    task_dir = WEB_OUTPUT_ROOT / task_id
+    task_dir.mkdir(parents=True, exist_ok=False)
+    input_path = task_dir / "input.json"
+    input_path.write_text(
+        json.dumps(design.model_dump(), ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
+    WebTaskRepository(WEB_OUTPUT_ROOT).initialize(
+        task_dir,
+        task_id=task_id,
+        created_by=user.username if user is not None else None,
+    )
+    return task_id, task_dir, input_path
+
+
+def _task_summary_payload(
+    record: StoredWebTask,
+    user: AuthenticatedUser,
+) -> dict[str, Any]:
+    design = record.design
+    report = record.report or {}
+    machine_data = report.get("machine", {})
+    machine_id = str(design.get("machine_type", machine_data.get("machine_id", "")))
+    machine_name = machine_data.get("machine_name") or _machine_name(machine_id)
+    release_allowed = bool(report.get("release_allowed"))
+    return {
+        "task_id": record.task_id,
+        "task_name": str(design.get("finished_spec", record.task_id)),
+        "created_at": record.created_at,
+        "updated_at": record.updated_at,
+        "created_by": record.created_by,
+        "can_delete": record.status != "running" and _user_can_delete_task(record, user),
+        "status": record.status,
+        "error": record.error,
+        "machine_id": machine_id,
+        "machine_name": machine_name,
+        "finished_spec": str(design.get("finished_spec", "")),
+        "pre_grinding_spec": str(design.get("pre_grinding_spec", "")),
+        "finished_shape": str(design.get("product_shape_after", "")),
+        "pre_grinding_shape": str(design.get("product_shape_before", "")),
+        "release_allowed": release_allowed,
+        "derived": _task_derived_payload(report),
+        "preview": _task_preview_payload(record.task_id, record.task_dir, report),
+        "files": _task_file_payload(record.task_id, record.task_dir, report, user=user),
+    }
+
+
+def _user_can_delete_task(record: StoredWebTask, user: AuthenticatedUser) -> bool:
+    """Keep ownership policy in the API instead of trusting UI-provided identity."""
+    return user.is_administrator or record.created_by == user.username
+
+
+def _task_derived_payload(report: dict[str, Any]) -> dict[str, Any]:
+    process_parameters = report.get("process_parameters", {})
+    shared_parameters = report.get("shared_parameters", {})
+    input_rule = report.get("input_rule", {})
+    return {
+        "slot_width": process_parameters.get("slot_width", {}).get(
+            "slot_width", shared_parameters.get("slot_width")
+        ),
+        "guide_thickness": process_parameters.get("guide_thickness", {}).get(
+            "result", shared_parameters.get("guide_thickness")
+        ),
+        "groove_profile": input_rule.get("groove_profile")
+        or report.get("section_profile_type"),
+    }
+
+
+def _machine_name(machine_id: str) -> str:
+    try:
+        return load_machine_config(machine_id).machine_name
+    except (FileNotFoundError, KeyError, ValueError):
+        return machine_id or "未知机台"
+
+
+def _task_metrics(records: list[StoredWebTask]) -> dict[str, int]:
+    today = datetime.now().astimezone().date()
+    return {
+        "total": len(records),
+        "today": sum(
+            1
+            for record in records
+            if datetime.fromisoformat(record.created_at.replace("Z", "+00:00")).astimezone().date()
+            == today
+        ),
+        "passed": sum(record.status == "passed" for record in records),
+        "failed": sum(record.status == "failed" for record in records),
+        "running": sum(record.status == "running" for record in records),
+    }
+
+
 def _task_file_payload(
     task_id: str,
     task_dir: Path,
@@ -454,9 +702,13 @@ def _task_file_payload(
 ) -> dict[str, dict[str, str]]:
     """Expose only the artifacts the authenticated role is allowed to download."""
     files: dict[str, dict[str, str]] = {}
-    path_keys = {"release_dxf": "release DXF"}
+    path_keys = {
+        "release_dwg": "AutoCAD 2007 DWG",
+        "release_dxf": "release DXF",
+    }
     if user is None or user.is_administrator:
         path_keys = {
+            "release_dwg": "AutoCAD 2007 DWG",
             "debug_dxf": "debug DXF",
             "release_dxf": "release DXF",
             "preview_png": "截面预览图",
@@ -512,7 +764,7 @@ def _task_preview_payload(
 
 
 def _is_operator_visible_file(task_dir: Path, requested: Path) -> bool:
-    """Operators may inspect the generated section but download only release DXF."""
+    """Operators may inspect previews and download formal release drawings."""
     report_path = next(iter(task_dir.glob("**/*_report.json")), None)
     if report_path is None:
         return False
@@ -522,4 +774,45 @@ def _is_operator_visible_file(task_dir: Path, requested: Path) -> bool:
         preview_path = Path(str(paths["preview_png"])).resolve()
     except (KeyError, TypeError, ValueError, json.JSONDecodeError):
         return False
-    return requested == release_path or requested == preview_path
+    allowed_paths = {release_path, preview_path}
+    raw_dwg_path = paths.get("release_dwg")
+    if raw_dwg_path:
+        allowed_paths.add(Path(str(raw_dwg_path)).resolve())
+    return requested in allowed_paths
+
+
+def _task_retention_days() -> int:
+    raw_value = os.getenv("CAD_TASK_RETENTION_DAYS", "30")
+    try:
+        retention_days = int(raw_value)
+    except ValueError as error:
+        raise HTTPException(status_code=503, detail="CAD_TASK_RETENTION_DAYS 必须是整数。") from error
+    if not 1 <= retention_days <= 3650:
+        raise HTTPException(status_code=503, detail="CAD_TASK_RETENTION_DAYS 必须在 1 到 3650 之间。")
+    return retention_days
+
+
+def _add_autocad_2007_dwg_export(report: dict[str, Any]) -> None:
+    """Add a verified AC1021 DWG without changing the DXF release gate."""
+    export = {
+        "format": AUTOCAD_2007_FORMAT_LABEL,
+        "dwg_version": AUTOCAD_2007_DWG_VERSION,
+        "generated": False,
+        "converter_available": dwg_conversion_available(),
+        "error": None,
+    }
+    report["dwg_export"] = export
+    if not export["converter_available"]:
+        export["error"] = "未安装或未配置 AutoCAD Core Console；保留通过校验的 release DXF。"
+        return
+    raw_release_path = report.get("paths", {}).get("release_dxf")
+    if not raw_release_path:
+        export["error"] = "report.json 未包含 release_dxf 路径。"
+        return
+    try:
+        dwg_path = convert_release_dxf_to_autocad_2007_dwg(Path(str(raw_release_path)))
+    except DwgConversionError as error:
+        export["error"] = str(error)
+        return
+    report.setdefault("paths", {})["release_dwg"] = str(dwg_path)
+    export["generated"] = True

@@ -1,4 +1,4 @@
-import type { DesignInput, GenerationResult, Machine, UserSession, ValidationResult } from "./types";
+import type { BulkDeleteResult, DesignInput, GenerationResult, Machine, TaskDetail, TaskHistoryResult, UserSession, ValidationResult } from "./types";
 
 const request = async <T>(path: string, options?: RequestInit): Promise<T> => {
   const response = await fetch(path, {
@@ -31,6 +31,16 @@ export const api = {
   logout: () => request<{ status: string }>("/api/auth/logout", { method: "POST" }),
   me: () => request<UserSession>("/api/auth/me"),
   machines: () => request<Machine[]>("/api/machines"),
+  tasks: (limit = 100) => request<TaskHistoryResult>(`/api/tasks?limit=${limit}`),
+  task: (taskId: string) => request<TaskDetail>(`/api/tasks/${encodeURIComponent(taskId)}`),
+  deleteTask: (taskId: string) => request<{ task_id: string; status: "deleted" }>(
+    `/api/tasks/${encodeURIComponent(taskId)}`,
+    { method: "DELETE" },
+  ),
+  deleteTasks: (taskIds: string[]) => request<BulkDeleteResult>(
+    "/api/tasks/bulk-delete",
+    { method: "POST", body: JSON.stringify({ task_ids: taskIds }) },
+  ),
   validate: (design: DesignInput) =>
     request<ValidationResult>("/api/designs/validate", {
       method: "POST",

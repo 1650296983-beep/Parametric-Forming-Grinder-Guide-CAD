@@ -2,6 +2,11 @@
 
 release DXF 是给厂家加工的正式图纸。任何校验失败时都不得输出或保留正式图纸。
 
+Web 任务通过全部 release DXF 校验后，可额外生成 AutoCAD 2007/LT 2007
+`*.dwg`。DWG 必须由 AutoCAD Core Console 从已晋级的 release DXF 转换，且
+文件头必须为 `AC1021`；禁止只修改扩展名或绕过 DXF 几何、图层和尺寸审计。
+DWG 转换失败不改变 DXF 的校验结论，但必须在 `report.json.dwg_export` 中记录。
+
 显式双规格任务的正式文件名固定为 `成品规格（磨前规格）机台类型.dxf`，
 且不包含规格公差。公差仍必须保留在输入、DXF 尺寸和校验报告中。为兼容
 macOS 和 Windows 文件系统，规格内的 `*` 输出为 `×`。例如：
@@ -18,6 +23,7 @@ macOS 和 Windows 文件系统，规格内的 `*` 输出为 `×`。例如：
 5. 写入 `report.json`；
 6. 全部检查通过后，将候选文件晋级为正式文件名；
 7. 任一检查失败时删除候选文件，不生成正式 release。
+8. release DXF 通过后，转换并验证同名 AutoCAD 2007 DWG（转换器可用时）。
 
 ## release 允许图层
 

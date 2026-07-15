@@ -1,20 +1,30 @@
 from __future__ import annotations
 
 import asyncio
+from datetime import datetime, timezone
 import json
 from pathlib import Path
 from types import SimpleNamespace
 
+from fastapi import HTTPException
+import pytest
+
 import src.web_api as web_api
 from src.auth import AuthenticatedUser, authenticate, create_session_token, require_user
 from src.web_api import (
+    BulkDeleteRequest,
     DesignInput,
     GenerationRequest,
     _task_file_payload,
+    bulk_delete_tasks,
+    delete_task,
     generate_design,
+    get_task,
     list_machines,
+    list_tasks,
     validate_design,
 )
+from src.web_task_repository import WebTaskRepository
 
 
 def _call_asgi(
@@ -124,6 +134,7 @@ def test_web_api_calculates_dual_guide_with_centralized_profile_rule() -> None:
 
 def test_web_api_generates_release_gated_dual_guide_artifacts(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+    monkeypatch.setattr(web_api, "dwg_conversion_available", lambda: False)
 
     result = generate_design(GenerationRequest(design=_triple_double_tile_request()))
 
@@ -136,6 +147,182 @@ def test_web_api_generates_release_gated_dual_guide_artifacts(tmp_path: Path, mo
     )
     assert Path(result["report"]["paths"]["release_dxf"]).is_file()
     assert Path(result["report"]["paths"]["preview_png"]).is_file()
+    task_status = json.loads((tmp_path / result["task_id"] / "task_status.json").read_text(encoding="utf-8"))
+    assert task_status["status"] == "passed"
+
+
+def test_task_history_reconstructs_legacy_tasks_and_exposes_details(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+    user = AuthenticatedUser(username="admin", role="administrator")
+    passed_dir = tmp_path / "abc123def456"
+    failed_dir = tmp_path / "def456abc123"
+    passed_artifacts = passed_dir / "artifacts"
+    passed_artifacts.mkdir(parents=True)
+    failed_dir.mkdir(parents=True)
+    design = _triple_single_block_request().model_dump()
+    (passed_dir / "input.json").write_text(json.dumps(design), encoding="utf-8")
+    (failed_dir / "input.json").write_text(json.dumps(design), encoding="utf-8")
+    release = passed_artifacts / "guide.dxf"
+    preview = passed_artifacts / "guide.png"
+    release.write_bytes(b"release")
+    preview.write_bytes(b"preview")
+    report = {
+        "release_allowed": True,
+        "machine": {"machine_id": "triple_single_down_up", "machine_name": "三头机单导轨（下上）"},
+        "input_rule": {"groove_profile": "rectangular_groove"},
+        "process_parameters": {
+            "slot_width": {"slot_width": 8.56},
+            "guide_thickness": {"result": 2.22},
+        },
+        "inspection": {"release_allowed": True},
+        "dimension_definition_point_audit": {"release_allowed": True},
+        "paths": {"release_dxf": str(release), "preview_png": str(preview)},
+        "workflow": ["read_config", "promote_release_dxf_after_validation"],
+    }
+    (passed_artifacts / "guide_report.json").write_text(json.dumps(report), encoding="utf-8")
+
+    result = list_tasks(limit=100, user=user)
+
+    assert result["metrics"] == {"total": 2, "today": 2, "passed": 1, "failed": 1, "running": 0}
+    passed = next(item for item in result["items"] if item["task_id"] == "abc123def456")
+    failed = next(item for item in result["items"] if item["task_id"] == "def456abc123")
+    assert passed["derived"] == {
+        "slot_width": 8.56,
+        "guide_thickness": 2.22,
+        "groove_profile": "rectangular_groove",
+    }
+    assert passed["files"]["release_dxf"]["name"] == "guide.dxf"
+    assert passed["can_delete"] is True
+    assert failed["status"] == "failed"
+    assert "report.json" in failed["error"]
+
+    detail = get_task("abc123def456", user=user)
+    assert detail["input"]["finished_spec"] == design["finished_spec"]
+    assert detail["audit"]["inspection_passed"] is True
+    assert detail["audit"]["dimension_points_passed"] is True
+
+
+def test_task_repository_persists_failure_reason(tmp_path: Path) -> None:
+    task_dir = tmp_path / "abc123def456"
+    task_dir.mkdir()
+    (task_dir / "input.json").write_text(json.dumps(_triple_single_block_request().model_dump()), encoding="utf-8")
+    repository = WebTaskRepository(tmp_path)
+    repository.initialize(task_dir, task_id=task_dir.name, created_by="operator")
+    repository.finish(task_dir, status="failed", error="尺寸定义点审计未通过")
+
+    record = repository.get(task_dir.name)
+
+    assert record is not None
+    assert record.status == "failed"
+    assert record.error == "尺寸定义点审计未通过"
+    assert record.created_by == "operator"
+
+
+def test_task_repository_deletes_only_expired_completed_tasks(tmp_path: Path) -> None:
+    now = datetime(2026, 7, 15, tzinfo=timezone.utc)
+    repository = WebTaskRepository(tmp_path)
+    for task_id, created_at, task_status in (
+        ("oldpassed001", "2026-06-14T00:00:00+00:00", "passed"),
+        ("newpassed001", "2026-06-16T00:00:00+00:00", "passed"),
+        ("oldrunning01", "2026-06-01T00:00:00+00:00", "running"),
+    ):
+        task_dir = tmp_path / task_id
+        task_dir.mkdir()
+        (task_dir / "input.json").write_text(json.dumps(_triple_single_block_request().model_dump()), encoding="utf-8")
+        (task_dir / "task_status.json").write_text(
+            json.dumps({
+                "task_id": task_id,
+                "status": task_status,
+                "created_at": created_at,
+                "updated_at": created_at,
+                "created_by": "admin",
+                "error": None,
+            }),
+            encoding="utf-8",
+        )
+
+    deleted = repository.delete_expired(30, now=now)
+
+    assert deleted == ["oldpassed001"]
+    assert not (tmp_path / "oldpassed001").exists()
+    assert (tmp_path / "newpassed001").is_dir()
+    assert (tmp_path / "oldrunning01").is_dir()
+
+
+def test_operator_can_delete_own_task_but_not_legacy_or_other_users_task(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+    repository = WebTaskRepository(tmp_path)
+    for task_id, owner in (
+        ("abc123def456", "operator"),
+        ("def456abc123", "other-operator"),
+        ("legacy123456", None),
+    ):
+        task_dir = tmp_path / task_id
+        task_dir.mkdir()
+        (task_dir / "input.json").write_text(
+            json.dumps(_triple_single_block_request().model_dump()),
+            encoding="utf-8",
+        )
+        if owner is not None:
+            repository.initialize(task_dir, task_id=task_id, created_by=owner)
+            repository.finish(task_dir, status="passed")
+
+    operator = AuthenticatedUser(username="operator", role="operator")
+    result = delete_task("abc123def456", user=operator)
+    assert result == {"task_id": "abc123def456", "status": "deleted"}
+    assert not (tmp_path / "abc123def456").exists()
+
+    for task_id in ("def456abc123", "legacy123456"):
+        with pytest.raises(HTTPException) as forbidden:
+            delete_task(task_id, user=operator)
+        assert forbidden.value.status_code == 403
+        assert (tmp_path / task_id).is_dir()
+
+    admin_result = delete_task(
+        "legacy123456",
+        user=AuthenticatedUser(username="admin", role="administrator"),
+    )
+    assert admin_result == {"task_id": "legacy123456", "status": "deleted"}
+    assert not (tmp_path / "legacy123456").exists()
+
+
+def test_bulk_delete_returns_deleted_and_skipped_tasks(tmp_path: Path, monkeypatch) -> None:
+    monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+    repository = WebTaskRepository(tmp_path)
+    for task_id, owner, task_status in (
+        ("owned1234567", "operator", "passed"),
+        ("other1234567", "other-operator", "passed"),
+        ("running12345", "operator", "running"),
+    ):
+        task_dir = tmp_path / task_id
+        task_dir.mkdir()
+        (task_dir / "input.json").write_text(
+            json.dumps(_triple_single_block_request().model_dump()),
+            encoding="utf-8",
+        )
+        repository.initialize(task_dir, task_id=task_id, created_by=owner)
+        if task_status == "passed":
+            repository.finish(task_dir, status="passed")
+
+    result = bulk_delete_tasks(
+        BulkDeleteRequest(
+            task_ids=["owned1234567", "other1234567", "running12345", "missing12345"]
+        ),
+        user=AuthenticatedUser(username="operator", role="operator"),
+    )
+
+    assert result["deleted"] == ["owned1234567"]
+    assert [item["task_id"] for item in result["skipped"]] == [
+        "other1234567",
+        "running12345",
+        "missing12345",
+    ]
+    assert not (tmp_path / "owned1234567").exists()
+    assert (tmp_path / "other1234567").is_dir()
+    assert (tmp_path / "running12345").is_dir()
 
 
 def test_task_file_payload_only_exposes_generated_task_files(tmp_path: Path) -> None:
@@ -191,6 +378,7 @@ def test_environment_configured_session_preserves_server_role(monkeypatch) -> No
     monkeypatch.setenv("CAD_ADMIN_PASSWORD", "admin-password")
     monkeypatch.setenv("CAD_SESSION_SECRET", "session-signing-secret")
     monkeypatch.setenv("CAD_OPERATOR_ACCOUNTS_JSON", '{"operator":"operator-password"}')
+    monkeypatch.setenv("CAD_ADDITIONAL_OPERATOR_ACCOUNTS_JSON", '{"吴跃":"123","魏文嵩":"123"}')
 
     administrator = authenticate("admin", "admin-password")
     operator = authenticate("operator", "operator-password")
@@ -198,6 +386,8 @@ def test_environment_configured_session_preserves_server_role(monkeypatch) -> No
     assert administrator == AuthenticatedUser(username="admin", role="administrator")
     assert operator == AuthenticatedUser(username="operator", role="operator")
     assert authenticate("operator", "wrong-password") is None
+    assert authenticate("吴跃", "123") == AuthenticatedUser(username="吴跃", role="operator")
+    assert authenticate("魏文嵩", "123") == AuthenticatedUser(username="魏文嵩", role="operator")
     token = create_session_token(operator)
     request = SimpleNamespace(cookies={"cad_session": token})
     assert require_user(request) == operator
