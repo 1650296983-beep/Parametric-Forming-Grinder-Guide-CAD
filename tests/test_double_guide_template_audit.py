@@ -4,22 +4,17 @@ import pytest
 
 from src.template_audit import (
     DEFAULT_DOUBLE_GUIDE_TEMPLATE_DIR,
+    DOUBLE_GUIDE_TEMPLATE_SPECS,
     build_double_guide_template_reports,
     generate_double_guide_template_reports,
 )
 
 
-pytestmark = pytest.mark.skipif(
-    not (
-        DEFAULT_DOUBLE_GUIDE_TEMPLATE_DIR
-        / "6）R23.57XR21.53X6.56X13.73X2.04（R23.57X6.6X2.4)三机头双导轨砂轮下、上、上.dxf"
-    ).exists()
-    or not (
-        DEFAULT_DOUBLE_GUIDE_TEMPLATE_DIR
-        / "7）3.3X1.9X0.94X1.01（3.33X2)三机头双导轨(砂轮上、上、上).dxf"
-    ).exists(),
-    reason="External clean double-guide templates are not available.",
-)
+def test_double_guide_audit_uses_version_controlled_templates():
+    for spec in DOUBLE_GUIDE_TEMPLATE_SPECS:
+        template_path = DEFAULT_DOUBLE_GUIDE_TEMPLATE_DIR / spec.machine_id / spec.template_filename
+        assert template_path.is_file()
+        assert template_path.stat().st_size > 0
 
 
 def test_double_guide_audit_identifies_590_templates_and_two_sections():

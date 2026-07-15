@@ -29,7 +29,9 @@ for template in \
     templates/legacy_reference/R17_45XR15_8X6_2X1_65_clean_template.dxf \
     templates/legacy_reference/R17_45XR15_8X6_2X1_65_clean_template_latest.dxf \
     templates/legacy_reference/导轨长度投影（干净模板）.dxf \
-    templates/legacy_reference/导轨长度，codex.dxf; do
+    templates/legacy_reference/导轨长度，codex.dxf \
+    templates/triple_double_down_up_up/full_template.dxf \
+    templates/triple_double_up_up_up/full_template.dxf; do
     [[ -s "$TEMPORARY_ROOT/$template" ]] || fail "提交版本缺少 $template"
 done
 

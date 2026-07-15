@@ -6,8 +6,12 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 
+from .template_paths import PROJECT_ROOT
 
-DEFAULT_DOUBLE_GUIDE_TEMPLATE_DIR = Path("/Users/wrd/Desktop/各种机台干净模板")
+
+# Template audits must use the version-controlled copies that generation uses.
+# Machine-local reference directories are not available in CI or on deployment hosts.
+DEFAULT_DOUBLE_GUIDE_TEMPLATE_DIR = PROJECT_ROOT / "templates"
 
 
 @dataclass(frozen=True)
@@ -41,7 +45,7 @@ class DoubleGuideTemplateSpec:
     guide_length: float
     wheel_positions: tuple[str, ...]
     guide_sections: int
-    filename: str
+    template_filename: str = "full_template.dxf"
 
 
 DOUBLE_GUIDE_TEMPLATE_SPECS: tuple[DoubleGuideTemplateSpec, ...] = (
@@ -51,7 +55,6 @@ DOUBLE_GUIDE_TEMPLATE_SPECS: tuple[DoubleGuideTemplateSpec, ...] = (
         guide_length=590.0,
         wheel_positions=("下", "上", "上"),
         guide_sections=2,
-        filename="6）R23.57XR21.53X6.56X13.73X2.04（R23.57X6.6X2.4)三机头双导轨砂轮下、上、上.dxf",
     ),
     DoubleGuideTemplateSpec(
         machine_id="triple_double_up_up_up",
@@ -59,7 +62,6 @@ DOUBLE_GUIDE_TEMPLATE_SPECS: tuple[DoubleGuideTemplateSpec, ...] = (
         guide_length=590.0,
         wheel_positions=("上", "上", "上"),
         guide_sections=2,
-        filename="7）3.3X1.9X0.94X1.01（3.33X2)三机头双导轨(砂轮上、上、上).dxf",
     ),
 )
 
@@ -84,7 +86,10 @@ def generate_double_guide_template_reports(
 def build_double_guide_template_reports(
     template_dir: Path = DEFAULT_DOUBLE_GUIDE_TEMPLATE_DIR,
 ) -> dict[str, dict[str, Any]]:
-    audits = [_audit_one_template(spec, template_dir / spec.filename) for spec in DOUBLE_GUIDE_TEMPLATE_SPECS]
+    audits = [
+        _audit_one_template(spec, template_dir / spec.machine_id / spec.template_filename)
+        for spec in DOUBLE_GUIDE_TEMPLATE_SPECS
+    ]
     generated_at = datetime.now().isoformat(timespec="seconds")
     return {
         "template_audit_report": {

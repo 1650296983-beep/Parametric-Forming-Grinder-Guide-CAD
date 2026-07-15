@@ -106,6 +106,8 @@
 
 三头机双导轨（下上上）使用 `6）R23.57XR21.53X6.56X13.73X2.04（R23.57X6.6X2.4)三机头双导轨砂轮下、上、上.dxf` 作为标准干净模板。项目内 `templates/triple_double_down_up_up/full_template.dxf` 必须与该模板一致。文件名和旧模板标注中的 `R23.57` 只是该模板历史产品规格，不是机台永久固定参数，release 不得强制保留或生成 `R23.57`。
 
+双导轨模板审计直接读取项目内受 Git 管理的 `templates/<machine_id>/full_template.dxf`，不得依赖开发电脑的 `各种机台干净模板` 目录。这样 GitHub Actions、Mac mini 和其他部署环境都会使用与生成服务相同的模板文件。
+
 输入必须显式提供 `finished_product_spec`、`pre_grinding_spec`、`finished_product_shape`、`pre_grinding_shape` 和 `guide_profile_source`，不得按规格字符串中的 R 数量推断工艺。馒头状成品加方块成型磨前走矩形槽；瓦型成品加方块成型磨前走第一砂轮同侧的大 R、对侧平面；同 R 型腔仅由显式 `same_r_tile` 输入触发。
 
 规范字段现为 `finished_spec`、`pre_grinding_spec`、
