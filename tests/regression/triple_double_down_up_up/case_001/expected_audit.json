@@ -14,7 +14,7 @@
       "上"
     ],
     "slot_width": 9.14,
-    "guide_thickness": 3.09,
+    "guide_thickness": 3.12,
     "R_form": null,
     "lower_cavity_notch_opening": 8.9,
     "fixed_template_dimensions": {
@@ -35,8 +35,8 @@
       "FIXED_TEMPLATE",
       "PARAM_SLOT",
       "SECTION_CENTER",
+      "SIDE_CAVITY",
       "SIDE_CENTER",
-      "SIDE_DERIVED_RELEASE",
       "SIDE_TEMPLATE"
     ],
     "dimension_checks": [
@@ -53,6 +53,10 @@
         "dimension_defpoint": [
           3488.454,
           -605.355
+        ],
+        "datum_defpoint": [
+          3488.454,
+          -617.479
         ],
         "measured_value": 12.124,
         "is_bound_to_wheel_crown": true
@@ -71,6 +75,10 @@
           3668.454,
           -603.179
         ],
+        "datum_defpoint": [
+          3668.454,
+          -590.479
+        ],
         "measured_value": 12.7,
         "is_bound_to_wheel_crown": true
       },
@@ -87,6 +95,10 @@
         "dimension_defpoint": [
           3848.454,
           -603.179
+        ],
+        "datum_defpoint": [
+          3848.454,
+          -590.479
         ],
         "measured_value": 12.7,
         "is_bound_to_wheel_crown": true
@@ -105,6 +117,10 @@
           3459.205,
           -107.871
         ],
+        "datum_defpoint": [
+          3459.205,
+          -119.995
+        ],
         "measured_value": 12.123,
         "is_bound_to_wheel_crown": true
       },
@@ -122,6 +138,10 @@
           3422.707,
           -186.388
         ],
+        "datum_defpoint": [
+          3422.707,
+          -173.688
+        ],
         "measured_value": 12.7,
         "is_bound_to_wheel_crown": true
       },
@@ -139,6 +159,10 @@
           3602.707,
           -186.388
         ],
+        "datum_defpoint": [
+          3602.707,
+          -173.688
+        ],
         "measured_value": 12.7,
         "is_bound_to_wheel_crown": true
       }
@@ -152,7 +176,21 @@
         "status": "PASS"
       },
       "guide_thickness": {
-        "expected_measurement": 3.09,
+        "expected_measurement": 3.12,
+        "minimum_count": 2,
+        "actual_count": 2,
+        "all_bound_to_geometry": true,
+        "status": "PASS"
+      },
+      "section_center_opening": {
+        "expected_measurement": 2.0,
+        "minimum_count": 2,
+        "actual_count": 2,
+        "all_bound_to_geometry": true,
+        "status": "PASS"
+      },
+      "relief": {
+        "expected_measurement": 0.5,
         "minimum_count": 2,
         "actual_count": 2,
         "all_bound_to_geometry": true,
@@ -223,33 +261,33 @@
       "ACAD_PROXY_ENTITY": 19,
       "ARC": 18,
       "CIRCLE": 4,
-      "DIMENSION": 34,
+      "DIMENSION": 36,
       "INSERT": 1,
-      "LINE": 99,
+      "LINE": 91,
       "LWPOLYLINE": 60,
       "MTEXT": 20,
       "TEXT": 4
     },
-    "line_count": 99,
+    "line_count": 91,
     "arc_count": 18,
-    "dimension_count": 34,
+    "dimension_count": 36,
     "layers": [
       "DIMENSION",
       "FIXED_TEMPLATE",
       "PARAM_SLOT",
       "SECTION_CENTER",
+      "SIDE_CAVITY",
       "SIDE_CENTER",
-      "SIDE_DERIVED_RELEASE",
       "SIDE_TEMPLATE"
     ],
     "layer_entity_counts": {
-      "DIMENSION": 34,
+      "DIMENSION": 36,
       "FIXED_TEMPLATE": 144,
       "PARAM_SLOT": 26,
       "SECTION_CENTER": 2,
+      "SIDE_CAVITY": 12,
       "SIDE_CENTER": 6,
-      "SIDE_DERIVED_RELEASE": 21,
-      "SIDE_TEMPLATE": 26
+      "SIDE_TEMPLATE": 27
     },
     "key_arc_radii": [
       {
@@ -264,409 +302,169 @@
     "dimension_measurements": [
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 27.0,
+        "text": "12.12",
+        "measurement": 12.123437,
         "definition_points": {
           "defpoint": [
-            3200.280864,
-            -200.687514,
+            3508.706391,
+            -107.871138,
             0.0
           ],
           "defpoint2": [
-            3221.337169,
-            -173.687514,
-            0.0
-          ],
-          "defpoint3": [
-            3221.337169,
-            -200.687514,
-            0.0
-          ],
-          "text_midpoint": [
-            3197.030864,
-            -187.187514,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 27.0,
-        "definition_points": {
-          "defpoint": [
-            3201.711243,
-            -119.994575,
-            0.0
-          ],
-          "defpoint2": [
-            3222.767548,
-            -92.994575,
-            0.0
-          ],
-          "defpoint3": [
-            3222.767548,
-            -119.994575,
-            0.0
-          ],
-          "text_midpoint": [
-            3198.461243,
-            -106.494575,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 40.0,
-        "definition_points": {
-          "defpoint": [
-            3261.337169,
-            -155.648847,
-            0.0
-          ],
-          "defpoint2": [
-            3221.337169,
-            -173.687514,
-            0.0
-          ],
-          "defpoint3": [
-            3261.337169,
-            -173.687514,
-            0.0
-          ],
-          "text_midpoint": [
-            3241.337169,
-            -155.648847,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 40.0,
-        "definition_points": {
-          "defpoint": [
-            3262.767548,
-            -74.955908,
-            0.0
-          ],
-          "defpoint2": [
-            3222.767548,
-            -92.994575,
-            0.0
-          ],
-          "defpoint3": [
-            3262.767548,
-            -92.994575,
-            0.0
-          ],
-          "text_midpoint": [
-            3242.767548,
-            -74.955908,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
-        "definition_points": {
-          "defpoint": [
-            3422.706592,
-            -106.387514,
-            0.0
-          ],
-          "defpoint4": [
-            3390.126977,
-            -179.453024,
-            0.0
-          ],
-          "text_midpoint": [
-            3392.359068,
-            -174.447167,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
-        "definition_points": {
-          "defpoint": [
             3459.205,
-            -187.871138,
+            -107.871138,
             0.0
           ],
-          "defpoint4": [
-            3434.168175,
-            -111.889842,
+          "defpoint3": [
+            3459.205,
+            -119.994575,
             0.0
           ],
           "text_midpoint": [
-            3437.772804,
-            -122.853555,
+            3510.706391,
+            -113.932857,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
+        "text": "12.12",
+        "measurement": 12.123534,
         "definition_points": {
           "defpoint": [
+            3537.955624,
+            -605.355138,
+            0.0
+          ],
+          "defpoint2": [
             3488.454,
-            -685.355138,
+            -605.355138,
             0.0
           ],
-          "defpoint4": [
-            3463.417175,
-            -609.373842,
+          "defpoint3": [
+            3488.454,
+            -617.478672,
             0.0
           ],
           "text_midpoint": [
-            3467.022038,
-            -620.337652,
+            3539.955624,
+            -611.416905,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
+        "text": "12.70",
+        "measurement": 12.7,
         "definition_points": {
           "defpoint": [
+            3473.724015,
+            -186.387514,
+            0.0
+          ],
+          "defpoint2": [
+            3422.706592,
+            -186.387514,
+            0.0
+          ],
+          "defpoint3": [
+            3422.706592,
+            -173.687514,
+            0.0
+          ],
+          "text_midpoint": [
+            3471.724015,
+            -180.037514,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "12.70",
+        "measurement": 12.7,
+        "definition_points": {
+          "defpoint": [
+            3650.6897,
+            -186.387514,
+            0.0
+          ],
+          "defpoint2": [
             3602.706592,
-            -106.387514,
+            -186.387514,
             0.0
           ],
-          "defpoint4": [
-            3575.54414,
-            -181.635114,
+          "defpoint3": [
+            3602.706592,
+            -173.687514,
             0.0
           ],
           "text_midpoint": [
-            3578.502336,
-            -173.440082,
+            3648.6897,
+            -180.037514,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
+        "text": "12.70",
+        "measurement": 12.7,
         "definition_points": {
           "defpoint": [
+            3719.471323,
+            -603.178672,
+            0.0
+          ],
+          "defpoint2": [
             3668.4539,
-            -523.178672,
+            -603.178672,
             0.0
           ],
-          "defpoint4": [
-            3635.874285,
-            -596.244182,
+          "defpoint3": [
+            3668.4539,
+            -590.478672,
             0.0
           ],
           "text_midpoint": [
-            3638.106376,
-            -591.238324,
+            3717.471323,
+            -596.828672,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
+        "text": "12.70",
+        "measurement": 12.7,
         "definition_points": {
           "defpoint": [
+            3896.437008,
+            -603.178672,
+            0.0
+          ],
+          "defpoint2": [
             3848.4539,
-            -523.178672,
-            0.0
-          ],
-          "defpoint4": [
-            3821.291448,
-            -598.426272,
-            0.0
-          ],
-          "text_midpoint": [
-            3824.249644,
-            -590.23124,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 90.0,
-        "definition_points": {
-          "defpoint": [
-            3422.706592,
-            -144.005843,
-            0.0
-          ],
-          "defpoint2": [
-            3332.706592,
-            -173.688,
+            -603.178672,
             0.0
           ],
           "defpoint3": [
-            3422.706592,
-            -173.688,
+            3848.4539,
+            -590.478672,
             0.0
           ],
           "text_midpoint": [
-            3377.706592,
-            -140.755843,
+            3894.437008,
+            -596.828672,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 90.0,
-        "definition_points": {
-          "defpoint": [
-            3549.204666,
-            -63.312904,
-            0.0
-          ],
-          "defpoint2": [
-            3459.204666,
-            -92.995,
-            0.0
-          ],
-          "defpoint3": [
-            3549.204666,
-            -92.995,
-            0.0
-          ],
-          "text_midpoint": [
-            3504.204666,
-            -60.062904,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 90.0,
-        "definition_points": {
-          "defpoint": [
-            3578.4539,
-            -560.797001,
-            0.0
-          ],
-          "defpoint2": [
-            3488.4539,
-            -590.479,
-            0.0
-          ],
-          "defpoint3": [
-            3578.4539,
-            -590.479,
-            0.0
-          ],
-          "text_midpoint": [
-            3533.4539,
-            -557.547001,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 90.0,
-        "definition_points": {
-          "defpoint": [
-            3668.4539,
-            -560.797001,
-            0.0
-          ],
-          "defpoint2": [
-            3578.4539,
-            -590.479,
-            0.0
-          ],
-          "defpoint3": [
-            3668.4539,
-            -590.479,
-            0.0
-          ],
-          "text_midpoint": [
-            3623.4539,
-            -557.547001,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 99.0,
-        "definition_points": {
-          "defpoint": [
-            3459.204666,
-            -63.312904,
-            0.0
-          ],
-          "defpoint2": [
-            3360.204666,
-            -92.995,
-            0.0
-          ],
-          "defpoint3": [
-            3459.204666,
-            -92.995,
-            0.0
-          ],
-          "text_midpoint": [
-            3409.704666,
-            -60.062904,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 99.0,
-        "definition_points": {
-          "defpoint": [
-            3488.4539,
-            -560.797001,
-            0.0
-          ],
-          "defpoint2": [
-            3389.4539,
-            -590.479,
-            0.0
-          ],
-          "defpoint3": [
-            3488.4539,
-            -590.479,
-            0.0
-          ],
-          "text_midpoint": [
-            3438.9539,
-            -557.547001,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
+        "text": "131.00",
         "measurement": 131.0,
         "definition_points": {
           "defpoint": [
@@ -693,7 +491,7 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "",
+        "text": "131.00",
         "measurement": 131.0,
         "definition_points": {
           "defpoint": [
@@ -720,7 +518,7 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "",
+        "text": "180.00",
         "measurement": 180.0,
         "definition_points": {
           "defpoint": [
@@ -747,7 +545,7 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "",
+        "text": "180.00",
         "measurement": 180.0,
         "definition_points": {
           "defpoint": [
@@ -774,170 +572,116 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "12.12",
-        "measurement": 12.123437,
+        "text": "2.00",
+        "measurement": 2.0,
         "definition_points": {
           "defpoint": [
-            3508.706391,
+            3242.337169,
+            -172.043673,
+            0.0
+          ],
+          "defpoint2": [
+            3240.337,
+            -173.688,
+            0.0
+          ],
+          "defpoint3": [
+            3242.337,
+            -173.688,
+            0.0
+          ],
+          "text_midpoint": [
+            3252.884788,
+            -172.043673,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "2.00",
+        "measurement": 2.0,
+        "definition_points": {
+          "defpoint": [
+            3243.767548,
+            -91.350734,
+            0.0
+          ],
+          "defpoint2": [
+            3241.768,
+            -92.995,
+            0.0
+          ],
+          "defpoint3": [
+            3243.768,
+            -92.995,
+            0.0
+          ],
+          "text_midpoint": [
+            3254.315167,
+            -91.350734,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "27.00",
+        "measurement": 27.0,
+        "definition_points": {
+          "defpoint": [
+            3200.280864,
+            -200.687514,
+            0.0
+          ],
+          "defpoint2": [
+            3221.337169,
+            -173.687514,
+            0.0
+          ],
+          "defpoint3": [
+            3221.337169,
+            -200.687514,
+            0.0
+          ],
+          "text_midpoint": [
+            3197.030864,
+            -187.187514,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "27.00",
+        "measurement": 27.0,
+        "definition_points": {
+          "defpoint": [
+            3201.711243,
             -119.994575,
             0.0
           ],
           "defpoint2": [
-            3459.205,
-            -107.871138,
+            3222.767548,
+            -92.994575,
             0.0
           ],
           "defpoint3": [
-            3501.546141,
+            3222.767548,
             -119.994575,
             0.0
           ],
           "text_midpoint": [
-            3508.706391,
-            -112.879073,
+            3198.461243,
+            -106.494575,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "12.12",
-        "measurement": 12.123534,
-        "definition_points": {
-          "defpoint": [
-            3537.955624,
-            -617.478672,
-            0.0
-          ],
-          "defpoint2": [
-            3488.454,
-            -605.355138,
-            0.0
-          ],
-          "defpoint3": [
-            3530.795296,
-            -617.478672,
-            0.0
-          ],
-          "text_midpoint": [
-            3537.955624,
-            -610.36317,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "12.70",
-        "measurement": 12.7,
-        "definition_points": {
-          "defpoint": [
-            3473.724015,
-            -173.687514,
-            0.0
-          ],
-          "defpoint2": [
-            3422.706592,
-            -186.387514,
-            0.0
-          ],
-          "defpoint3": [
-            3465.958297,
-            -173.687514,
-            0.0
-          ],
-          "text_midpoint": [
-            3473.724015,
-            -179.455025,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "12.70",
-        "measurement": 12.7,
-        "definition_points": {
-          "defpoint": [
-            3650.6897,
-            -173.687514,
-            0.0
-          ],
-          "defpoint2": [
-            3602.706592,
-            -186.387514,
-            0.0
-          ],
-          "defpoint3": [
-            3645.958297,
-            -173.687514,
-            0.0
-          ],
-          "text_midpoint": [
-            3650.6897,
-            -178.813127,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "12.70",
-        "measurement": 12.7,
-        "definition_points": {
-          "defpoint": [
-            3719.471323,
-            -590.478672,
-            0.0
-          ],
-          "defpoint2": [
-            3668.4539,
-            -603.178672,
-            0.0
-          ],
-          "defpoint3": [
-            3711.705605,
-            -590.478672,
-            0.0
-          ],
-          "text_midpoint": [
-            3719.471323,
-            -596.246183,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "12.70",
-        "measurement": 12.7,
-        "definition_points": {
-          "defpoint": [
-            3896.437008,
-            -590.478672,
-            0.0
-          ],
-          "defpoint2": [
-            3848.4539,
-            -603.178672,
-            0.0
-          ],
-          "defpoint3": [
-            3891.705605,
-            -590.478672,
-            0.0
-          ],
-          "text_midpoint": [
-            3896.437008,
-            -595.604285,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "3.09",
-        "measurement": 3.09,
+        "text": "3.12",
+        "measurement": 3.12,
         "definition_points": {
           "defpoint": [
             3266.984566,
@@ -951,7 +695,7 @@
           ],
           "defpoint3": [
             3237.267,
-            -185.598,
+            -185.568,
             0.0
           ],
           "text_midpoint": [
@@ -963,8 +707,8 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "3.09",
-        "measurement": 3.09,
+        "text": "3.12",
+        "measurement": 3.12,
         "definition_points": {
           "defpoint": [
             3268.414945,
@@ -978,7 +722,7 @@
           ],
           "defpoint3": [
             3238.698,
-            -104.905,
+            -104.875,
             0.0
           ],
           "text_midpoint": [
@@ -995,17 +739,17 @@
         "definition_points": {
           "defpoint": [
             3236.767,
-            -185.598,
+            -185.568,
             0.0
           ],
           "defpoint4": [
             3236.767,
-            -186.098,
+            -186.068,
             0.0
           ],
           "text_midpoint": [
-            3233.04817,
-            -181.72631,
+            3234.767,
+            -191.368,
             0.0
           ]
         }
@@ -1017,24 +761,78 @@
         "definition_points": {
           "defpoint": [
             3238.198,
-            -104.905,
+            -104.875,
             0.0
           ],
           "defpoint4": [
             3238.198,
-            -105.405,
+            -105.375,
             0.0
           ],
           "text_midpoint": [
-            3234.478548,
-            -101.033372,
+            3236.198,
+            -110.675,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "590",
+        "text": "40.00",
+        "measurement": 40.0,
+        "definition_points": {
+          "defpoint": [
+            3261.337169,
+            -155.648847,
+            0.0
+          ],
+          "defpoint2": [
+            3221.337169,
+            -173.687514,
+            0.0
+          ],
+          "defpoint3": [
+            3261.337169,
+            -173.687514,
+            0.0
+          ],
+          "text_midpoint": [
+            3241.337169,
+            -155.648847,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "40.00",
+        "measurement": 40.0,
+        "definition_points": {
+          "defpoint": [
+            3262.767548,
+            -74.955908,
+            0.0
+          ],
+          "defpoint2": [
+            3222.767548,
+            -92.994575,
+            0.0
+          ],
+          "defpoint3": [
+            3262.767548,
+            -92.994575,
+            0.0
+          ],
+          "text_midpoint": [
+            3242.767548,
+            -74.955908,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "590.00",
         "measurement": 590.0,
         "definition_points": {
           "defpoint": [
@@ -1061,7 +859,7 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "8.9",
+        "text": "8.90",
         "measurement": 8.9,
         "definition_points": {
           "defpoint": [
@@ -1098,12 +896,12 @@
           ],
           "defpoint2": [
             3236.767,
-            -187.143,
+            -187.128,
             0.0
           ],
           "defpoint3": [
             3245.907,
-            -187.143,
+            -187.128,
             0.0
           ],
           "text_midpoint": [
@@ -1125,17 +923,311 @@
           ],
           "defpoint2": [
             3238.198,
-            -106.45,
+            -106.435,
             0.0
           ],
           "defpoint3": [
             3247.338,
-            -106.45,
+            -106.435,
             0.0
           ],
           "text_midpoint": [
             3259.10948,
             -125.584948,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "90.00",
+        "measurement": 90.0,
+        "definition_points": {
+          "defpoint": [
+            3422.706592,
+            -144.005843,
+            0.0
+          ],
+          "defpoint2": [
+            3332.706592,
+            -173.688,
+            0.0
+          ],
+          "defpoint3": [
+            3422.706592,
+            -173.688,
+            0.0
+          ],
+          "text_midpoint": [
+            3377.706592,
+            -140.755843,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "90.00",
+        "measurement": 90.0,
+        "definition_points": {
+          "defpoint": [
+            3549.204666,
+            -63.312904,
+            0.0
+          ],
+          "defpoint2": [
+            3459.204666,
+            -92.995,
+            0.0
+          ],
+          "defpoint3": [
+            3549.204666,
+            -92.995,
+            0.0
+          ],
+          "text_midpoint": [
+            3504.204666,
+            -60.062904,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "90.00",
+        "measurement": 90.0,
+        "definition_points": {
+          "defpoint": [
+            3578.4539,
+            -560.797001,
+            0.0
+          ],
+          "defpoint2": [
+            3488.4539,
+            -590.479,
+            0.0
+          ],
+          "defpoint3": [
+            3578.4539,
+            -590.479,
+            0.0
+          ],
+          "text_midpoint": [
+            3533.4539,
+            -557.547001,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "90.00",
+        "measurement": 90.0,
+        "definition_points": {
+          "defpoint": [
+            3668.4539,
+            -560.797001,
+            0.0
+          ],
+          "defpoint2": [
+            3578.4539,
+            -590.479,
+            0.0
+          ],
+          "defpoint3": [
+            3668.4539,
+            -590.479,
+            0.0
+          ],
+          "text_midpoint": [
+            3623.4539,
+            -557.547001,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "99.00",
+        "measurement": 99.0,
+        "definition_points": {
+          "defpoint": [
+            3459.204666,
+            -63.312904,
+            0.0
+          ],
+          "defpoint2": [
+            3360.204666,
+            -92.995,
+            0.0
+          ],
+          "defpoint3": [
+            3459.204666,
+            -92.995,
+            0.0
+          ],
+          "text_midpoint": [
+            3409.704666,
+            -60.062904,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "99.00",
+        "measurement": 99.0,
+        "definition_points": {
+          "defpoint": [
+            3488.4539,
+            -560.797001,
+            0.0
+          ],
+          "defpoint2": [
+            3389.4539,
+            -590.479,
+            0.0
+          ],
+          "defpoint3": [
+            3488.4539,
+            -590.479,
+            0.0
+          ],
+          "text_midpoint": [
+            3438.9539,
+            -557.547001,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3422.706592,
+            -106.387514,
+            0.0
+          ],
+          "defpoint4": [
+            3422.706592,
+            -186.387514,
+            0.0
+          ],
+          "text_midpoint": [
+            3420.706592,
+            -191.287514,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3459.205,
+            -187.871138,
+            0.0
+          ],
+          "defpoint4": [
+            3459.205,
+            -107.871138,
+            0.0
+          ],
+          "text_midpoint": [
+            3457.205,
+            -102.971138,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3488.454,
+            -685.355138,
+            0.0
+          ],
+          "defpoint4": [
+            3488.454,
+            -605.355138,
+            0.0
+          ],
+          "text_midpoint": [
+            3486.454,
+            -600.455138,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3602.706592,
+            -106.387514,
+            0.0
+          ],
+          "defpoint4": [
+            3602.706592,
+            -186.387514,
+            0.0
+          ],
+          "text_midpoint": [
+            3600.706592,
+            -191.287514,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3668.4539,
+            -523.178672,
+            0.0
+          ],
+          "defpoint4": [
+            3668.4539,
+            -603.178672,
+            0.0
+          ],
+          "text_midpoint": [
+            3666.4539,
+            -608.078672,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3848.4539,
+            -523.178672,
+            0.0
+          ],
+          "defpoint4": [
+            3848.4539,
+            -603.178672,
+            0.0
+          ],
+          "text_midpoint": [
+            3846.4539,
+            -608.078672,
             0.0
           ]
         }
@@ -1148,8 +1240,7 @@
       "max_y": 143.5
     },
     "PARAM_SLOT_count": 26,
-    "SIDE_DERIVED_count": 0,
-    "SIDE_DERIVED_RELEASE_count": 21
+    "SIDE_DERIVED_count": 0
   },
   "debug_dxf_summary": {
     "path": "/Users/wrd/Desktop/codex workspace/CAD/tests/regression/triple_double_down_up_up/case_001/actual_debug.dxf",
@@ -1157,17 +1248,17 @@
       "ACAD_PROXY_ENTITY": 19,
       "ARC": 18,
       "CIRCLE": 4,
-      "DIMENSION": 34,
+      "DIMENSION": 36,
       "INSERT": 1,
-      "LINE": 109,
+      "LINE": 101,
       "LWPOLYLINE": 60,
       "MTEXT": 20,
       "POINT": 16,
       "TEXT": 4
     },
-    "line_count": 109,
+    "line_count": 101,
     "arc_count": 18,
-    "dimension_count": 34,
+    "dimension_count": 36,
     "layers": [
       "DEBUG_CONTROL",
       "DEBUG_POINTS",
@@ -1175,20 +1266,20 @@
       "FIXED_TEMPLATE",
       "PARAM_SLOT",
       "SECTION_CENTER",
+      "SIDE_CAVITY",
       "SIDE_CENTER",
-      "SIDE_DERIVED_RELEASE",
       "SIDE_TEMPLATE"
     ],
     "layer_entity_counts": {
       "DEBUG_CONTROL": 10,
       "DEBUG_POINTS": 16,
-      "DIMENSION": 34,
+      "DIMENSION": 36,
       "FIXED_TEMPLATE": 144,
       "PARAM_SLOT": 26,
       "SECTION_CENTER": 2,
+      "SIDE_CAVITY": 12,
       "SIDE_CENTER": 6,
-      "SIDE_DERIVED_RELEASE": 21,
-      "SIDE_TEMPLATE": 26
+      "SIDE_TEMPLATE": 27
     },
     "key_arc_radii": [
       {
@@ -1203,409 +1294,169 @@
     "dimension_measurements": [
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 27.0,
+        "text": "12.12",
+        "measurement": 12.123437,
         "definition_points": {
           "defpoint": [
-            3200.280864,
-            -200.687514,
+            3508.706391,
+            -107.871138,
             0.0
           ],
           "defpoint2": [
-            3221.337169,
-            -173.687514,
-            0.0
-          ],
-          "defpoint3": [
-            3221.337169,
-            -200.687514,
-            0.0
-          ],
-          "text_midpoint": [
-            3197.030864,
-            -187.187514,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 27.0,
-        "definition_points": {
-          "defpoint": [
-            3201.711243,
-            -119.994575,
-            0.0
-          ],
-          "defpoint2": [
-            3222.767548,
-            -92.994575,
-            0.0
-          ],
-          "defpoint3": [
-            3222.767548,
-            -119.994575,
-            0.0
-          ],
-          "text_midpoint": [
-            3198.461243,
-            -106.494575,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 40.0,
-        "definition_points": {
-          "defpoint": [
-            3261.337169,
-            -155.648847,
-            0.0
-          ],
-          "defpoint2": [
-            3221.337169,
-            -173.687514,
-            0.0
-          ],
-          "defpoint3": [
-            3261.337169,
-            -173.687514,
-            0.0
-          ],
-          "text_midpoint": [
-            3241.337169,
-            -155.648847,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 40.0,
-        "definition_points": {
-          "defpoint": [
-            3262.767548,
-            -74.955908,
-            0.0
-          ],
-          "defpoint2": [
-            3222.767548,
-            -92.994575,
-            0.0
-          ],
-          "defpoint3": [
-            3262.767548,
-            -92.994575,
-            0.0
-          ],
-          "text_midpoint": [
-            3242.767548,
-            -74.955908,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
-        "definition_points": {
-          "defpoint": [
-            3422.706592,
-            -106.387514,
-            0.0
-          ],
-          "defpoint4": [
-            3390.126977,
-            -179.453024,
-            0.0
-          ],
-          "text_midpoint": [
-            3392.359068,
-            -174.447167,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
-        "definition_points": {
-          "defpoint": [
             3459.205,
-            -187.871138,
+            -107.871138,
             0.0
           ],
-          "defpoint4": [
-            3434.168175,
-            -111.889842,
+          "defpoint3": [
+            3459.205,
+            -119.994575,
             0.0
           ],
           "text_midpoint": [
-            3437.772804,
-            -122.853555,
+            3510.706391,
+            -113.932857,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
+        "text": "12.12",
+        "measurement": 12.123534,
         "definition_points": {
           "defpoint": [
+            3537.955624,
+            -605.355138,
+            0.0
+          ],
+          "defpoint2": [
             3488.454,
-            -685.355138,
+            -605.355138,
             0.0
           ],
-          "defpoint4": [
-            3463.417175,
-            -609.373842,
+          "defpoint3": [
+            3488.454,
+            -617.478672,
             0.0
           ],
           "text_midpoint": [
-            3467.022038,
-            -620.337652,
+            3539.955624,
+            -611.416905,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
+        "text": "12.70",
+        "measurement": 12.7,
         "definition_points": {
           "defpoint": [
+            3473.724015,
+            -186.387514,
+            0.0
+          ],
+          "defpoint2": [
+            3422.706592,
+            -186.387514,
+            0.0
+          ],
+          "defpoint3": [
+            3422.706592,
+            -173.687514,
+            0.0
+          ],
+          "text_midpoint": [
+            3471.724015,
+            -180.037514,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "12.70",
+        "measurement": 12.7,
+        "definition_points": {
+          "defpoint": [
+            3650.6897,
+            -186.387514,
+            0.0
+          ],
+          "defpoint2": [
             3602.706592,
-            -106.387514,
+            -186.387514,
             0.0
           ],
-          "defpoint4": [
-            3575.54414,
-            -181.635114,
+          "defpoint3": [
+            3602.706592,
+            -173.687514,
             0.0
           ],
           "text_midpoint": [
-            3578.502336,
-            -173.440082,
+            3648.6897,
+            -180.037514,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
+        "text": "12.70",
+        "measurement": 12.7,
         "definition_points": {
           "defpoint": [
+            3719.471323,
+            -603.178672,
+            0.0
+          ],
+          "defpoint2": [
             3668.4539,
-            -523.178672,
+            -603.178672,
             0.0
           ],
-          "defpoint4": [
-            3635.874285,
-            -596.244182,
+          "defpoint3": [
+            3668.4539,
+            -590.478672,
             0.0
           ],
           "text_midpoint": [
-            3638.106376,
-            -591.238324,
+            3717.471323,
+            -596.828672,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 80.0,
+        "text": "12.70",
+        "measurement": 12.7,
         "definition_points": {
           "defpoint": [
+            3896.437008,
+            -603.178672,
+            0.0
+          ],
+          "defpoint2": [
             3848.4539,
-            -523.178672,
-            0.0
-          ],
-          "defpoint4": [
-            3821.291448,
-            -598.426272,
-            0.0
-          ],
-          "text_midpoint": [
-            3824.249644,
-            -590.23124,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 90.0,
-        "definition_points": {
-          "defpoint": [
-            3422.706592,
-            -144.005843,
-            0.0
-          ],
-          "defpoint2": [
-            3332.706592,
-            -173.688,
+            -603.178672,
             0.0
           ],
           "defpoint3": [
-            3422.706592,
-            -173.688,
+            3848.4539,
+            -590.478672,
             0.0
           ],
           "text_midpoint": [
-            3377.706592,
-            -140.755843,
+            3894.437008,
+            -596.828672,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "",
-        "measurement": 90.0,
-        "definition_points": {
-          "defpoint": [
-            3549.204666,
-            -63.312904,
-            0.0
-          ],
-          "defpoint2": [
-            3459.204666,
-            -92.995,
-            0.0
-          ],
-          "defpoint3": [
-            3549.204666,
-            -92.995,
-            0.0
-          ],
-          "text_midpoint": [
-            3504.204666,
-            -60.062904,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 90.0,
-        "definition_points": {
-          "defpoint": [
-            3578.4539,
-            -560.797001,
-            0.0
-          ],
-          "defpoint2": [
-            3488.4539,
-            -590.479,
-            0.0
-          ],
-          "defpoint3": [
-            3578.4539,
-            -590.479,
-            0.0
-          ],
-          "text_midpoint": [
-            3533.4539,
-            -557.547001,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 90.0,
-        "definition_points": {
-          "defpoint": [
-            3668.4539,
-            -560.797001,
-            0.0
-          ],
-          "defpoint2": [
-            3578.4539,
-            -590.479,
-            0.0
-          ],
-          "defpoint3": [
-            3668.4539,
-            -590.479,
-            0.0
-          ],
-          "text_midpoint": [
-            3623.4539,
-            -557.547001,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 99.0,
-        "definition_points": {
-          "defpoint": [
-            3459.204666,
-            -63.312904,
-            0.0
-          ],
-          "defpoint2": [
-            3360.204666,
-            -92.995,
-            0.0
-          ],
-          "defpoint3": [
-            3459.204666,
-            -92.995,
-            0.0
-          ],
-          "text_midpoint": [
-            3409.704666,
-            -60.062904,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
-        "measurement": 99.0,
-        "definition_points": {
-          "defpoint": [
-            3488.4539,
-            -560.797001,
-            0.0
-          ],
-          "defpoint2": [
-            3389.4539,
-            -590.479,
-            0.0
-          ],
-          "defpoint3": [
-            3488.4539,
-            -590.479,
-            0.0
-          ],
-          "text_midpoint": [
-            3438.9539,
-            -557.547001,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "",
+        "text": "131.00",
         "measurement": 131.0,
         "definition_points": {
           "defpoint": [
@@ -1632,7 +1483,7 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "",
+        "text": "131.00",
         "measurement": 131.0,
         "definition_points": {
           "defpoint": [
@@ -1659,7 +1510,7 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "",
+        "text": "180.00",
         "measurement": 180.0,
         "definition_points": {
           "defpoint": [
@@ -1686,7 +1537,7 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "",
+        "text": "180.00",
         "measurement": 180.0,
         "definition_points": {
           "defpoint": [
@@ -1713,170 +1564,116 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "12.12",
-        "measurement": 12.123437,
+        "text": "2.00",
+        "measurement": 2.0,
         "definition_points": {
           "defpoint": [
-            3508.706391,
+            3242.337169,
+            -172.043673,
+            0.0
+          ],
+          "defpoint2": [
+            3240.337,
+            -173.688,
+            0.0
+          ],
+          "defpoint3": [
+            3242.337,
+            -173.688,
+            0.0
+          ],
+          "text_midpoint": [
+            3252.884788,
+            -172.043673,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "2.00",
+        "measurement": 2.0,
+        "definition_points": {
+          "defpoint": [
+            3243.767548,
+            -91.350734,
+            0.0
+          ],
+          "defpoint2": [
+            3241.768,
+            -92.995,
+            0.0
+          ],
+          "defpoint3": [
+            3243.768,
+            -92.995,
+            0.0
+          ],
+          "text_midpoint": [
+            3254.315167,
+            -91.350734,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "27.00",
+        "measurement": 27.0,
+        "definition_points": {
+          "defpoint": [
+            3200.280864,
+            -200.687514,
+            0.0
+          ],
+          "defpoint2": [
+            3221.337169,
+            -173.687514,
+            0.0
+          ],
+          "defpoint3": [
+            3221.337169,
+            -200.687514,
+            0.0
+          ],
+          "text_midpoint": [
+            3197.030864,
+            -187.187514,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "27.00",
+        "measurement": 27.0,
+        "definition_points": {
+          "defpoint": [
+            3201.711243,
             -119.994575,
             0.0
           ],
           "defpoint2": [
-            3459.205,
-            -107.871138,
+            3222.767548,
+            -92.994575,
             0.0
           ],
           "defpoint3": [
-            3501.546141,
+            3222.767548,
             -119.994575,
             0.0
           ],
           "text_midpoint": [
-            3508.706391,
-            -112.879073,
+            3198.461243,
+            -106.494575,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "12.12",
-        "measurement": 12.123534,
-        "definition_points": {
-          "defpoint": [
-            3537.955624,
-            -617.478672,
-            0.0
-          ],
-          "defpoint2": [
-            3488.454,
-            -605.355138,
-            0.0
-          ],
-          "defpoint3": [
-            3530.795296,
-            -617.478672,
-            0.0
-          ],
-          "text_midpoint": [
-            3537.955624,
-            -610.36317,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "12.70",
-        "measurement": 12.7,
-        "definition_points": {
-          "defpoint": [
-            3473.724015,
-            -173.687514,
-            0.0
-          ],
-          "defpoint2": [
-            3422.706592,
-            -186.387514,
-            0.0
-          ],
-          "defpoint3": [
-            3465.958297,
-            -173.687514,
-            0.0
-          ],
-          "text_midpoint": [
-            3473.724015,
-            -179.455025,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "12.70",
-        "measurement": 12.7,
-        "definition_points": {
-          "defpoint": [
-            3650.6897,
-            -173.687514,
-            0.0
-          ],
-          "defpoint2": [
-            3602.706592,
-            -186.387514,
-            0.0
-          ],
-          "defpoint3": [
-            3645.958297,
-            -173.687514,
-            0.0
-          ],
-          "text_midpoint": [
-            3650.6897,
-            -178.813127,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "12.70",
-        "measurement": 12.7,
-        "definition_points": {
-          "defpoint": [
-            3719.471323,
-            -590.478672,
-            0.0
-          ],
-          "defpoint2": [
-            3668.4539,
-            -603.178672,
-            0.0
-          ],
-          "defpoint3": [
-            3711.705605,
-            -590.478672,
-            0.0
-          ],
-          "text_midpoint": [
-            3719.471323,
-            -596.246183,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "12.70",
-        "measurement": 12.7,
-        "definition_points": {
-          "defpoint": [
-            3896.437008,
-            -590.478672,
-            0.0
-          ],
-          "defpoint2": [
-            3848.4539,
-            -603.178672,
-            0.0
-          ],
-          "defpoint3": [
-            3891.705605,
-            -590.478672,
-            0.0
-          ],
-          "text_midpoint": [
-            3896.437008,
-            -595.604285,
-            0.0
-          ]
-        }
-      },
-      {
-        "layer": "DIMENSION",
-        "text": "3.09",
-        "measurement": 3.09,
+        "text": "3.12",
+        "measurement": 3.12,
         "definition_points": {
           "defpoint": [
             3266.984566,
@@ -1890,7 +1687,7 @@
           ],
           "defpoint3": [
             3237.267,
-            -185.598,
+            -185.568,
             0.0
           ],
           "text_midpoint": [
@@ -1902,8 +1699,8 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "3.09",
-        "measurement": 3.09,
+        "text": "3.12",
+        "measurement": 3.12,
         "definition_points": {
           "defpoint": [
             3268.414945,
@@ -1917,7 +1714,7 @@
           ],
           "defpoint3": [
             3238.698,
-            -104.905,
+            -104.875,
             0.0
           ],
           "text_midpoint": [
@@ -1934,17 +1731,17 @@
         "definition_points": {
           "defpoint": [
             3236.767,
-            -185.598,
+            -185.568,
             0.0
           ],
           "defpoint4": [
             3236.767,
-            -186.098,
+            -186.068,
             0.0
           ],
           "text_midpoint": [
-            3233.04817,
-            -181.72631,
+            3234.767,
+            -191.368,
             0.0
           ]
         }
@@ -1956,24 +1753,78 @@
         "definition_points": {
           "defpoint": [
             3238.198,
-            -104.905,
+            -104.875,
             0.0
           ],
           "defpoint4": [
             3238.198,
-            -105.405,
+            -105.375,
             0.0
           ],
           "text_midpoint": [
-            3234.478548,
-            -101.033372,
+            3236.198,
+            -110.675,
             0.0
           ]
         }
       },
       {
         "layer": "DIMENSION",
-        "text": "590",
+        "text": "40.00",
+        "measurement": 40.0,
+        "definition_points": {
+          "defpoint": [
+            3261.337169,
+            -155.648847,
+            0.0
+          ],
+          "defpoint2": [
+            3221.337169,
+            -173.687514,
+            0.0
+          ],
+          "defpoint3": [
+            3261.337169,
+            -173.687514,
+            0.0
+          ],
+          "text_midpoint": [
+            3241.337169,
+            -155.648847,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "40.00",
+        "measurement": 40.0,
+        "definition_points": {
+          "defpoint": [
+            3262.767548,
+            -74.955908,
+            0.0
+          ],
+          "defpoint2": [
+            3222.767548,
+            -92.994575,
+            0.0
+          ],
+          "defpoint3": [
+            3262.767548,
+            -92.994575,
+            0.0
+          ],
+          "text_midpoint": [
+            3242.767548,
+            -74.955908,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "590.00",
         "measurement": 590.0,
         "definition_points": {
           "defpoint": [
@@ -2000,7 +1851,7 @@
       },
       {
         "layer": "DIMENSION",
-        "text": "8.9",
+        "text": "8.90",
         "measurement": 8.9,
         "definition_points": {
           "defpoint": [
@@ -2037,12 +1888,12 @@
           ],
           "defpoint2": [
             3236.767,
-            -187.143,
+            -187.128,
             0.0
           ],
           "defpoint3": [
             3245.907,
-            -187.143,
+            -187.128,
             0.0
           ],
           "text_midpoint": [
@@ -2064,17 +1915,311 @@
           ],
           "defpoint2": [
             3238.198,
-            -106.45,
+            -106.435,
             0.0
           ],
           "defpoint3": [
             3247.338,
-            -106.45,
+            -106.435,
             0.0
           ],
           "text_midpoint": [
             3259.10948,
             -125.584948,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "90.00",
+        "measurement": 90.0,
+        "definition_points": {
+          "defpoint": [
+            3422.706592,
+            -144.005843,
+            0.0
+          ],
+          "defpoint2": [
+            3332.706592,
+            -173.688,
+            0.0
+          ],
+          "defpoint3": [
+            3422.706592,
+            -173.688,
+            0.0
+          ],
+          "text_midpoint": [
+            3377.706592,
+            -140.755843,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "90.00",
+        "measurement": 90.0,
+        "definition_points": {
+          "defpoint": [
+            3549.204666,
+            -63.312904,
+            0.0
+          ],
+          "defpoint2": [
+            3459.204666,
+            -92.995,
+            0.0
+          ],
+          "defpoint3": [
+            3549.204666,
+            -92.995,
+            0.0
+          ],
+          "text_midpoint": [
+            3504.204666,
+            -60.062904,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "90.00",
+        "measurement": 90.0,
+        "definition_points": {
+          "defpoint": [
+            3578.4539,
+            -560.797001,
+            0.0
+          ],
+          "defpoint2": [
+            3488.4539,
+            -590.479,
+            0.0
+          ],
+          "defpoint3": [
+            3578.4539,
+            -590.479,
+            0.0
+          ],
+          "text_midpoint": [
+            3533.4539,
+            -557.547001,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "90.00",
+        "measurement": 90.0,
+        "definition_points": {
+          "defpoint": [
+            3668.4539,
+            -560.797001,
+            0.0
+          ],
+          "defpoint2": [
+            3578.4539,
+            -590.479,
+            0.0
+          ],
+          "defpoint3": [
+            3668.4539,
+            -590.479,
+            0.0
+          ],
+          "text_midpoint": [
+            3623.4539,
+            -557.547001,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "99.00",
+        "measurement": 99.0,
+        "definition_points": {
+          "defpoint": [
+            3459.204666,
+            -63.312904,
+            0.0
+          ],
+          "defpoint2": [
+            3360.204666,
+            -92.995,
+            0.0
+          ],
+          "defpoint3": [
+            3459.204666,
+            -92.995,
+            0.0
+          ],
+          "text_midpoint": [
+            3409.704666,
+            -60.062904,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "99.00",
+        "measurement": 99.0,
+        "definition_points": {
+          "defpoint": [
+            3488.4539,
+            -560.797001,
+            0.0
+          ],
+          "defpoint2": [
+            3389.4539,
+            -590.479,
+            0.0
+          ],
+          "defpoint3": [
+            3488.4539,
+            -590.479,
+            0.0
+          ],
+          "text_midpoint": [
+            3438.9539,
+            -557.547001,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3422.706592,
+            -106.387514,
+            0.0
+          ],
+          "defpoint4": [
+            3422.706592,
+            -186.387514,
+            0.0
+          ],
+          "text_midpoint": [
+            3420.706592,
+            -191.287514,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3459.205,
+            -187.871138,
+            0.0
+          ],
+          "defpoint4": [
+            3459.205,
+            -107.871138,
+            0.0
+          ],
+          "text_midpoint": [
+            3457.205,
+            -102.971138,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3488.454,
+            -685.355138,
+            0.0
+          ],
+          "defpoint4": [
+            3488.454,
+            -605.355138,
+            0.0
+          ],
+          "text_midpoint": [
+            3486.454,
+            -600.455138,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3602.706592,
+            -106.387514,
+            0.0
+          ],
+          "defpoint4": [
+            3602.706592,
+            -186.387514,
+            0.0
+          ],
+          "text_midpoint": [
+            3600.706592,
+            -191.287514,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3668.4539,
+            -523.178672,
+            0.0
+          ],
+          "defpoint4": [
+            3668.4539,
+            -603.178672,
+            0.0
+          ],
+          "text_midpoint": [
+            3666.4539,
+            -608.078672,
+            0.0
+          ]
+        }
+      },
+      {
+        "layer": "DIMENSION",
+        "text": "R80.00",
+        "measurement": 80.0,
+        "definition_points": {
+          "defpoint": [
+            3848.4539,
+            -523.178672,
+            0.0
+          ],
+          "defpoint4": [
+            3848.4539,
+            -603.178672,
+            0.0
+          ],
+          "text_midpoint": [
+            3846.4539,
+            -608.078672,
             0.0
           ]
         }
@@ -2087,8 +2232,7 @@
       "max_y": 143.5
     },
     "PARAM_SLOT_count": 26,
-    "SIDE_DERIVED_count": 0,
-    "SIDE_DERIVED_RELEASE_count": 21
+    "SIDE_DERIVED_count": 0
   },
   "template_geometry_summary": {
     "template_files": [

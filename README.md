@@ -191,8 +191,10 @@ PYTHON_BIN=python3.11 ./scripts/verify_clean_checkout.sh
 ```
 
 It exports the committed tree, verifies the required CAD templates, installs
-Python and frontend dependencies, builds the frontend, and runs the test suite.
-The same checks run in GitHub Actions for every push and pull request.
+Python and frontend dependencies, builds the frontend, runs the unit test
+suite, and then runs all machine regression cases. Regression `actual_*`
+artifacts are created only in the temporary export. The same checks run in
+GitHub Actions for every push and pull request.
 
 For explicit dual-spec tasks, the formal DXF filename is fixed as
 `成品规格（磨前规格）机台类型.dxf`. Tolerance annotations are deliberately excluded

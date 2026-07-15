@@ -45,6 +45,8 @@ done
 (
     cd "$TEMPORARY_ROOT"
     .venv/bin/python -m pytest -q
+    echo "执行独立机台回归验证…"
+    .venv/bin/python scripts/run_regression_tests.py
 )
 
 echo "干净克隆验证通过。"

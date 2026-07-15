@@ -1,7 +1,7 @@
 {
   "total_cases": 7,
-  "passed": 0,
-  "failed": 7,
+  "passed": 7,
+  "failed": 0,
   "cases": [
     {
       "machine_id": "bed_618",
@@ -112,39 +112,22 @@
             }
           },
           {
-            "name": "side_projected_slot_height_dimension",
-            "ok": true,
-            "details": {
-              "expected": 20.9,
-              "geometry_measured": 20.9,
-              "definition_points_measured": 20.9,
-              "dimension_group_42_measured": 20.9,
-              "display_text": "20.90"
-            }
-          },
-          {
             "name": "side_clearance_height_dimension",
             "ok": true,
             "details": {
-              "expected": 4.47,
-              "geometry_measured": 4.47,
-              "definition_points_measured": 4.47,
-              "dimension_group_42_measured": 4.47,
-              "display_text": "4.47"
+              "expected": 4.636606,
+              "geometry_measured": 4.636606,
+              "definition_points_measured": 4.636606,
+              "dimension_group_42_measured": 4.636606,
+              "display_text": "4.64"
             }
           }
         ],
         "required_dimension_roles": {},
         "release_allowed": true
       },
-      "status": "FAIL",
-      "differences": [
-        "report.lower_cavity_notch_opening: expected None, actual 15.3",
-        "safety_rules.limit: expected None, actual 15.3",
-        "safety_rules.lower_cavity_notch_opening: expected None, actual 15.3",
-        "safety_rules.not_applicable: expected True, actual None",
-        "safety_rules.product_length: expected None, actual 15.5"
-      ]
+      "status": "PASS",
+      "differences": []
     },
     {
       "machine_id": "double_head_up_down",
@@ -257,17 +240,6 @@
             }
           },
           {
-            "name": "side_projected_slot_height_dimension",
-            "ok": true,
-            "details": {
-              "expected": 12.5,
-              "geometry_measured": 12.5,
-              "definition_points_measured": 12.5,
-              "dimension_group_42_measured": 12.5,
-              "display_text": "12.50"
-            }
-          },
-          {
             "name": "side_clearance_height_dimension",
             "ok": true,
             "details": {
@@ -282,32 +254,8 @@
         "required_dimension_roles": {},
         "release_allowed": true
       },
-      "status": "FAIL",
-      "differences": [
-        "report.dimension_checks[4].details.definition_points_measured: expected 13.42, actual 13.358182",
-        "report.dimension_checks[4].details.dimension_group_42_measured: expected 13.42, actual 13.358182",
-        "report.dimension_checks[4].details.display_text: expected '13.42', actual '13.36'",
-        "report.dimension_checks[4].details.expected: expected 13.42, actual 13.358182",
-        "report.dimension_checks[4].details.geometry_measured: expected 13.42, actual 13.358182",
-        "release_dxf.extents.max_y: expected 209.429685, actual 209.491503",
-        "release_dxf.dimension_measurements[9].definition_points.defpoint[1]: expected 129.429685, actual 129.491503",
-        "release_dxf.dimension_measurements[9].definition_points.defpoint4[1]: expected 49.429685, actual 49.491503",
-        "release_dxf.dimension_measurements[9].definition_points.text_midpoint[1]: expected 41.229685, actual 41.291503",
-        "release_dxf.dimension_measurements[16].definition_points.defpoint2[0]: expected 3400.086638, actual 3400.179578",
-        "release_dxf.dimension_measurements[16].definition_points.defpoint3[1]: expected 49.429685, actual 49.491503",
-        "release_dxf.dimension_measurements[16].definition_points.text_midpoint[1]: expected 56.139685, actual 56.170594",
-        "release_dxf.dimension_measurements[16].measurement: expected 13.42, actual 13.358182",
-        "release_dxf.dimension_measurements[16].text: expected '13.42', actual '13.36'",
-        "debug_dxf.extents.max_y: expected 209.429685, actual 209.491503",
-        "debug_dxf.dimension_measurements[9].definition_points.defpoint[1]: expected 129.429685, actual 129.491503",
-        "debug_dxf.dimension_measurements[9].definition_points.defpoint4[1]: expected 49.429685, actual 49.491503",
-        "debug_dxf.dimension_measurements[9].definition_points.text_midpoint[1]: expected 41.229685, actual 41.291503",
-        "debug_dxf.dimension_measurements[16].definition_points.defpoint2[0]: expected 3400.086638, actual 3400.179578",
-        "debug_dxf.dimension_measurements[16].definition_points.defpoint3[1]: expected 49.429685, actual 49.491503",
-        "debug_dxf.dimension_measurements[16].definition_points.text_midpoint[1]: expected 56.139685, actual 56.170594",
-        "debug_dxf.dimension_measurements[16].measurement: expected 13.42, actual 13.358182",
-        "debug_dxf.dimension_measurements[16].text: expected '13.42', actual '13.36'"
-      ]
+      "status": "PASS",
+      "differences": []
     },
     {
       "machine_id": "double_head_up_up",
@@ -324,9 +272,9 @@
           "上"
         ],
         "slot_width": 9.15,
-        "guide_thickness": 3.09,
+        "guide_thickness": 3.12,
         "R_form": null,
-        "lower_cavity_notch_opening": 0.0,
+        "lower_cavity_notch_opening": 8.9,
         "fixed_template_dimensions": {
           "section": {
             "outer_width": 35.0,
@@ -379,18 +327,18 @@
             "name": "guide_thickness_dimension",
             "ok": true,
             "details": {
-              "expected": 3.09,
-              "geometry_measured": 3.09,
+              "expected": 3.12,
+              "geometry_measured": 3.12,
               "definition_or_actual_measurements": [
-                3.09
+                3.12
               ],
               "display_texts": [
-                "3.09"
+                "3.12"
               ],
               "normalized_display_texts": [
-                "3.09"
+                "3.12"
               ],
-              "label": "3.09",
+              "label": "3.12",
               "dimension_count": 1,
               "expected_count": 1
             }
@@ -399,14 +347,8 @@
         "required_dimension_roles": {},
         "release_allowed": true
       },
-      "status": "FAIL",
-      "differences": [
-        "report.lower_cavity_notch_opening: expected None, actual 0.0",
-        "safety_rules.limit: expected None, actual 8.9",
-        "safety_rules.lower_cavity_notch_opening: expected None, actual 0.0",
-        "safety_rules.not_applicable: expected True, actual None",
-        "safety_rules.product_length: expected None, actual 9.1"
-      ]
+      "status": "PASS",
+      "differences": []
     },
     {
       "machine_id": "triple_double_down_up_up",
@@ -424,7 +366,7 @@
           "上"
         ],
         "slot_width": 9.14,
-        "guide_thickness": 3.09,
+        "guide_thickness": 3.12,
         "R_form": null,
         "lower_cavity_notch_opening": 8.9,
         "fixed_template_dimensions": {
@@ -445,8 +387,8 @@
           "FIXED_TEMPLATE",
           "PARAM_SLOT",
           "SECTION_CENTER",
+          "SIDE_CAVITY",
           "SIDE_CENTER",
-          "SIDE_DERIVED_RELEASE",
           "SIDE_TEMPLATE"
         ],
         "dimension_checks": [
@@ -463,6 +405,10 @@
             "dimension_defpoint": [
               3488.454,
               -605.355
+            ],
+            "datum_defpoint": [
+              3488.454,
+              -617.479
             ],
             "measured_value": 12.124,
             "is_bound_to_wheel_crown": true
@@ -481,6 +427,10 @@
               3668.454,
               -603.179
             ],
+            "datum_defpoint": [
+              3668.454,
+              -590.479
+            ],
             "measured_value": 12.7,
             "is_bound_to_wheel_crown": true
           },
@@ -497,6 +447,10 @@
             "dimension_defpoint": [
               3848.454,
               -603.179
+            ],
+            "datum_defpoint": [
+              3848.454,
+              -590.479
             ],
             "measured_value": 12.7,
             "is_bound_to_wheel_crown": true
@@ -515,6 +469,10 @@
               3459.205,
               -107.871
             ],
+            "datum_defpoint": [
+              3459.205,
+              -119.995
+            ],
             "measured_value": 12.123,
             "is_bound_to_wheel_crown": true
           },
@@ -532,6 +490,10 @@
               3422.707,
               -186.388
             ],
+            "datum_defpoint": [
+              3422.707,
+              -173.688
+            ],
             "measured_value": 12.7,
             "is_bound_to_wheel_crown": true
           },
@@ -549,6 +511,10 @@
               3602.707,
               -186.388
             ],
+            "datum_defpoint": [
+              3602.707,
+              -173.688
+            ],
             "measured_value": 12.7,
             "is_bound_to_wheel_crown": true
           }
@@ -562,7 +528,21 @@
             "status": "PASS"
           },
           "guide_thickness": {
-            "expected_measurement": 3.09,
+            "expected_measurement": 3.12,
+            "minimum_count": 2,
+            "actual_count": 2,
+            "all_bound_to_geometry": true,
+            "status": "PASS"
+          },
+          "section_center_opening": {
+            "expected_measurement": 2.0,
+            "minimum_count": 2,
+            "actual_count": 2,
+            "all_bound_to_geometry": true,
+            "status": "PASS"
+          },
+          "relief": {
+            "expected_measurement": 0.5,
             "minimum_count": 2,
             "actual_count": 2,
             "all_bound_to_geometry": true,
@@ -627,33 +607,8 @@
         },
         "release_allowed": true
       },
-      "status": "FAIL",
-      "differences": [
-        "release_dxf.dimension_measurements[4].definition_points.defpoint4[0]: expected 3390.126977, actual 3379.454887",
-        "release_dxf.dimension_measurements[4].definition_points.defpoint4[1]: expected -179.453024, actual -173.687514",
-        "release_dxf.dimension_measurements[5].definition_points.defpoint4[0]: expected 3434.168175, actual 3501.546822",
-        "release_dxf.dimension_measurements[5].definition_points.defpoint4[1]: expected -111.889842, actual -119.995",
-        "release_dxf.dimension_measurements[6].definition_points.defpoint4[0]: expected 3463.417175, actual 3530.795822",
-        "release_dxf.dimension_measurements[6].definition_points.defpoint4[1]: expected -609.373842, actual -617.479",
-        "release_dxf.dimension_measurements[7].definition_points.defpoint4[0]: expected 3575.54414, actual 3559.454887",
-        "release_dxf.dimension_measurements[7].definition_points.defpoint4[1]: expected -181.635114, actual -173.687514",
-        "release_dxf.dimension_measurements[8].definition_points.defpoint4[0]: expected 3635.874285, actual 3625.202195",
-        "release_dxf.dimension_measurements[8].definition_points.defpoint4[1]: expected -596.244182, actual -590.478672",
-        "release_dxf.dimension_measurements[9].definition_points.defpoint4[0]: expected 3821.291448, actual 3805.202195",
-        "release_dxf.dimension_measurements[9].definition_points.defpoint4[1]: expected -598.426272, actual -590.478672",
-        "debug_dxf.dimension_measurements[4].definition_points.defpoint4[0]: expected 3390.126977, actual 3379.454887",
-        "debug_dxf.dimension_measurements[4].definition_points.defpoint4[1]: expected -179.453024, actual -173.687514",
-        "debug_dxf.dimension_measurements[5].definition_points.defpoint4[0]: expected 3434.168175, actual 3501.546822",
-        "debug_dxf.dimension_measurements[5].definition_points.defpoint4[1]: expected -111.889842, actual -119.995",
-        "debug_dxf.dimension_measurements[6].definition_points.defpoint4[0]: expected 3463.417175, actual 3530.795822",
-        "debug_dxf.dimension_measurements[6].definition_points.defpoint4[1]: expected -609.373842, actual -617.479",
-        "debug_dxf.dimension_measurements[7].definition_points.defpoint4[0]: expected 3575.54414, actual 3559.454887",
-        "debug_dxf.dimension_measurements[7].definition_points.defpoint4[1]: expected -181.635114, actual -173.687514",
-        "debug_dxf.dimension_measurements[8].definition_points.defpoint4[0]: expected 3635.874285, actual 3625.202195",
-        "debug_dxf.dimension_measurements[8].definition_points.defpoint4[1]: expected -596.244182, actual -590.478672",
-        "debug_dxf.dimension_measurements[9].definition_points.defpoint4[0]: expected 3821.291448, actual 3805.202195",
-        "debug_dxf.dimension_measurements[9].definition_points.defpoint4[1]: expected -598.426272, actual -590.478672"
-      ]
+      "status": "PASS",
+      "differences": []
     },
     {
       "machine_id": "triple_double_up_up_up",
@@ -671,7 +626,7 @@
           "上"
         ],
         "slot_width": 9.15,
-        "guide_thickness": 3.09,
+        "guide_thickness": 3.12,
         "R_form": null,
         "lower_cavity_notch_opening": 8.9,
         "fixed_template_dimensions": {
@@ -692,317 +647,172 @@
           "FIXED_TEMPLATE",
           "PARAM_SLOT",
           "SECTION_CENTER",
+          "SIDE_CAVITY",
           "SIDE_CENTER",
-          "SIDE_DERIVED_RELEASE",
           "SIDE_TEMPLATE"
         ],
         "dimension_checks": [
           {
             "wheel_center": [
               3476.938,
-              -403.774
+              -400.808
             ],
             "wheel_radius": 80.0,
             "expected_wheel_crown_point": [
               3476.938,
-              -483.774
+              -480.808
             ],
             "dimension_defpoint": [
               3476.938,
-              -483.774
+              -480.808
             ],
-            "measured_value": 6.09,
+            "datum_defpoint": [
+              3476.938,
+              -477.684
+            ],
+            "measured_value": 3.124,
             "is_bound_to_wheel_crown": true
           },
           {
             "wheel_center": [
               3656.938,
-              -403.774
+              -400.808
             ],
             "wheel_radius": 80.0,
             "expected_wheel_crown_point": [
               3656.938,
-              -483.774
+              -480.808
             ],
             "dimension_defpoint": [
               3656.938,
-              -483.774
+              -480.808
             ],
-            "measured_value": 6.09,
+            "datum_defpoint": [
+              3656.938,
+              -477.684
+            ],
+            "measured_value": 3.124,
             "is_bound_to_wheel_crown": true
           },
           {
             "wheel_center": [
               3836.938,
-              -403.774
+              -400.808
             ],
             "wheel_radius": 80.0,
             "expected_wheel_crown_point": [
               3836.938,
-              -483.774
+              -480.808
             ],
             "dimension_defpoint": [
               3836.938,
-              -483.774
+              -480.808
             ],
-            "measured_value": 6.09,
+            "datum_defpoint": [
+              3836.938,
+              -477.684
+            ],
+            "measured_value": 3.124,
             "is_bound_to_wheel_crown": true
           },
           {
             "wheel_center": [
               3459.205,
-              -114.719
+              -111.753
             ],
             "wheel_radius": 80.0,
             "expected_wheel_crown_point": [
               3459.205,
-              -194.719
+              -191.753
             ],
             "dimension_defpoint": [
               3459.205,
-              -194.719
+              -191.753
             ],
-            "measured_value": 6.09,
+            "datum_defpoint": [
+              3459.205,
+              -188.629
+            ],
+            "measured_value": 3.124,
             "is_bound_to_wheel_crown": true
           },
           {
             "wheel_center": [
               3639.205,
-              -114.719
+              -111.753
             ],
             "wheel_radius": 80.0,
             "expected_wheel_crown_point": [
               3639.205,
-              -194.719
+              -191.753
             ],
             "dimension_defpoint": [
               3639.205,
-              -194.719
+              -191.753
             ],
-            "measured_value": 6.09,
+            "datum_defpoint": [
+              3639.205,
+              -188.629
+            ],
+            "measured_value": 3.124,
             "is_bound_to_wheel_crown": true
           },
           {
             "wheel_center": [
               3459.205,
-              -19.085
+              -16.119
             ],
             "wheel_radius": 80.0,
             "expected_wheel_crown_point": [
               3459.205,
-              -99.085
+              -96.119
             ],
             "dimension_defpoint": [
               3459.205,
-              -99.085
+              -96.119
             ],
-            "measured_value": 6.09,
+            "datum_defpoint": [
+              3459.205,
+              -92.995
+            ],
+            "measured_value": 3.124,
             "is_bound_to_wheel_crown": true
           }
         ],
-        "required_dimension_roles": {},
+        "required_dimension_roles": {
+          "slot_width": {
+            "expected_measurement": 9.15,
+            "minimum_count": 2,
+            "actual_count": 2,
+            "all_bound_to_geometry": true,
+            "status": "PASS"
+          },
+          "guide_thickness": {
+            "expected_measurement": 3.12,
+            "minimum_count": 2,
+            "actual_count": 8,
+            "all_bound_to_geometry": true,
+            "status": "PASS"
+          },
+          "section_center_opening": {
+            "expected_measurement": 1.0,
+            "minimum_count": 2,
+            "actual_count": 2,
+            "all_bound_to_geometry": true,
+            "status": "PASS"
+          },
+          "relief": {
+            "expected_measurement": 0.5,
+            "minimum_count": 2,
+            "actual_count": 2,
+            "all_bound_to_geometry": true,
+            "status": "PASS"
+          }
+        },
         "release_allowed": true
       },
-      "status": "FAIL",
-      "differences": [
-        "report.dimension_checks[0].dimension_defpoint[0]: expected 3656.938, actual 3476.938",
-        "report.dimension_checks[0].dimension_defpoint[1]: expected -481.484, actual -483.774",
-        "report.dimension_checks[0].expected_wheel_crown_point[0]: expected 3656.938, actual 3476.938",
-        "report.dimension_checks[0].expected_wheel_crown_point[1]: expected -481.484, actual -483.774",
-        "report.dimension_checks[0].measured_value: expected 3.8, actual 6.09",
-        "report.dimension_checks[0].wheel_center[0]: expected 3656.938, actual 3476.938",
-        "report.dimension_checks[0].wheel_center[1]: expected -401.484, actual -403.774",
-        "report.dimension_checks[1].dimension_defpoint[0]: expected 3836.938, actual 3656.938",
-        "report.dimension_checks[1].dimension_defpoint[1]: expected -481.484, actual -483.774",
-        "report.dimension_checks[1].expected_wheel_crown_point[0]: expected 3836.938, actual 3656.938",
-        "report.dimension_checks[1].expected_wheel_crown_point[1]: expected -481.484, actual -483.774",
-        "report.dimension_checks[1].measured_value: expected 3.8, actual 6.09",
-        "report.dimension_checks[1].wheel_center[0]: expected 3836.938, actual 3656.938",
-        "report.dimension_checks[1].wheel_center[1]: expected -401.484, actual -403.774",
-        "report.dimension_checks[2].dimension_defpoint[0]: expected 3476.938, actual 3836.938",
-        "report.dimension_checks[2].dimension_defpoint[1]: expected -481.484, actual -483.774",
-        "report.dimension_checks[2].expected_wheel_crown_point[0]: expected 3476.938, actual 3836.938",
-        "report.dimension_checks[2].expected_wheel_crown_point[1]: expected -481.484, actual -483.774",
-        "report.dimension_checks[2].measured_value: expected 3.8, actual 6.09",
-        "report.dimension_checks[2].wheel_center[0]: expected 3476.938, actual 3836.938",
-        "report.dimension_checks[2].wheel_center[1]: expected -401.484, actual -403.774",
-        "report.dimension_checks[3].dimension_defpoint[1]: expected -192.429, actual -194.719",
-        "report.dimension_checks[3].expected_wheel_crown_point[1]: expected -192.429, actual -194.719",
-        "report.dimension_checks[3].measured_value: expected 3.8, actual 6.09",
-        "report.dimension_checks[3].wheel_center[1]: expected -112.429, actual -114.719",
-        "report.dimension_checks[4].dimension_defpoint[1]: expected -192.429, actual -194.719",
-        "report.dimension_checks[4].expected_wheel_crown_point[1]: expected -192.429, actual -194.719",
-        "report.dimension_checks[4].measured_value: expected 3.8, actual 6.09",
-        "report.dimension_checks[4].wheel_center[1]: expected -112.429, actual -114.719",
-        "report.dimension_checks[5].dimension_defpoint[1]: expected -96.795, actual -99.085",
-        "report.dimension_checks[5].expected_wheel_crown_point[1]: expected -96.795, actual -99.085",
-        "report.dimension_checks[5].measured_value: expected 3.8, actual 6.09",
-        "report.dimension_checks[5].wheel_center[1]: expected -16.795, actual -19.085",
-        "release_dxf.dimension_measurements[5].definition_points.defpoint[1]: expected -112.428785, actual -114.719",
-        "release_dxf.dimension_measurements[5].definition_points.defpoint4[0]: expected 3443.524736, actual 3454.755",
-        "release_dxf.dimension_measurements[5].definition_points.defpoint4[1]: expected -190.877111, actual -194.595138",
-        "release_dxf.dimension_measurements[6].definition_points.defpoint[1]: expected -16.794575, actual -19.085",
-        "release_dxf.dimension_measurements[6].definition_points.defpoint4[0]: expected 3438.137224, actual 3454.755",
-        "release_dxf.dimension_measurements[6].definition_points.defpoint4[1]: expected -93.970756, actual -98.961138",
-        "release_dxf.dimension_measurements[7].definition_points.defpoint[1]: expected -401.483597, actual -403.774",
-        "release_dxf.dimension_measurements[7].definition_points.defpoint4[0]: expected 3455.870282, actual 3472.488",
-        "release_dxf.dimension_measurements[7].definition_points.defpoint4[1]: expected -478.659777, actual -483.650138",
-        "release_dxf.dimension_measurements[8].definition_points.defpoint[1]: expected -112.428785, actual -114.719",
-        "release_dxf.dimension_measurements[8].definition_points.defpoint4[0]: expected 3621.031569, actual 3634.755",
-        "release_dxf.dimension_measurements[8].definition_points.defpoint4[1]: expected -190.337312, actual -194.595138",
-        "release_dxf.dimension_measurements[9].definition_points.defpoint[1]: expected -401.483597, actual -403.774",
-        "release_dxf.dimension_measurements[9].definition_points.defpoint4[0]: expected 3641.257794, actual 3652.488",
-        "release_dxf.dimension_measurements[9].definition_points.defpoint4[1]: expected -479.931922, actual -483.650138",
-        "release_dxf.dimension_measurements[10].definition_points.defpoint[1]: expected -401.483597, actual -403.774",
-        "release_dxf.dimension_measurements[10].definition_points.defpoint4[0]: expected 3818.764628, actual 3832.488",
-        "release_dxf.dimension_measurements[10].definition_points.defpoint4[1]: expected -479.392123, actual -483.650138",
-        "release_dxf.dimension_measurements[23].definition_points.defpoint[0]: expected 3494.677452, actual 3238.193",
-        "release_dxf.dimension_measurements[23].definition_points.defpoint[1]: expected -188.628785, actual -191.629",
-        "release_dxf.dimension_measurements[23].definition_points.defpoint2: expected [3459.204666, -192.428785, 0.0], actual None",
-        "release_dxf.dimension_measurements[23].definition_points.defpoint3: expected [3483.567753, -188.628785, 0.0], actual None",
-        "release_dxf.dimension_measurements[23].definition_points.defpoint4: expected None, actual [3238.193, -192.129, 0.0]",
-        "release_dxf.dimension_measurements[23].definition_points.text_midpoint[0]: expected 3494.677452, actual 3229.997411",
-        "release_dxf.dimension_measurements[23].definition_points.text_midpoint[1]: expected -179.081166, actual -184.524969",
-        "release_dxf.dimension_measurements[23].measurement: expected 3.8, actual 0.5",
-        "release_dxf.dimension_measurements[23].text: expected '3.80', actual '4-R0.50'",
-        "release_dxf.dimension_measurements[24].definition_points.defpoint[0]: expected 3496.490488, actual 3238.193",
-        "release_dxf.dimension_measurements[24].definition_points.defpoint[1]: expected -92.994575, actual -95.995",
-        "release_dxf.dimension_measurements[24].definition_points.defpoint2: expected [3459.204666, -96.794575, 0.0], actual None",
-        "release_dxf.dimension_measurements[24].definition_points.defpoint3: expected [3483.567753, -92.994575, 0.0], actual None",
-        "release_dxf.dimension_measurements[24].definition_points.defpoint4: expected None, actual [3238.193, -96.495, 0.0]",
-        "release_dxf.dimension_measurements[24].definition_points.text_midpoint[0]: expected 3496.490488, actual 3229.997411",
-        "release_dxf.dimension_measurements[24].definition_points.text_midpoint[1]: expected -83.446956, actual -88.890759",
-        "release_dxf.dimension_measurements[24].measurement: expected 3.8, actual 0.5",
-        "release_dxf.dimension_measurements[24].text: expected '3.80', actual '4-R0.50'",
-        "release_dxf.dimension_measurements[25].definition_points.defpoint[0]: expected 3514.223547, actual 3494.677452",
-        "release_dxf.dimension_measurements[25].definition_points.defpoint[1]: expected -477.683597, actual -188.628785",
-        "release_dxf.dimension_measurements[25].definition_points.defpoint2[0]: expected 3476.937725, actual 3459.205",
-        "release_dxf.dimension_measurements[25].definition_points.defpoint2[1]: expected -481.483597, actual -194.719",
-        "release_dxf.dimension_measurements[25].definition_points.defpoint3[0]: expected 3501.300812, actual 3489.821069",
-        "release_dxf.dimension_measurements[25].definition_points.defpoint3[1]: expected -477.683597, actual -188.628785",
-        "release_dxf.dimension_measurements[25].definition_points.text_midpoint[0]: expected 3514.223547, actual 3494.677452",
-        "release_dxf.dimension_measurements[25].definition_points.text_midpoint[1]: expected -468.135978, actual -179.081166",
-        "release_dxf.dimension_measurements[25].measurement: expected 3.8, actual 6.090215",
-        "release_dxf.dimension_measurements[25].text: expected '3.80', actual '6.09'",
-        "release_dxf.dimension_measurements[26].definition_points.defpoint2[1]: expected -192.428785, actual -194.719",
-        "release_dxf.dimension_measurements[26].definition_points.defpoint3[0]: expected 3663.567753, actual 3669.821069",
-        "release_dxf.dimension_measurements[26].measurement: expected 3.8, actual 6.090215",
-        "release_dxf.dimension_measurements[26].text: expected '3.80', actual '6.09'",
-        "release_dxf.dimension_measurements[27].definition_points.defpoint[0]: expected 3692.410511, actual 3514.223547",
-        "release_dxf.dimension_measurements[27].definition_points.defpoint2[0]: expected 3656.937725, actual 3476.938",
-        "release_dxf.dimension_measurements[27].definition_points.defpoint2[1]: expected -481.483597, actual -483.774",
-        "release_dxf.dimension_measurements[27].definition_points.defpoint3[0]: expected 3681.300812, actual 3507.554524",
-        "release_dxf.dimension_measurements[27].definition_points.text_midpoint[0]: expected 3692.410511, actual 3514.223547",
-        "release_dxf.dimension_measurements[27].measurement: expected 3.8, actual 6.090403",
-        "release_dxf.dimension_measurements[27].text: expected '3.80', actual '6.09'",
-        "release_dxf.dimension_measurements[28].definition_points.defpoint[0]: expected 3877.333722, actual 3692.410511",
-        "release_dxf.dimension_measurements[28].definition_points.defpoint2[0]: expected 3836.937725, actual 3656.938",
-        "release_dxf.dimension_measurements[28].definition_points.defpoint2[1]: expected -481.483597, actual -483.774",
-        "release_dxf.dimension_measurements[28].definition_points.defpoint3[0]: expected 3861.300812, actual 3687.554524",
-        "release_dxf.dimension_measurements[28].definition_points.text_midpoint[0]: expected 3877.333722, actual 3692.410511",
-        "release_dxf.dimension_measurements[28].measurement: expected 3.8, actual 6.090403",
-        "release_dxf.dimension_measurements[28].text: expected '3.80', actual '6.09'",
-        "release_dxf.dimension_measurements[29].definition_points.defpoint[0]: expected 3238.193, actual 3877.333722",
-        "release_dxf.dimension_measurements[29].definition_points.defpoint[1]: expected -191.629, actual -477.683597",
-        "release_dxf.dimension_measurements[29].definition_points.defpoint2: expected None, actual [3836.938, -483.774, 0.0]",
-        "release_dxf.dimension_measurements[29].definition_points.defpoint3: expected None, actual [3867.554524, -477.683597, 0.0]",
-        "release_dxf.dimension_measurements[29].definition_points.defpoint4: expected [3238.193, -192.129, 0.0], actual None",
-        "release_dxf.dimension_measurements[29].definition_points.text_midpoint[0]: expected 3229.997411, actual 3877.333722",
-        "release_dxf.dimension_measurements[29].definition_points.text_midpoint[1]: expected -184.524969, actual -468.135978",
-        "release_dxf.dimension_measurements[29].measurement: expected 0.5, actual 6.090403",
-        "release_dxf.dimension_measurements[29].text: expected '4-R0.50', actual '6.09'",
-        "release_dxf.dimension_measurements[30].definition_points.defpoint[0]: expected 3238.193, actual 3496.490488",
-        "release_dxf.dimension_measurements[30].definition_points.defpoint[1]: expected -95.995, actual -92.994575",
-        "release_dxf.dimension_measurements[30].definition_points.defpoint2: expected None, actual [3459.205, -99.085, 0.0]",
-        "release_dxf.dimension_measurements[30].definition_points.defpoint3: expected None, actual [3489.821575, -92.994575, 0.0]",
-        "release_dxf.dimension_measurements[30].definition_points.defpoint4: expected [3238.193, -96.495, 0.0], actual None",
-        "release_dxf.dimension_measurements[30].definition_points.text_midpoint[0]: expected 3229.997411, actual 3496.490488",
-        "release_dxf.dimension_measurements[30].definition_points.text_midpoint[1]: expected -88.890759, actual -83.446956",
-        "release_dxf.dimension_measurements[30].measurement: expected 0.5, actual 6.090425",
-        "release_dxf.dimension_measurements[30].text: expected '4-R0.50', actual '6.09'",
-        "debug_dxf.dimension_measurements[5].definition_points.defpoint[1]: expected -112.428785, actual -114.719",
-        "debug_dxf.dimension_measurements[5].definition_points.defpoint4[0]: expected 3443.524736, actual 3454.755",
-        "debug_dxf.dimension_measurements[5].definition_points.defpoint4[1]: expected -190.877111, actual -194.595138",
-        "debug_dxf.dimension_measurements[6].definition_points.defpoint[1]: expected -16.794575, actual -19.085",
-        "debug_dxf.dimension_measurements[6].definition_points.defpoint4[0]: expected 3438.137224, actual 3454.755",
-        "debug_dxf.dimension_measurements[6].definition_points.defpoint4[1]: expected -93.970756, actual -98.961138",
-        "debug_dxf.dimension_measurements[7].definition_points.defpoint[1]: expected -401.483597, actual -403.774",
-        "debug_dxf.dimension_measurements[7].definition_points.defpoint4[0]: expected 3455.870282, actual 3472.488",
-        "debug_dxf.dimension_measurements[7].definition_points.defpoint4[1]: expected -478.659777, actual -483.650138",
-        "debug_dxf.dimension_measurements[8].definition_points.defpoint[1]: expected -112.428785, actual -114.719",
-        "debug_dxf.dimension_measurements[8].definition_points.defpoint4[0]: expected 3621.031569, actual 3634.755",
-        "debug_dxf.dimension_measurements[8].definition_points.defpoint4[1]: expected -190.337312, actual -194.595138",
-        "debug_dxf.dimension_measurements[9].definition_points.defpoint[1]: expected -401.483597, actual -403.774",
-        "debug_dxf.dimension_measurements[9].definition_points.defpoint4[0]: expected 3641.257794, actual 3652.488",
-        "debug_dxf.dimension_measurements[9].definition_points.defpoint4[1]: expected -479.931922, actual -483.650138",
-        "debug_dxf.dimension_measurements[10].definition_points.defpoint[1]: expected -401.483597, actual -403.774",
-        "debug_dxf.dimension_measurements[10].definition_points.defpoint4[0]: expected 3818.764628, actual 3832.488",
-        "debug_dxf.dimension_measurements[10].definition_points.defpoint4[1]: expected -479.392123, actual -483.650138",
-        "debug_dxf.dimension_measurements[25].definition_points.defpoint[0]: expected 3494.677452, actual 3238.193",
-        "debug_dxf.dimension_measurements[25].definition_points.defpoint[1]: expected -188.628785, actual -191.629",
-        "debug_dxf.dimension_measurements[25].definition_points.defpoint2: expected [3459.204666, -192.428785, 0.0], actual None",
-        "debug_dxf.dimension_measurements[25].definition_points.defpoint3: expected [3483.567753, -188.628785, 0.0], actual None",
-        "debug_dxf.dimension_measurements[25].definition_points.defpoint4: expected None, actual [3238.193, -192.129, 0.0]",
-        "debug_dxf.dimension_measurements[25].definition_points.text_midpoint[0]: expected 3494.677452, actual 3229.997411",
-        "debug_dxf.dimension_measurements[25].definition_points.text_midpoint[1]: expected -179.081166, actual -184.524969",
-        "debug_dxf.dimension_measurements[25].measurement: expected 3.8, actual 0.5",
-        "debug_dxf.dimension_measurements[25].text: expected '3.80', actual '4-R0.50'",
-        "debug_dxf.dimension_measurements[26].definition_points.defpoint[0]: expected 3496.490488, actual 3238.193",
-        "debug_dxf.dimension_measurements[26].definition_points.defpoint[1]: expected -92.994575, actual -95.995",
-        "debug_dxf.dimension_measurements[26].definition_points.defpoint2: expected [3459.204666, -96.794575, 0.0], actual None",
-        "debug_dxf.dimension_measurements[26].definition_points.defpoint3: expected [3483.567753, -92.994575, 0.0], actual None",
-        "debug_dxf.dimension_measurements[26].definition_points.defpoint4: expected None, actual [3238.193, -96.495, 0.0]",
-        "debug_dxf.dimension_measurements[26].definition_points.text_midpoint[0]: expected 3496.490488, actual 3229.997411",
-        "debug_dxf.dimension_measurements[26].definition_points.text_midpoint[1]: expected -83.446956, actual -88.890759",
-        "debug_dxf.dimension_measurements[26].measurement: expected 3.8, actual 0.5",
-        "debug_dxf.dimension_measurements[26].text: expected '3.80', actual '4-R0.50'",
-        "debug_dxf.dimension_measurements[27].definition_points.defpoint[0]: expected 3514.223547, actual 3494.677452",
-        "debug_dxf.dimension_measurements[27].definition_points.defpoint[1]: expected -477.683597, actual -188.628785",
-        "debug_dxf.dimension_measurements[27].definition_points.defpoint2[0]: expected 3476.937725, actual 3459.205",
-        "debug_dxf.dimension_measurements[27].definition_points.defpoint2[1]: expected -481.483597, actual -194.719",
-        "debug_dxf.dimension_measurements[27].definition_points.defpoint3[0]: expected 3501.300812, actual 3489.821069",
-        "debug_dxf.dimension_measurements[27].definition_points.defpoint3[1]: expected -477.683597, actual -188.628785",
-        "debug_dxf.dimension_measurements[27].definition_points.text_midpoint[0]: expected 3514.223547, actual 3494.677452",
-        "debug_dxf.dimension_measurements[27].definition_points.text_midpoint[1]: expected -468.135978, actual -179.081166",
-        "debug_dxf.dimension_measurements[27].measurement: expected 3.8, actual 6.090215",
-        "debug_dxf.dimension_measurements[27].text: expected '3.80', actual '6.09'",
-        "debug_dxf.dimension_measurements[28].definition_points.defpoint2[1]: expected -192.428785, actual -194.719",
-        "debug_dxf.dimension_measurements[28].definition_points.defpoint3[0]: expected 3663.567753, actual 3669.821069",
-        "debug_dxf.dimension_measurements[28].measurement: expected 3.8, actual 6.090215",
-        "debug_dxf.dimension_measurements[28].text: expected '3.80', actual '6.09'",
-        "debug_dxf.dimension_measurements[29].definition_points.defpoint[0]: expected 3692.410511, actual 3514.223547",
-        "debug_dxf.dimension_measurements[29].definition_points.defpoint2[0]: expected 3656.937725, actual 3476.938",
-        "debug_dxf.dimension_measurements[29].definition_points.defpoint2[1]: expected -481.483597, actual -483.774",
-        "debug_dxf.dimension_measurements[29].definition_points.defpoint3[0]: expected 3681.300812, actual 3507.554524",
-        "debug_dxf.dimension_measurements[29].definition_points.text_midpoint[0]: expected 3692.410511, actual 3514.223547",
-        "debug_dxf.dimension_measurements[29].measurement: expected 3.8, actual 6.090403",
-        "debug_dxf.dimension_measurements[29].text: expected '3.80', actual '6.09'",
-        "debug_dxf.dimension_measurements[30].definition_points.defpoint[0]: expected 3877.333722, actual 3692.410511",
-        "debug_dxf.dimension_measurements[30].definition_points.defpoint2[0]: expected 3836.937725, actual 3656.938",
-        "debug_dxf.dimension_measurements[30].definition_points.defpoint2[1]: expected -481.483597, actual -483.774",
-        "debug_dxf.dimension_measurements[30].definition_points.defpoint3[0]: expected 3861.300812, actual 3687.554524",
-        "debug_dxf.dimension_measurements[30].definition_points.text_midpoint[0]: expected 3877.333722, actual 3692.410511",
-        "debug_dxf.dimension_measurements[30].measurement: expected 3.8, actual 6.090403",
-        "debug_dxf.dimension_measurements[30].text: expected '3.80', actual '6.09'",
-        "debug_dxf.dimension_measurements[31].definition_points.defpoint[0]: expected 3238.193, actual 3877.333722",
-        "debug_dxf.dimension_measurements[31].definition_points.defpoint[1]: expected -191.629, actual -477.683597",
-        "debug_dxf.dimension_measurements[31].definition_points.defpoint2: expected None, actual [3836.938, -483.774, 0.0]",
-        "debug_dxf.dimension_measurements[31].definition_points.defpoint3: expected None, actual [3867.554524, -477.683597, 0.0]",
-        "debug_dxf.dimension_measurements[31].definition_points.defpoint4: expected [3238.193, -192.129, 0.0], actual None",
-        "debug_dxf.dimension_measurements[31].definition_points.text_midpoint[0]: expected 3229.997411, actual 3877.333722",
-        "debug_dxf.dimension_measurements[31].definition_points.text_midpoint[1]: expected -184.524969, actual -468.135978",
-        "debug_dxf.dimension_measurements[31].measurement: expected 0.5, actual 6.090403",
-        "debug_dxf.dimension_measurements[31].text: expected '4-R0.50', actual '6.09'",
-        "debug_dxf.dimension_measurements[32].definition_points.defpoint[0]: expected 3238.193, actual 3496.490488",
-        "debug_dxf.dimension_measurements[32].definition_points.defpoint[1]: expected -95.995, actual -92.994575",
-        "debug_dxf.dimension_measurements[32].definition_points.defpoint2: expected None, actual [3459.205, -99.085, 0.0]",
-        "debug_dxf.dimension_measurements[32].definition_points.defpoint3: expected None, actual [3489.821575, -92.994575, 0.0]",
-        "debug_dxf.dimension_measurements[32].definition_points.defpoint4: expected [3238.193, -96.495, 0.0], actual None",
-        "debug_dxf.dimension_measurements[32].definition_points.text_midpoint[0]: expected 3229.997411, actual 3496.490488",
-        "debug_dxf.dimension_measurements[32].definition_points.text_midpoint[1]: expected -88.890759, actual -83.446956",
-        "debug_dxf.dimension_measurements[32].measurement: expected 0.5, actual 6.090425",
-        "debug_dxf.dimension_measurements[32].text: expected '4-R0.50', actual '6.09'"
-      ]
+      "status": "PASS",
+      "differences": []
     },
     {
       "machine_id": "triple_single_down_up",
@@ -1021,7 +831,7 @@
         "slot_width": 5.6,
         "guide_thickness": 2.08,
         "R_form": 15.9,
-        "lower_cavity_notch_opening": 7.9974996092526,
+        "lower_cavity_notch_opening": 12.200000000000001,
         "fixed_template_dimensions": {
           "section": {
             "outer_width": 40.0,
@@ -1115,7 +925,7 @@
           "section_center_opening": {
             "expected_value": 2.0,
             "actual_dimension_measurement": 2.0,
-            "display_text": "2",
+            "display_text": "2.00",
             "definition_points": {
               "defpoint": [
                 3243.351869,
@@ -1141,25 +951,25 @@
             "bound_to_geometry": true,
             "status": "PASS",
             "dimension_count": 1,
-            "expected_display_text": "2"
+            "expected_display_text": "2.00"
           },
           "lower_wheel_notch_opening": {
-            "expected_value": 7.9975,
-            "actual_dimension_measurement": 7.9975,
-            "display_text": "8",
+            "expected_value": 12.2,
+            "actual_dimension_measurement": 12.2,
+            "display_text": "12.20",
             "definition_points": {
               "defpoint": [
-                3463.211454,
+                3461.110204,
                 43.149685,
                 0.0
               ],
               "defpoint2": [
-                3463.211454,
+                3461.110204,
                 47.849685,
                 0.0
               ],
               "defpoint3": [
-                3471.208954,
+                3473.310204,
                 47.849685,
                 0.0
               ],
@@ -1172,12 +982,12 @@
             "bound_to_geometry": true,
             "status": "PASS",
             "dimension_count": 1,
-            "expected_display_text": "8"
+            "expected_display_text": "12.20"
           },
           "lower_wheel_key_process_height": {
-            "expected_value": 12.1,
-            "actual_dimension_measurement": 12.1,
-            "display_text": "12.1",
+            "expected_value": 12.232902,
+            "actual_dimension_measurement": 12.232902,
+            "display_text": "12.23",
             "definition_points": {
               "defpoint": [
                 3516.710204,
@@ -1191,19 +1001,19 @@
               ],
               "defpoint3": [
                 3467.210204,
-                47.949685,
+                48.082586,
                 0.0
               ],
               "text_midpoint": [
                 3518.110204,
-                41.899685,
+                41.966135,
                 0.0
               ]
             },
             "bound_to_geometry": true,
             "status": "PASS",
             "dimension_count": 1,
-            "expected_display_text": "12.1"
+            "expected_display_text": "12.23"
           },
           "upper_wheel_key_process_height": {
             "expected_value": 13.152902,
@@ -1270,46 +1080,8 @@
         },
         "release_allowed": true
       },
-      "status": "FAIL",
-      "differences": [
-        "report.lower_cavity_notch_opening: expected 12.200000000000001, actual 7.9974996092526",
-        "report.required_dimension_roles.lower_wheel_key_process_height.actual_dimension_measurement: expected 12.232902, actual 12.1",
-        "report.required_dimension_roles.lower_wheel_key_process_height.definition_points.defpoint3[1]: expected 48.082586, actual 47.949685",
-        "report.required_dimension_roles.lower_wheel_key_process_height.definition_points.text_midpoint[1]: expected 41.966135, actual 41.899685",
-        "report.required_dimension_roles.lower_wheel_key_process_height.display_text: expected '12.23', actual '12.1'",
-        "report.required_dimension_roles.lower_wheel_key_process_height.expected_display_text: expected '12.23', actual '12.1'",
-        "report.required_dimension_roles.lower_wheel_key_process_height.expected_value: expected 12.232902, actual 12.1",
-        "report.required_dimension_roles.lower_wheel_notch_opening.actual_dimension_measurement: expected 12.2, actual 7.9975",
-        "report.required_dimension_roles.lower_wheel_notch_opening.definition_points.defpoint[0]: expected 3461.110204, actual 3463.211454",
-        "report.required_dimension_roles.lower_wheel_notch_opening.definition_points.defpoint2[0]: expected 3461.110204, actual 3463.211454",
-        "report.required_dimension_roles.lower_wheel_notch_opening.definition_points.defpoint3[0]: expected 3473.310204, actual 3471.208954",
-        "report.required_dimension_roles.lower_wheel_notch_opening.display_text: expected '12.2', actual '8'",
-        "report.required_dimension_roles.lower_wheel_notch_opening.expected_display_text: expected '12.2', actual '8'",
-        "report.required_dimension_roles.lower_wheel_notch_opening.expected_value: expected 12.2, actual 7.9975",
-        "report.required_dimension_roles.upper_wheel_key_process_height.actual_dimension_measurement: expected 14.096, actual 13.152902",
-        "report.required_dimension_roles.upper_wheel_key_process_height.definition_points.defpoint[1]: expected 48.753685, actual 49.696783",
-        "report.required_dimension_roles.upper_wheel_key_process_height.definition_points.defpoint2[1]: expected 48.753685, actual 49.696783",
-        "report.required_dimension_roles.upper_wheel_key_process_height.definition_points.text_midpoint[1]: expected 55.801685, actual 56.273234",
-        "report.required_dimension_roles.upper_wheel_key_process_height.display_text: expected '14.1', actual '13.15'",
-        "report.required_dimension_roles.upper_wheel_key_process_height.expected_display_text: expected '14.1', actual '13.15'",
-        "report.required_dimension_roles.upper_wheel_key_process_height.expected_value: expected 14.096, actual 13.152902",
-        "report.required_dimension_roles.upper_wheel_local_cut_in_depth.actual_dimension_measurement: expected 1.176, actual 0.232902",
-        "report.required_dimension_roles.upper_wheel_local_cut_in_depth.definition_points.defpoint[1]: expected 48.753685, actual 49.696783",
-        "report.required_dimension_roles.upper_wheel_local_cut_in_depth.definition_points.defpoint2[1]: expected 48.753685, actual 49.696783",
-        "report.required_dimension_roles.upper_wheel_local_cut_in_depth.definition_points.text_midpoint[1]: expected 49.341685, actual 49.813234",
-        "report.required_dimension_roles.upper_wheel_local_cut_in_depth.display_text: expected '1.18', actual '0.23'",
-        "report.required_dimension_roles.upper_wheel_local_cut_in_depth.expected_display_text: expected '1.18', actual '0.23'",
-        "report.required_dimension_roles.upper_wheel_local_cut_in_depth.expected_value: expected 1.176, actual 0.232902",
-        "release_dxf.dimension_count: expected 17, actual 16",
-        "release_dxf.extents.max_y: expected 208.753685, actual 209.696783",
-        "release_dxf.extents.min_y: expected -111.917414, actual -112.050315",
-        "release_dxf.dimension_measurements: expected list length 17, actual 16",
-        "debug_dxf.dimension_count: expected 17, actual 16",
-        "debug_dxf.extents.max_y: expected 208.753685, actual 209.696783",
-        "debug_dxf.extents.min_y: expected -111.917414, actual -112.050315",
-        "debug_dxf.dimension_measurements: expected list length 17, actual 16",
-        "safety_rules.lower_cavity_notch_opening: expected 12.200000000000001, actual 7.9974996092526"
-      ]
+      "status": "PASS",
+      "differences": []
     },
     {
       "machine_id": "triple_single_up_up",
@@ -1326,9 +1098,9 @@
           "上"
         ],
         "slot_width": 9.15,
-        "guide_thickness": 2.59,
+        "guide_thickness": 2.62,
         "R_form": null,
-        "lower_cavity_notch_opening": 0.0,
+        "lower_cavity_notch_opening": 8.9,
         "fixed_template_dimensions": {
           "section": {
             "outer_width": 40.0,
@@ -1382,18 +1154,18 @@
             "name": "guide_thickness_dimension",
             "ok": true,
             "details": {
-              "expected": 2.59,
-              "geometry_measured": 2.59,
+              "expected": 2.62,
+              "geometry_measured": 2.62,
               "definition_or_actual_measurements": [
-                2.59
+                2.62
               ],
               "display_texts": [
-                "2.59"
+                "2.62"
               ],
               "normalized_display_texts": [
-                "2.59"
+                "2.62"
               ],
-              "label": "2.59",
+              "label": "2.62",
               "dimension_count": 1,
               "expected_count": 1
             }
@@ -1402,14 +1174,8 @@
         "required_dimension_roles": {},
         "release_allowed": true
       },
-      "status": "FAIL",
-      "differences": [
-        "report.lower_cavity_notch_opening: expected None, actual 0.0",
-        "safety_rules.limit: expected None, actual 8.9",
-        "safety_rules.lower_cavity_notch_opening: expected None, actual 0.0",
-        "safety_rules.not_applicable: expected True, actual None",
-        "safety_rules.product_length: expected None, actual 9.1"
-      ]
+      "status": "PASS",
+      "differences": []
     }
   ]
 }

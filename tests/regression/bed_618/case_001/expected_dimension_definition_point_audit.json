@@ -4,10 +4,10 @@
   "dimension_count": 19,
   "dimensions": [
     {
-      "dimension_handle": "203905A",
+      "dimension_handle": "203905C",
       "dimension_role": "fixed_section_height_27",
       "measurement": 27.0,
-      "display_text": "27.0",
+      "display_text": "27.00",
       "defpoint2": [
         3221.351869,
         62.849685,
@@ -30,13 +30,14 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203907A",
+      "dimension_handle": "203907B",
       "dimension_role": "other_release_dimension",
       "measurement": 2.0,
-      "display_text": "2.0",
+      "display_text": "2.00",
       "defpoint2": [
         3240.351869,
         62.849685,
@@ -59,13 +60,14 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
       "dimension_handle": "203909A",
       "dimension_role": "fixed_section_width_40",
       "measurement": 40.0,
-      "display_text": "40",
+      "display_text": "40.00",
       "defpoint2": [
         3221.351869,
         62.849685,
@@ -88,13 +90,14 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20390B6",
+      "dimension_handle": "20390B5",
       "dimension_role": "other_release_dimension",
       "measurement": 20.9,
-      "display_text": "20.9",
+      "display_text": "20.90",
       "defpoint2": [
         3261.351869,
         56.749685,
@@ -117,10 +120,11 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20390D2",
+      "dimension_handle": "20390D0",
       "dimension_role": "guide_thickness",
       "measurement": 1.83,
       "display_text": "1.83",
@@ -146,10 +150,11 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_slot_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20390F1",
+      "dimension_handle": "20390EF",
       "dimension_role": "slot_width",
       "measurement": 6.21,
       "display_text": "6.21±0.01",
@@ -175,13 +180,14 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_slot_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039110",
+      "dimension_handle": "203910E",
       "dimension_role": "relief",
       "measurement": 0.5,
-      "display_text": "4-r0.5",
+      "display_text": "4-R0.50",
       "defpoint2": [
         3238.246869,
         58.579685,
@@ -204,39 +210,41 @@
       ],
       "point_error": 0.0,
       "binding_mode": "radius_or_diameter_entity",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039129",
+      "dimension_handle": "2039126",
       "dimension_role": "relief",
       "measurement": 0.5,
-      "display_text": "2-r0.5",
+      "display_text": "2-R0.50",
       "defpoint2": [
-        3244.456869,
-        58.579685,
+        3242.851869,
+        59.29537,
         0.0
       ],
       "defpoint3": [
-        3244.456869,
-        58.079685,
+        3242.351869,
+        59.29537,
         0.0
       ],
       "expected_geometry_point_1": [
-        3244.456869,
-        58.579685,
+        3242.851869,
+        59.29537,
         0.0
       ],
       "expected_geometry_point_2": [
-        3244.456869,
-        58.079685,
+        3242.351869,
+        59.29537,
         0.0
       ],
       "point_error": 0.0,
       "binding_mode": "radius_or_diameter_entity",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203913E",
+      "dimension_handle": "203913B",
       "dimension_role": "R_form",
       "measurement": 17.45,
       "display_text": "R17.45",
@@ -262,10 +270,11 @@
       ],
       "point_error": 0.0,
       "binding_mode": "radius_or_diameter_entity",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039153",
+      "dimension_handle": "2039150",
       "dimension_role": "R_form",
       "measurement": 17.45,
       "display_text": "R17.45",
@@ -291,13 +300,14 @@
       ],
       "point_error": 0.0,
       "binding_mode": "radius_or_diameter_entity",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039175",
+      "dimension_handle": "2039173",
       "dimension_role": "other_release_dimension",
       "measurement": 130.0,
-      "display_text": "130.0",
+      "display_text": "130.00",
       "defpoint2": [
         3690.483328,
         61.420832,
@@ -320,42 +330,44 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039185",
-      "dimension_role": "wheel_radius_R80",
+      "dimension_handle": "2039182",
+      "dimension_role": "wheel_radius",
       "measurement": 80.0,
-      "display_text": "R80",
+      "display_text": "R80.00",
       "defpoint2": [
         3560.483328,
-        136.950832,
+        136.784227,
         0.0
       ],
       "defpoint3": [
         3560.483328,
-        56.950832,
+        56.784227,
         0.0
       ],
       "expected_geometry_point_1": [
         3560.483328,
-        136.950832,
+        136.784227,
         0.0
       ],
       "expected_geometry_point_2": [
         3560.483328,
-        56.950832,
+        56.784227,
         0.0
       ],
       "point_error": 0.0,
       "binding_mode": "radius_or_diameter_entity",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203918E",
+      "dimension_handle": "203918B",
       "dimension_role": "other_release_dimension",
-      "measurement": 4.47,
-      "display_text": "4.47",
+      "measurement": 4.636606,
+      "display_text": "4.64",
       "defpoint2": [
         3690.483328,
         61.420832,
@@ -363,7 +375,7 @@
       ],
       "defpoint3": [
         3690.483328,
-        56.950832,
+        56.784227,
         0.0
       ],
       "expected_geometry_point_1": [
@@ -373,18 +385,19 @@
       ],
       "expected_geometry_point_2": [
         3690.483328,
-        56.950832,
+        56.784227,
         0.0
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391AE",
+      "dimension_handle": "20391AA",
       "dimension_role": "other_release_dimension",
       "measurement": 170.0,
-      "display_text": "170.0",
+      "display_text": "170.00",
       "defpoint2": [
         3390.483328,
         61.420832,
@@ -407,13 +420,14 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391BE",
+      "dimension_handle": "20391B9",
       "dimension_role": "fixed_guide_length_590",
       "measurement": 300.0,
-      "display_text": "300",
+      "display_text": "300.00",
       "defpoint2": [
         3390.483328,
         54.320832,
@@ -436,13 +450,14 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391CC",
+      "dimension_handle": "20391C6",
       "dimension_role": "other_release_dimension",
       "measurement": 1.0,
-      "display_text": "1.0",
+      "display_text": "1.00",
       "defpoint2": [
         3390.483328,
         55.320832,
@@ -465,13 +480,14 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391DC",
+      "dimension_handle": "20391D5",
       "dimension_role": "other_release_dimension",
       "measurement": 15.0,
-      "display_text": "15",
+      "display_text": "15.00",
       "defpoint2": [
         3405.483328,
         34.420832,
@@ -494,13 +510,14 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391EB",
+      "dimension_handle": "20391E4",
       "dimension_role": "other_release_dimension",
       "measurement": 15.0,
-      "display_text": "R15",
+      "display_text": "R15.00",
       "defpoint2": [
         3390.483328,
         39.320832,
@@ -523,10 +540,11 @@
       ],
       "point_error": 0.0,
       "binding_mode": "radius_or_diameter_entity",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039200",
+      "dimension_handle": "20391FE",
       "dimension_role": "other_release_dimension",
       "measurement": 20.9,
       "display_text": "20.90",
@@ -552,10 +570,26 @@
       ],
       "point_error": 0.0,
       "binding_mode": "rounded_corner_tangent_envelope",
+      "annotation_block_bound": null,
       "bound_to_geometry": true
     }
   ],
-  "required_roles": {},
+  "required_roles": {
+    "slot_width": {
+      "expected_measurement": 6.21,
+      "minimum_count": 1,
+      "actual_count": 1,
+      "all_bound_to_geometry": true,
+      "status": "PASS"
+    },
+    "guide_thickness": {
+      "expected_measurement": 1.83,
+      "minimum_count": 1,
+      "actual_count": 1,
+      "all_bound_to_geometry": true,
+      "status": "PASS"
+    }
+  },
   "all_dimensions_bound_to_geometry": true,
   "all_required_roles_pass": true,
   "release_allowed": true

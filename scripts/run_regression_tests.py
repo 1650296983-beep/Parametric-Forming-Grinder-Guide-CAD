@@ -25,12 +25,13 @@ from src.dual_guide_release_audit import (
     build_release_line_type_audit,
     write_dimension_definition_point_audit,
 )
+from src.global_rules import BLOCK_THICKNESS_CLEARANCE
 from src.guide_design_input import build_single_guide_profile_from_input
 from src.dxf_writer import write_dxf
-from src.generate_machine import _build_profile, write_block_png_preview
+from src.generate_machine import _build_profile
 from src.geometry import TileSection
 from src.machine_config import MachineConfig, load_machine_config
-from src.preview import write_png_preview
+from src.preview import write_block_png_preview, write_png_preview
 from src.spec_parser import BlockSpec, ProductPreFormTolerance, parse_relief_spec
 from src.validation_report import write_validation_report_json
 from src.validator import validate_tile_section
@@ -47,6 +48,29 @@ ARTIFACTS = {
     "report_json": ("expected_report.json", "actual_report.json"),
     "audit_json": ("expected_audit.json", "actual_audit.json"),
 }
+
+
+def optional_thickness_clearance(input_data: dict[str, Any]) -> float | None:
+    """Return an explicit fixture override without adding machine-specific defaults."""
+    value = input_data.get("thickness_clearance")
+    return None if value is None else float(value)
+
+
+def write_regression_preview(
+    profile: TileSection | BlockGuideSection,
+    machine: MachineConfig,
+    preview_path: Path,
+) -> None:
+    """Render the preview with the same machine context used for generation."""
+    if isinstance(profile, TileSection):
+        write_png_preview(
+            profile,
+            preview_path,
+            side_layout=machine.side_layout,
+            machine_name=f"{machine.machine_id} {machine.guide_length:.0f}mm",
+        )
+        return
+    write_block_png_preview(profile, machine, preview_path)
 
 
 def main() -> int:
@@ -177,8 +201,8 @@ def generate_single_guide_case(input_data: dict[str, Any], machine: MachineConfi
             block_slot_clearance=float(input_data.get("block_slot_clearance", 0.05)),
             machine=machine,
             block_outer_width=machine.block_outer_width,
-            block_thickness_clearance_mid=machine.block_thickness_clearance_mid,
-            thickness_clearance_mid=input_data.get("thickness_clearance"),
+            default_block_thickness_clearance=BLOCK_THICKNESS_CLEARANCE,
+            thickness_clearance_mid=optional_thickness_clearance(input_data),
             preform_spec=input_data.get("preform_spec"),
         )
     if isinstance(profile, TileSection):
@@ -196,15 +220,7 @@ def generate_single_guide_case(input_data: dict[str, Any], machine: MachineConfi
         machine,
         paths["dimension_audit_json"],
     )
-    if isinstance(profile, TileSection):
-        write_png_preview(
-            profile,
-            paths["preview_png"],
-            side_layout=machine.side_layout,
-            machine_name=f"{machine.machine_id} {machine.guide_length:.0f}mm",
-        )
-    else:
-        write_block_png_preview(profile, machine.machine_id, paths["preview_png"])
+    write_regression_preview(profile, machine, paths["preview_png"])
     report = write_validation_report_json(
         profile,
         parsed_spec,
@@ -258,11 +274,10 @@ def generate_dual_guide_case(input_data: dict[str, Any], machine: MachineConfig,
             slot_reference=str(input_data.get("slot_reference", "length")),
             slot_clearance=float(input_data.get("block_slot_clearance", 0.05)),
             outer_width=machine.block_outer_width,
-            thickness_clearance_mid=float(
-                input_data.get(
-                    "thickness_clearance",
-                    machine.block_thickness_clearance_mid,
-                )
+            thickness_clearance_mid=(
+                BLOCK_THICKNESS_CLEARANCE
+                if (thickness_clearance := optional_thickness_clearance(input_data)) is None
+                else thickness_clearance
             ),
         )
         input_rule = engine._legacy_input_rule(profile, pre_grinding_spec)
@@ -303,15 +318,7 @@ def generate_dual_guide_case(input_data: dict[str, Any], machine: MachineConfig,
         release_gate=release_gate,
     )
     write_json(paths["report_json"], report)
-    if isinstance(profile, TileSection):
-        write_png_preview(
-            profile,
-            paths["preview_png"],
-            side_layout=machine.side_layout,
-            machine_name=f"{machine.machine_id} {machine.guide_length:.0f}mm",
-        )
-    else:
-        write_block_png_preview(profile, machine.machine_id, paths["preview_png"])
+    write_regression_preview(profile, machine, paths["preview_png"])
     return report
 
 

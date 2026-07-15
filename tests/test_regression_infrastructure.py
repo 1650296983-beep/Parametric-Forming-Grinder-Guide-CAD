@@ -1,6 +1,12 @@
 from pathlib import Path
 import importlib.util
 import json
+import shutil
+
+from src.block_geometry import build_block_guide_section
+from src.global_rules import BLOCK_THICKNESS_CLEARANCE
+from src.machine_config import MachineConfig, load_machine_config
+from src.spec_parser import parse_block_spec, parse_relief_spec
 
 
 REPO_ROOT = Path(__file__).resolve().parents[1]
@@ -70,3 +76,56 @@ def test_high_risk_change_detection_catches_fixed_machine_fields():
     assert any("guide_length changed" in reason for reason in reasons)
     assert any("guide_sections changed" in reason for reason in reasons)
     assert any("wheel_positions changed" in reason for reason in reasons)
+
+
+def test_regression_thickness_clearance_uses_global_default_and_explicit_override():
+    regression = _load_regression_script()
+    machine = load_machine_config("bed_618")
+
+    assert not hasattr(machine, "block_thickness_clearance_mid")
+    assert regression.optional_thickness_clearance({}) is None
+    assert regression.optional_thickness_clearance({"thickness_clearance": 0.09}) == 0.09
+    assert BLOCK_THICKNESS_CLEARANCE == 0.12
+
+
+def test_regression_block_preview_receives_machine_config(tmp_path, monkeypatch):
+    regression = _load_regression_script()
+    machine = load_machine_config("bed_618")
+    profile = build_block_guide_section(
+        parse_block_spec("9.1*4*3"),
+        relief=parse_relief_spec("4-1"),
+        slot_reference="length",
+        slot_clearance=0.05,
+        thickness_clearance_mid=BLOCK_THICKNESS_CLEARANCE,
+    )
+    captured: list[MachineConfig] = []
+    original_preview = regression.write_block_png_preview
+
+    def checked_preview(preview_profile, preview_machine, preview_path):
+        assert isinstance(preview_machine, MachineConfig)
+        captured.append(preview_machine)
+        return original_preview(preview_profile, preview_machine, preview_path)
+
+    monkeypatch.setattr(regression, "write_block_png_preview", checked_preview)
+    regression.write_regression_preview(profile, machine, tmp_path / "preview.png")
+
+    assert captured == [machine]
+
+
+def test_historical_regression_cases_run_without_removed_machine_property(tmp_path):
+    regression = _load_regression_script()
+
+    for machine_id in ("bed_618", "triple_double_up_up_up"):
+        source_case = REPO_ROOT / "tests" / "regression" / machine_id / "case_001"
+        case_dir = tmp_path / machine_id / "case_001"
+        shutil.copytree(source_case, case_dir)
+
+        result = regression.run_case(case_dir)
+
+        assert result["generation_ok"], result["generation_errors"]
+
+
+def test_clean_checkout_runs_independent_regression_entrypoint():
+    script = (REPO_ROOT / "scripts" / "verify_clean_checkout.sh").read_text(encoding="utf-8")
+
+    assert ".venv/bin/python scripts/run_regression_tests.py" in script

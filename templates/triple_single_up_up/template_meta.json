@@ -1,9 +1,9 @@
 {
   "machine_id": "triple_single_up_up",
-  "template_version": "v1.0.1",
+  "template_version": "v1.0.2",
   "source_template_file": "section_template.dxf; side_template.dxf",
   "sha256": "41209e6036fd898c7be3dec368d512d63501808eb45c86b6987aae1978c14b0a",
-  "change_reason": "用户确认双规格规则：双R的R面跟随第一砂轮方向；单R成品加方块磨前采用矩形槽；槽宽和厚度继续按QG公式；同步修正尺寸定义点到真实几何及实例实测固定开口。",
+  "change_reason": "用户确认 c317b69 当前规则为最新基准：方块磨前默认厚度间隙 0.12 mm、正式尺寸文字保留两位小数；同步已提交并验证的侧视投影、砂轮开口和尺寸定义点规则。",
   "approved_by": "生产图纸规则确认",
-  "approved_date": "2026-07-11"
+  "approved_date": "2026-07-15"
 }
