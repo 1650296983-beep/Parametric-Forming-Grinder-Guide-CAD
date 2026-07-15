@@ -7,9 +7,10 @@ from pathlib import Path
 from .geometry import TileSection
 from .dimension_roles import set_dimension_role
 from .global_rules import CENTER_TRANSITION_RADIUS, format_dimension
+from .template_paths import LEGACY_TEMPLATE_ROOT, legacy_template_path
 
 
-SECTION_DIMENSION_TEMPLATE_PATH = Path("section_dimension_template.dxf")
+SECTION_DIMENSION_TEMPLATE_PATH = legacy_template_path("section_dimension_template.dxf")
 DIMENSION_LAYER = "DIMENSION"
 DIMENSION_TEXT_FALLBACK_LAYER = "DIMENSION_TEXT_FALLBACK"
 TEXT_NOTE_LAYER = "TEXT_NOTE"

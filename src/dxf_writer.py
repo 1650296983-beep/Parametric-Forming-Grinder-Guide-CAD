@@ -39,12 +39,13 @@ from .side_view_writer import (
     add_side_view_to_dxf,
 )
 from .side_view_validator import assert_side_view_consistency
+from .template_paths import legacy_template_path
 
 
 DEFAULT_TEMPLATE_PATHS = (
-    Path("standard_guide_template.dxf"),
-    Path("R17_45XR15_8X6_2X1_65_clean_template_latest.dxf"),
-    Path("R17_45XR15_8X6_2X1_65_clean_template.dxf"),
+    legacy_template_path("standard_guide_template.dxf"),
+    legacy_template_path("R17_45XR15_8X6_2X1_65_clean_template_latest.dxf"),
+    legacy_template_path("R17_45XR15_8X6_2X1_65_clean_template.dxf"),
 )
 DEBUG_CONTROL_LAYER = "DEBUG_CONTROL"
 DEBUG_POINTS_LAYER = "DEBUG_POINTS"

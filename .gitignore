@@ -22,6 +22,8 @@ npm-debug.log*
 # Generated CAD artifacts, previews, reports, and scratch files
 output/
 tmp/
+# Root-level CAD files are local/generated artifacts. Source templates belong
+# under templates/ and are intentionally version controlled there.
 /*.dxf
 /*.dwg
 /*.json

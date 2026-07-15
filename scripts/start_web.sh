@@ -35,7 +35,7 @@ api_is_healthy() {
 
 trap cleanup EXIT INT TERM
 
-[[ -x "$PYTHON" ]] || fail "未找到 Python 虚拟环境。请先在项目根目录执行：python3 -m venv .venv"
+[[ -x "$PYTHON" ]] || fail "未找到 Python 3.10+ 虚拟环境。请先在项目根目录执行：python3.11 -m venv .venv"
 [[ -f "$ENV_FILE" ]] || fail "未找到 .env。请复制 .env.example 为 .env 并配置账户和会话密钥。"
 set -a
 . "$ENV_FILE"

@@ -112,10 +112,14 @@ reimplement process formulas.
 First-time environment setup:
 
 ```bash
-python3 -m venv .venv
+python3.11 -m venv .venv
 ./.venv/bin/python -m pip install -r requirements.txt
 cd frontend && npm ci
 ```
+
+Python 3.10 or later is required. On macOS, do not use the system-provided
+Python 3.9; install Python 3.11 or newer and create the virtual environment
+with that interpreter.
 
 Then start both the API and frontend from the repository root with one command:
 
@@ -171,6 +175,24 @@ three-head dual-guide machines (`triple_double_down_up_up` and
 `triple_double_up_up_up`). Dual-guide jobs are generated only through
 `DualGuideTemplateEngine`; both sections must pass synchronization and dimension
 definition-point audits before a formal DXF is exposed.
+
+## Template Asset Delivery
+
+All source DXF templates required by the generator are versioned under
+`templates/`. Legacy section-dimension references live in
+`templates/legacy_reference/`; generated or ad-hoc DXF files must not be placed
+at the repository root because root-level CAD artifacts are ignored by Git.
+
+Before publishing a release to GitHub or deploying to a Mac mini, run the
+clean-checkout verifier after committing the changes:
+
+```bash
+PYTHON_BIN=python3.11 ./scripts/verify_clean_checkout.sh
+```
+
+It exports the committed tree, verifies the required CAD templates, installs
+Python and frontend dependencies, builds the frontend, and runs the test suite.
+The same checks run in GitHub Actions for every push and pull request.
 
 For explicit dual-spec tasks, the formal DXF filename is fixed as
 `成品规格（磨前规格）机台类型.dxf`. Tolerance annotations are deliberately excluded

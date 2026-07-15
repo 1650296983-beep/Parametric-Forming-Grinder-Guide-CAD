@@ -3,8 +3,10 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
+from .template_paths import legacy_template_path
 
-DEFAULT_SIDE_VIEW_TEMPLATE = Path("导轨长度投影（干净模板）.dxf")
+
+DEFAULT_SIDE_VIEW_TEMPLATE = legacy_template_path("导轨长度投影（干净模板）.dxf")
 
 
 @dataclass(frozen=True)

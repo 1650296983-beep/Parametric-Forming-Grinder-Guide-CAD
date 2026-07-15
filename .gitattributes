@@ -1,0 +1,3 @@
+# AutoCAD DXF source templates use fixed-width group-code lines with meaningful
+# trailing spaces. Do not rewrite or flag those spaces as source-code whitespace.
+templates/legacy_reference/*.dxf -whitespace
