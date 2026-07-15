@@ -258,10 +258,10 @@ def write_dimension_report(
     dimension_specs = [
         ("slot_width", "horizontal_linear", guide.slot_width_dimension_text, guide.guide_slot_width, "PARAM_SLOT left/right relief centers"),
         ("guide_thickness", "vertical_linear", f"{guide.guide_thickness:.2f}", guide.guide_thickness, "PARAM_SLOT upper/lower relief centers"),
-        ("center_opening", "horizontal_linear", f"{guide.center_opening:.1f}", guide.center_opening, "PARAM_SLOT top opening vertical boundaries"),
-        ("slot_base_height", "vertical_linear", f"{guide.slot_base_height:.1f}", guide.slot_base_height, "FIXED_TEMPLATE bottom baseline to slot base"),
-        ("outer_width", "horizontal_linear", f"{guide.outer_width:.0f}", guide.outer_width, "FIXED_TEMPLATE outer frame width"),
-        ("outer_height", "vertical_linear", f"{guide.outer_height:.1f}", guide.outer_height, "FIXED_TEMPLATE outer frame height"),
+        ("center_opening", "horizontal_linear", f"{guide.center_opening:.2f}", guide.center_opening, "PARAM_SLOT top opening vertical boundaries"),
+        ("slot_base_height", "vertical_linear", f"{guide.slot_base_height:.2f}", guide.slot_base_height, "FIXED_TEMPLATE bottom baseline to slot base"),
+        ("outer_width", "horizontal_linear", f"{guide.outer_width:.2f}", guide.outer_width, "FIXED_TEMPLATE outer frame width"),
+        ("outer_height", "vertical_linear", f"{guide.outer_height:.2f}", guide.outer_height, "FIXED_TEMPLATE outer frame height"),
         ("upper_r_form", "radius", f"R{r_form:.2f}", r_form, "PARAM_SLOT upper R_form arc"),
         ("lower_r_form", "radius", f"R{r_form:.2f}", r_form, "PARAM_SLOT lower R_form arc"),
     ]
@@ -483,19 +483,19 @@ def _guide_report_lines(tile_section: TileSection) -> list[str]:
         ),
         (
             "  center_offset_dimension: source=PARAM_SLOT center opening vertical line X distance; "
-            f"actual={guide.center_opening:.6f} mm; text={guide.center_opening:.1f}"
+            f"actual={guide.center_opening:.6f} mm; text={guide.center_opening:.2f}"
         ),
         (
             "  slot_base_dimension: source=FIXED_TEMPLATE bottom baseline to slot base line; "
-            f"actual={guide.slot_base_height:.6f} mm; text={guide.slot_base_height:.1f}"
+            f"actual={guide.slot_base_height:.6f} mm; text={guide.slot_base_height:.2f}"
         ),
         (
             "  outer_width_dimension: source=FIXED_TEMPLATE outer frame width; "
-            f"actual={guide.outer_width:.6f} mm; text={guide.outer_width:.0f}"
+            f"actual={guide.outer_width:.6f} mm; text={guide.outer_width:.2f}"
         ),
         (
             "  outer_height_dimension: source=FIXED_TEMPLATE outer frame height; "
-            f"actual={guide.outer_height:.6f} mm; text={guide.outer_height:.1f}"
+            f"actual={guide.outer_height:.6f} mm; text={guide.outer_height:.2f}"
         ),
     ]
 

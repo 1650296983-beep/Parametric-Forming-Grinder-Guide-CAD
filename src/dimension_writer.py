@@ -6,6 +6,7 @@ from pathlib import Path
 
 from .geometry import TileSection
 from .dimension_roles import set_dimension_role
+from .global_rules import CENTER_TRANSITION_RADIUS, format_dimension
 
 
 SECTION_DIMENSION_TEMPLATE_PATH = Path("section_dimension_template.dxf")
@@ -43,6 +44,9 @@ class SlotDimensionGeometry:
     upper_radius_center: tuple[float, float]
     lower_radius_center: tuple[float, float]
     relief_radius: float
+    center_transition_radius: float = CENTER_TRANSITION_RADIUS
+    center_transition_left_center: tuple[float, float] | None = None
+    center_transition_right_center: tuple[float, float] | None = None
 
     @property
     def slot_width(self) -> float:
@@ -313,7 +317,7 @@ def add_center_offset_dimension(
         (geometry.opening_right_x, geometry.outer_top),
         (geometry.opening_left_x, y - 0.6),
         (geometry.opening_right_x, y - 0.6),
-        f"{geometry.center_opening:.1f}",
+        format_dimension(geometry.center_opening),
         (geometry.center_x - 0.55, y + 0.4),
         angle=0.0,
         include_fallback=include_fallback,
@@ -381,10 +385,7 @@ def add_section_template_dimensions(
             continue
         if skip_secondary_relief_dimension and _dimension_text(entity).startswith("2-"):
             continue
-        try:
-            copied = entity.copy()
-        except Exception:
-            continue
+        copied = copy_template_dimension_without_associations(entity)
         copied.dxf.layer = DIMENSION_LAYER
         _update_section_dimension(copied, tile_section, geometry)
         _sync_actual_measurement(copied)
@@ -434,10 +435,7 @@ def add_bed_618_r_form_dimensions(
         else (True, False)
     )
     for is_lower in sides:
-        try:
-            copied = source.copy()
-        except Exception:
-            continue
+        copied = copy_template_dimension_without_associations(source)
         copied.dxf.layer = DIMENSION_LAYER
         center = geometry.lower_radius_center if is_lower else geometry.upper_radius_center
         target, text_midpoint = _r_form_dimension_layout(
@@ -466,6 +464,24 @@ def add_bed_618_r_form_dimensions(
         _sync_dimension_block_text(copied)
 
 
+def copy_template_dimension_without_associations(entity):
+    """Copy a template DIMENSION without stale AutoCAD association objects.
+
+    Template dimensions are used for their drawing style and annotation layout,
+    but their DIMASSOC data points to geometry that is replaced during this
+    generation.  Carrying that relationship into the new document is both
+    invalid and unsupported by ezdxf, so the copied dimension is deliberately
+    detached before its definition points are rebuilt.
+    """
+    from ezdxf.entities.copy import CopySettings, CopyStrategy
+
+    try:
+        strategy = CopyStrategy(CopySettings(copy_extension_dict=False))
+        return entity.copy(copy_strategy=strategy)
+    except Exception as exc:
+        raise RuntimeError("Failed to copy template DIMENSION without DIMASSOC.") from exc
+
+
 def add_template_dimensions(modelspace, tile_section: TileSection, geometry: SlotDimensionGeometry) -> None:
     add_fixed_template_dimensions(modelspace, tile_section, geometry)
 
@@ -483,7 +499,7 @@ def _add_outer_width_dimension(
         (geometry.outer_right, geometry.outer_top),
         (geometry.outer_left, y - 0.7),
         (geometry.outer_right, y - 0.7),
-        f"{geometry.outer_width:.0f}",
+        format_dimension(geometry.outer_width),
         (geometry.center_x - 0.8, y + 0.4),
         angle=0.0,
         include_fallback=include_fallback,
@@ -504,7 +520,7 @@ def _add_outer_height_dimension(
         (geometry.outer_left, geometry.outer_top),
         (x + 0.8, geometry.outer_bottom),
         (x + 0.8, geometry.outer_top),
-        f"{geometry.outer_height:.1f}",
+        format_dimension(geometry.outer_height),
         (x - 2.5, (geometry.outer_bottom + geometry.outer_top) / 2.0),
         angle=90.0,
         text_rotation=90.0,
@@ -526,7 +542,7 @@ def _add_slot_base_dimension(
         (geometry.outer_right, geometry.outer_bottom),
         (x - 0.9, geometry.base_y),
         (x - 0.9, geometry.outer_bottom),
-        f"{geometry.slot_base_height:.1f}",
+        format_dimension(geometry.slot_base_height),
         (x + 0.4, (geometry.outer_bottom + geometry.base_y) / 2.0),
         angle=90.0,
         text_rotation=90.0,
@@ -544,24 +560,24 @@ def _update_section_dimension(entity, tile_section: TileSection, geometry: SlotD
     text = entity.dxf.text
     if abs(measurement - geometry.outer_height) < 0.05:
         _set_linear_definition(entity, (geometry.outer_left, geometry.outer_top), (geometry.outer_left, geometry.outer_bottom))
-        _set_dimension_text(entity, f"{geometry.outer_height:.1f}")
+        _set_dimension_text(entity, format_dimension(geometry.outer_height))
     elif abs(measurement - geometry.outer_width) < 0.05 or (
         _is_horizontal_linear_dimension(entity) and 25.0 <= measurement <= 45.0
     ):
         _set_linear_definition(entity, (geometry.outer_left, geometry.outer_top), (geometry.outer_right, geometry.outer_top))
-        _set_dimension_text(entity, f"{geometry.outer_width:.0f}")
+        _set_dimension_text(entity, format_dimension(geometry.outer_width))
     elif abs(measurement - geometry.slot_base_height) < 0.05 or (
         _is_verticalish_linear_dimension(entity)
         and 5.0 <= measurement <= 25.0
     ):
         _set_linear_definition(entity, (geometry.outer_right, geometry.base_y), (geometry.outer_right, geometry.outer_bottom))
-        _set_dimension_text(entity, f"{geometry.slot_base_height:.1f}")
+        _set_dimension_text(entity, format_dimension(geometry.slot_base_height))
     elif _is_horizontal_linear_dimension(entity) and (
         abs(measurement - geometry.center_opening) < 0.05
         or 1.0 <= measurement <= 4.0
     ):
         _set_linear_definition(entity, (geometry.opening_left_x, geometry.outer_top), (geometry.opening_right_x, geometry.outer_top))
-        _set_dimension_text(entity, f"{geometry.center_opening:.1f}")
+        _set_dimension_text(entity, format_dimension(geometry.center_opening))
     elif _is_slot_width_dimension(entity, measurement, text, geometry):
         _set_linear_definition(entity, (geometry.left_x, geometry.base_y), (geometry.right_x, geometry.base_y))
         _set_dimension_text(
@@ -571,14 +587,20 @@ def _update_section_dimension(entity, tile_section: TileSection, geometry: SlotD
     elif _is_guide_thickness_dimension(entity, measurement, geometry):
         _set_linear_definition(entity, (geometry.right_x, geometry.top_y), (geometry.right_x, geometry.base_y))
         _set_dimension_text(entity, f"{geometry.guide_thickness:.2f}")
-    elif text.startswith("4-") or measurement < 1.0:
+    elif text.startswith("4-") or text.startswith("2-") or measurement < 1.0:
         old_center = entity.dxf.defpoint if entity.dxf.hasattr("defpoint") else None
         old_text_midpoint = entity.dxf.text_midpoint if entity.dxf.hasattr("text_midpoint") else None
-        new_center = _relief_dimension_center(entity, geometry)
+        is_center_transition = text.startswith("2-")
+        new_center = _relief_dimension_center(
+            entity,
+            geometry,
+            center_transition=is_center_transition,
+        )
         _set_relief_radius_definition(
             entity,
             new_center,
             geometry,
+            center_transition=is_center_transition,
         )
         if old_center is not None and old_text_midpoint is not None and entity.dxf.hasattr("text_midpoint"):
             text_midpoint = (
@@ -591,8 +613,11 @@ def _update_section_dimension(entity, tile_section: TileSection, geometry: SlotD
                 "kind": "relief_text",
                 "text_midpoint": (text_midpoint[0], text_midpoint[1]),
             }
-        if text.startswith("2-"):
-            _set_dimension_text(entity, f"2-r{geometry.relief_radius:g}")
+        if is_center_transition:
+            _set_dimension_text(
+                entity,
+                f"2-R{format_dimension(geometry.center_transition_radius)}",
+            )
         else:
             _set_dimension_text(entity, tile_section.guide_spec.relief.relief_label)
     elif abs(measurement - 17.45) < 0.05:
@@ -630,7 +655,7 @@ def _dimension_text(entity) -> str:
 
 
 def _format_compact_decimal(value: float) -> str:
-    return f"{value:.2f}".rstrip("0").rstrip(".")
+    return format_dimension(value)
 
 
 def _is_horizontal_linear_dimension(entity) -> bool:
@@ -699,10 +724,25 @@ def _set_relief_radius_definition(
     entity,
     center: tuple[float, float],
     geometry: SlotDimensionGeometry,
+    *,
+    center_transition: bool = False,
 ) -> None:
     if not entity.dxf.hasattr("defpoint4"):
         return
-    radius = geometry.relief_radius
+    radius = (
+        geometry.center_transition_radius
+        if center_transition
+        else geometry.relief_radius
+    )
+    if center_transition:
+        direction = 1.0 if center[0] < geometry.center_x else -1.0
+        entity.dxf.defpoint = (center[0], center[1], 0.0)
+        entity.dxf.defpoint4 = (
+            center[0] + direction * radius,
+            center[1],
+            0.0,
+        )
+        return
     slot_mid_y = (geometry.base_y + geometry.top_y) / 2.0
     direction = -1.0 if center[1] >= slot_mid_y else 1.0
     entity.dxf.defpoint = (center[0], center[1], 0.0)
@@ -749,8 +789,27 @@ def _radius_dimension_center(entity, geometry: SlotDimensionGeometry) -> tuple[f
     return geometry.upper_radius_center
 
 
-def _relief_dimension_center(entity, geometry: SlotDimensionGeometry) -> tuple[float, float]:
+def _relief_dimension_center(
+    entity,
+    geometry: SlotDimensionGeometry,
+    *,
+    center_transition: bool = False,
+) -> tuple[float, float]:
     source = entity.dxf.defpoint
+    if center_transition:
+        if source.x < geometry.center_x:
+            if geometry.center_transition_left_center is not None:
+                return geometry.center_transition_left_center
+            return (
+                geometry.opening_left_x - geometry.center_transition_radius,
+                geometry.top_y + geometry.center_transition_radius,
+            )
+        if geometry.center_transition_right_center is not None:
+            return geometry.center_transition_right_center
+        return (
+            geometry.opening_right_x + geometry.center_transition_radius,
+            geometry.top_y + geometry.center_transition_radius,
+        )
     if source.x < (geometry.left_x + geometry.right_x) / 2.0:
         x = geometry.left_x
     else:

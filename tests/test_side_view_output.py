@@ -31,8 +31,8 @@ def test_side_view_outputs_dxf_png_and_report(tmp_path):
 
     report = Path(report_path).read_text(encoding="utf-8")
     assert "side_projected_slot_height_formula: 12.000000 + 0.500000 = 12.500000" in report
-    assert "side_clearance_height_formula: 27.000000 - 12.000000 - 1.830000 + 0.200000 = 13.370000" in report
-    assert "measured_side_clearance_height_from_dimension_group_42: 13.370000" in report
+    assert "side_clearance_height_formula: 27.000000 - 12.000000 - 1.830000 + 0.366606 = 13.536606" in report
+    assert "measured_side_clearance_height_from_dimension_group_42: 13.536606" in report
     assert "side_view_combined_with_section: PASS" in report
     assert "derived_dimension_texts_present: PASS" in report
     assert "R80_arc_count_matches_template: PASS" in report

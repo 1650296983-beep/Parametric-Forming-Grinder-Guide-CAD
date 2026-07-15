@@ -29,7 +29,16 @@ def test_side_view_geometry_is_present_in_release_dxf(tmp_path):
         and entity.dxf.radius == pytest.approx(80.0)
         for entity in entities
     ) == 2
-    assert not any(entity.dxf.layer == "SIDE_DERIVED" and entity.dxftype() == "LINE" for entity in entities)
+    cavity_lines = [
+        entity
+        for entity in entities
+        if entity.dxf.layer == "SIDE_DERIVED"
+        and entity.dxftype() == "LINE"
+    ]
+    assert cavity_lines
+    assert len(
+        {round(float(entity.dxf.start.y), 6) for entity in cavity_lines}
+    ) == 4
 
 
 def test_side_view_dimensions_preserve_template_positions_and_update_derived_text(tmp_path):
@@ -40,24 +49,24 @@ def test_side_view_dimensions_preserve_template_positions_and_update_derived_tex
     doc = ezdxf.readfile(path)
     labels = _side_dimension_labels(doc)
 
-    for expected in ("90", "200", "145", "435", "R80", "12.50", "13.37"):
+    for expected in ("90", "200", "145", "435", "R80", "12.50", "13.54"):
         assert expected in labels
     measurements_by_text = {
         entity.dxf.text: entity.get_measurement()
         for entity in doc.modelspace()
         if entity.dxf.layer == "SIDE_DIMENSION"
         and entity.dxftype() == "DIMENSION"
-        and entity.dxf.text in {"12.50", "13.37"}
+        and entity.dxf.text in {"12.50", "13.54"}
     }
     assert measurements_by_text["12.50"] == pytest.approx(12.50)
-    assert measurements_by_text["13.37"] == pytest.approx(13.37)
+    assert measurements_by_text["13.54"] == pytest.approx(13.536605623)
     displayed_texts = [
         text
         for entity in doc.modelspace()
         if entity.dxf.layer == "SIDE_DIMENSION" and entity.dxftype() == "DIMENSION"
         for text in _dimension_block_texts(doc, entity)
     ]
-    assert "13.37" in displayed_texts
+    assert "13.54" in displayed_texts
     assert "13.30" not in displayed_texts
 
 

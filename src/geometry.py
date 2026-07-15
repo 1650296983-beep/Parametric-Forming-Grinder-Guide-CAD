@@ -4,6 +4,12 @@ from dataclasses import dataclass
 from math import atan2, cos, degrees, pi, sin, sqrt
 from typing import Iterable, Literal, Union
 
+from .global_rules import (
+    LARGE_TILE_THICKNESS_CLEARANCE,
+    LARGE_TILE_WIDTH_THRESHOLD,
+    SMALL_TILE_THICKNESS_CLEARANCE,
+)
+
 from .spec_parser import (
     BlockSpec,
     FinishedSpec,
@@ -211,6 +217,7 @@ def build_tile_section(
     relief: ReliefSpec | None = None,
     preform_tolerance: ProductPreFormTolerance | None = None,
     thickness_clearance_mid: float | None = None,
+    tolerance_slot_clearance: float | None = None,
     outer_width: float = 33.0,
     slot_base_height: float = 12.0,
     center_opening: float = 1.5,
@@ -229,6 +236,7 @@ def build_tile_section(
         relief=relief,
         preform_tolerance=preform_tolerance,
         thickness_clearance_mid=thickness_clearance_mid,
+        tolerance_slot_clearance=tolerance_slot_clearance,
         outer_width=outer_width,
         slot_base_height=slot_base_height,
         center_opening=center_opening,
@@ -248,6 +256,7 @@ def build_block_to_tile_section(
     preform_spec: BlockSpec,
     relief: ReliefSpec | None = None,
     thickness_clearance_mid: float = 0.12,
+    tolerance_slot_clearance: float | None = None,
     outer_width: float = 40.0,
     slot_base_height: float = 12.0,
     center_opening: float = 1.8,
@@ -283,6 +292,7 @@ def build_block_to_tile_section(
         outer_width=outer_width,
         slot_base_height=slot_base_height,
         center_offset=center_opening,
+        tolerance_slot_clearance=tolerance_slot_clearance,
         use_tolerance_based_slot_width=True,
     )
     forming_profile = build_flat_arc_profile(
@@ -310,6 +320,7 @@ def build_block_to_bread_section(
     preform_spec: BlockSpec,
     relief: ReliefSpec | None = None,
     thickness_clearance_mid: float = 0.12,
+    tolerance_slot_clearance: float | None = None,
     outer_width: float = 40.0,
     slot_base_height: float = 12.0,
     center_opening: float = 1.8,
@@ -353,6 +364,7 @@ def build_block_to_bread_section(
         outer_width=outer_width,
         slot_base_height=slot_base_height,
         center_offset=center_opening,
+        tolerance_slot_clearance=tolerance_slot_clearance,
         use_tolerance_based_slot_width=True,
     )
     forming_profile = build_flat_arc_profile(
@@ -540,9 +552,9 @@ def calculate_guide_spec(
 
 
 def _tile_thickness_clearance_mid(spec: FinishedSpec) -> float:
-    if spec.chord_width > 15.0:
-        return 0.25
-    return 0.18
+    if spec.chord_width > LARGE_TILE_WIDTH_THRESHOLD:
+        return LARGE_TILE_THICKNESS_CLEARANCE
+    return SMALL_TILE_THICKNESS_CLEARANCE
 
 
 def build_forming_profile(

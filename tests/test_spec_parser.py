@@ -99,10 +99,10 @@ def test_parse_relief_spec_supports_default_and_custom_labels():
 
     assert default_relief.relief_count == 4
     assert default_relief.relief_size == pytest.approx(1.0)
-    assert default_relief.relief_label == "4-r0.5"
+    assert default_relief.relief_label == "4-R0.50"
     assert custom_relief.relief_count == 4
     assert custom_relief.relief_size == pytest.approx(0.6)
-    assert custom_relief.relief_label == "4-r0.3"
+    assert custom_relief.relief_label == "4-R0.30"
 
 
 def test_parse_block_spec_accepts_length_tolerance():

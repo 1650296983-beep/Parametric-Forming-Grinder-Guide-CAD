@@ -17,6 +17,10 @@ const initialDesign: DesignInput = {
   product_shape_after: "bread_shape",
   product_shape_before: "rectangular_block",
   relief: "4-1",
+  single_side_or_high_requirement: false,
+  high_symmetry_requirement: false,
+  large_tile_clearance: false,
+  wheel_radius: 80,
 };
 
 const navItems: Array<{ id: Page; icon: string; label: string }> = [
@@ -373,6 +377,23 @@ function Workspace(props: {
                   <input value={design.pre_grinding_spec} onChange={(event) => props.onUpdate("pre_grinding_spec", event.target.value)} spellCheck={false} />
                 </label>
                 <p className="input-help">方块：长度*宽度(上偏差/下偏差)*厚度(上偏差/下偏差)</p>
+                <div className="process-options">
+                  <label className="check-option">
+                    <input type="checkbox" checked={design.single_side_or_high_requirement} onChange={(event) => props.onUpdate("single_side_or_high_requirement", event.target.checked)} />
+                    <span>磨单边 / 高要求<small>勾选后厚度间隙固定为 0.09 mm</small></span>
+                  </label>
+                  <label className="check-option">
+                    <input type="checkbox" checked={design.high_symmetry_requirement} disabled={design.large_tile_clearance} onChange={(event) => props.onUpdate("high_symmetry_requirement", event.target.checked)} />
+                    <span>高对称度槽宽<small>显式采用 0.03 mm 槽宽间隙</small></span>
+                  </label>
+                  <label className="check-option">
+                    <input type="checkbox" checked={design.large_tile_clearance} disabled={design.high_symmetry_requirement} onChange={(event) => props.onUpdate("large_tile_clearance", event.target.checked)} />
+                    <span>大瓦放宽槽宽<small>显式采用 0.08 mm 槽宽间隙</small></span>
+                  </label>
+                  <label>砂轮半径（默认 R80）
+                    <input type="number" min="1" step="0.01" value={design.wheel_radius} onChange={(event) => props.onUpdate("wheel_radius", Number(event.target.value))} />
+                  </label>
+                </div>
               </div>
               <div className="form-actions">
                 <span>所有尺寸单位：mm</span>
@@ -413,6 +434,7 @@ function Review({ validation, machine, onBack, onGenerate }: { validation: Valid
     ["导轨厚度", `${validation.derived.guide_thickness.toFixed(2)} mm`, "磨前厚度中值 + 机台间隙"],
     ["R_form", validation.decision.arc_radius ? `R${validation.decision.arc_radius.toFixed(2)} mm` : "不适用（矩形槽）", validation.decision.R_form_source],
     ["避空", validation.derived.relief_label, "工艺规则"],
+    ["砂轮半径", `R${validation.decision.process_options.wheel_radius.toFixed(2)} mm`, "任务显式参数（默认 R80）"],
   ];
   return <div className="review-layout">
     <section className="panel calculation-panel">

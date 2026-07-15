@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .block_geometry import BlockGuideSection
+from .cavity_projection import derive_cavity_projection_profile
 from .dimension_writer import DIMENSION_LAYER, TEXT_NOTE_LAYER
 from .dimension_roles import (
     LOWER_WHEEL_KEY_PROCESS_HEIGHT,
@@ -19,15 +20,28 @@ from .dimension_roles import (
 )
 from .geometry import TileSection
 from .machine_config import MachineConfig
-from .side_view import build_side_view_geometry
+from .relief_arc_audit import build_four_outer_relief_arc_audit
+from .side_view import GLOBAL_WHEEL_CUT_IN_RATIO, build_side_view_geometry
+from .side_view_config import SideViewTemplateConfig
 from .side_view_validator import (
+    cavity_projection_matches_pre_grinding_shape,
     measure_side_clearance_consistency,
-    measure_side_projected_slot_consistency,
 )
 from .side_view_writer import SIDE_DEBUG_LAYER, SIDE_DIMENSION_LAYER
 
 
-TOLERANCE = 0.001
+from .global_rules import ENDPOINT_TOLERANCE
+
+
+TOLERANCE = ENDPOINT_TOLERANCE
+
+
+def _build_machine_side(profile, machine: MachineConfig):
+    return build_side_view_geometry(
+        profile,
+        template=SideViewTemplateConfig(wheel_radius=machine.wheel_radius),
+        layout=machine.side_layout,
+    )
 RELEASE_ALLOWED_LAYERS = {
     "FIXED_TEMPLATE",
     "SECTION_CENTER",
@@ -72,6 +86,8 @@ def inspect_release_dxf(
         _check_formula_text_absent(doc),
         _check_old_parametric_geometry_absent(doc, profile),
         _check_block_to_tile_main_arc_sweeps(doc, profile),
+        _check_block_to_tile_relief_topology(doc, profile),
+        _check_four_relief_arcs_are_outer(doc, profile),
         *_dimension_consistency_checks(doc, profile, machine),
     ]
     lower_notch_check = _check_lower_wheel_notch_safety(doc, profile, machine)
@@ -100,11 +116,6 @@ def inspect_release_dxf(
         checks.extend(
             [
                 _check_upper_wheel_cut_in(doc, profile, machine),
-                *(
-                    [_check_triple_single_down_up_relief_topology(doc, profile)]
-                    if profile.process_type in {"block_to_tile", "block_to_bread"}
-                    else []
-                ),
                 _check_stale_section_opening_dimension_absent(doc),
             ]
         )
@@ -112,7 +123,7 @@ def inspect_release_dxf(
         checks.extend(
             [
                 _check_block_bread_side_geometry(doc, profile, machine),
-                _check_triple_single_down_up_relief_topology(doc, profile),
+                _check_flat_arc_relief_topology(doc, profile),
             ]
         )
     return {
@@ -298,20 +309,28 @@ def _dimension_consistency_checks(doc, profile: TileSection | BlockGuideSection,
             )
         )
     if isinstance(profile, TileSection) and machine.section_style != "triple_single_down_up_flat_arc":
-        side = build_side_view_geometry(profile, layout=machine.side_layout)
-        projected = measure_side_projected_slot_consistency(doc, side)
+        side = _build_machine_side(profile, machine)
+        cavity_projection = derive_cavity_projection_profile(
+            profile,
+            side.derived.guide_thickness,
+        )
+        cavity_projection_ok = cavity_projection_matches_pre_grinding_shape(
+            doc,
+            profile,
+            side,
+        )
         clearance = measure_side_clearance_consistency(doc, side)
         checks.extend(
             [
                 _check(
-                    "side_projected_slot_height_dimension",
-                    projected.ok,
+                    "side_cavity_projection_from_pre_grinding_shape",
+                    cavity_projection_ok,
                     {
-                        "expected": round(projected.expected, 6),
-                        "geometry_measured": _round_optional(projected.measured_geometry),
-                        "definition_points_measured": _round_optional(projected.measured_dimension_points),
-                        "dimension_group_42_measured": _round_optional(projected.measured_dimension_group_42),
-                        "display_text": projected.text_label,
+                        "pre_grinding_shape": cavity_projection.pre_grinding_shape,
+                        "expected_line_count": cavity_projection.line_count,
+                        "surface_roles": list(
+                            cavity_projection.surface_roles
+                        ),
                     },
                 ),
                 _check(
@@ -499,7 +518,7 @@ def _check_lower_wheel_notch_safety(
 ) -> InspectionCheck | None:
     if not isinstance(profile, TileSection) or "下" not in machine.wheel_positions:
         return None
-    side = build_side_view_geometry(profile, layout=machine.side_layout)
+    side = _build_machine_side(profile, machine)
     measured = _measure_lower_wheel_notch_opening_from_geometry(doc, side, machine)
     expected_report_value = side.derived.lower_cavity_notch_opening
     opening_limit = side.derived.wheel_notch_opening_limit
@@ -528,7 +547,7 @@ def _check_upper_wheel_notch_safety(
 ) -> InspectionCheck | None:
     if not isinstance(profile, TileSection) or "上" not in machine.wheel_positions:
         return None
-    side = build_side_view_geometry(profile, layout=machine.side_layout)
+    side = _build_machine_side(profile, machine)
     expected = side.derived.upper_cavity_notch_opening
     opening_limit = side.derived.upper_cavity_notch_opening_limit
     measurements = _measure_upper_wheel_notch_openings_from_geometry(doc, side, machine)
@@ -555,7 +574,7 @@ def _check_upper_wheel_notch_safety(
 
 
 def _check_side_r80_dimensions_bound_to_arcs(doc, machine: MachineConfig) -> InspectionCheck:
-    radius = 80.0
+    radius = machine.wheel_radius
     arcs = [
         entity
         for entity in doc.modelspace()
@@ -619,7 +638,7 @@ def _check_upper_wheel_cut_in(
     profile: TileSection,
     machine: MachineConfig,
 ) -> InspectionCheck:
-    side = build_side_view_geometry(profile, layout=machine.side_layout)
+    side = _build_machine_side(profile, machine)
     radius = side.template.wheel_radius
     center_x = machine.side_layout.center_b_x
     arc = next(
@@ -648,12 +667,9 @@ def _check_upper_wheel_cut_in(
         {
             "formula": "min(natural_upper_R80_opening, product_length - 0.2)",
             "process_thickness": profile.process_thickness,
-            "cut_in_ratio": machine.side_layout.tile_upper_wheel_cut_in_ratio,
-            "requested_cut_in": (
-                machine.side_layout.block_to_tile_upper_wheel_cut_in
-                if profile.process_type == "block_to_tile"
-                else profile.process_thickness * machine.side_layout.tile_upper_wheel_cut_in_ratio
-            ),
+            "cut_in_ratio": GLOBAL_WHEEL_CUT_IN_RATIO,
+            "requested_cut_in": profile.process_thickness
+            * GLOBAL_WHEEL_CUT_IN_RATIO,
             "expected": round(expected, 6),
             "measured_from_geometry": _round_optional(measured),
             "slot_top_y": round(slot_top_y, 6),
@@ -666,7 +682,7 @@ def _check_block_bread_side_geometry(
     profile: BlockGuideSection,
     machine: MachineConfig,
 ) -> InspectionCheck:
-    side = build_side_view_geometry(profile, layout=machine.side_layout)
+    side = _build_machine_side(profile, machine)
     layout = machine.side_layout
     radius = side.template.wheel_radius
     arcs = [
@@ -723,7 +739,7 @@ def _check_required_process_dimensions(
     profile: TileSection | BlockGuideSection,
     machine: MachineConfig,
 ) -> InspectionCheck:
-    side = build_side_view_geometry(profile, layout=machine.side_layout)
+    side = _build_machine_side(profile, machine)
     expectations = _required_dimension_expectations(doc, profile, machine, side)
     required_roles = (
         REQUIRED_BLOCK_TO_BREAD_DIMENSION_ROLES
@@ -782,7 +798,29 @@ def _check_required_process_dimensions(
     )
 
 
-def _check_triple_single_down_up_relief_topology(
+def _check_block_to_tile_relief_topology(
+    doc,
+    profile: TileSection | BlockGuideSection,
+) -> InspectionCheck:
+    if not isinstance(profile, TileSection) or profile.process_type != "block_to_tile":
+        return _check("relief_topology", True, {"applicable": False})
+
+    return _check_flat_arc_relief_topology(doc, profile)
+
+
+def _check_four_relief_arcs_are_outer(
+    doc,
+    profile: TileSection | BlockGuideSection,
+) -> InspectionCheck:
+    audit = build_four_outer_relief_arc_audit(
+        doc.modelspace(),
+        profile.guide_spec.relief.relief_size / 2.0,
+        tolerance=TOLERANCE,
+    )
+    return _check("four_relief_arcs_are_outer", audit["release_allowed"], audit)
+
+
+def _check_flat_arc_relief_topology(
     doc,
     profile: TileSection | BlockGuideSection,
 ) -> InspectionCheck:
@@ -866,9 +904,44 @@ def _check_triple_single_down_up_relief_topology(
         and abs(center_centers[index][1] - expected_center_y) <= TOLERANCE
         for index in range(min(2, len(center_centers)))
     )
+    main_arcs = (
+        [
+            entity
+            for entity in doc.modelspace()
+            if entity.dxftype() == "ARC"
+            and entity.dxf.layer == "PARAM_SLOT"
+            and abs(float(entity.dxf.radius) - profile.forming_spec.R_form) <= TOLERANCE
+        ]
+        if isinstance(profile, TileSection)
+        else []
+    )
+    if isinstance(profile, TileSection) and profile.process_type == "block_to_tile":
+        if profile.arc_side == "upper":
+            main_arc_side_ok = bool(main_arcs) and all(
+                float(entity.dxf.center.y) < top_y - TOLERANCE for entity in main_arcs
+            )
+            expected_main_arc_count = 2
+        else:
+            main_arc_side_ok = bool(main_arcs) and all(
+                float(entity.dxf.center.y) > base_y + TOLERANCE for entity in main_arcs
+            )
+            expected_main_arc_count = 1
+    else:
+        main_arc_side_ok = True
+        expected_main_arc_count = None
+
     return _check(
         "relief_topology",
-        len(arcs) == 6 and side_ok and center_ok,
+        (
+            len(arcs) == 6
+            and side_ok
+            and center_ok
+            and main_arc_side_ok
+            and (
+                expected_main_arc_count is None
+                or len(main_arcs) == expected_main_arc_count
+            )
+        ),
         {
             "expected_arc_count": 6,
             "actual_arc_count": len(arcs),
@@ -895,6 +968,19 @@ def _check_triple_single_down_up_relief_topology(
                 "independent_of_slot_width": True,
             },
             "process_type": profile.process_type,
+            "main_R": {
+                "expected_arc_count": expected_main_arc_count,
+                "actual_arc_count": len(main_arcs),
+                "arc_side": getattr(profile, "arc_side", None),
+                "centers": [
+                    [
+                        round(float(entity.dxf.center.x), 6),
+                        round(float(entity.dxf.center.y), 6),
+                    ]
+                    for entity in main_arcs
+                ],
+                "orientation_ok": main_arc_side_ok,
+            },
         },
     )
 
@@ -1018,7 +1104,8 @@ def _point_matches(actual, expected: tuple[float, float]) -> bool:
 
 
 def _format_dimension_text(value: float, digits: int) -> str:
-    return f"{value:.{digits}f}".rstrip("0").rstrip(".")
+    del digits
+    return f"{value:.2f}"
 
 
 def _check_stale_section_opening_dimension_absent(doc) -> InspectionCheck:

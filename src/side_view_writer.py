@@ -4,12 +4,17 @@ from math import atan2, cos, hypot, radians, sin
 from pathlib import Path
 
 from .block_geometry import BlockGuideSection
+from .cavity_projection import (
+    derive_cavity_projection_profile,
+    horizontal_arc_gap,
+)
 from .dimension_writer import (
     DIMENSION_TEXT_STYLE,
     TEMPLATE_DIMENSION_STYLE,
     TEMPLATE_DIMENSION_TEXT_HEIGHT,
     TEXT_HEIGHT,
     add_linear_dimension_with_text,
+    copy_template_dimension_without_associations,
 )
 from .dimension_roles import (
     LOWER_WHEEL_KEY_PROCESS_HEIGHT,
@@ -20,7 +25,8 @@ from .dimension_roles import (
 from .geometry import TileSection
 from .side_view import SideViewGeometry, build_side_view_geometry
 from .side_view_config import SideViewLayoutConfig
-from .side_view_config import DEFAULT_SIDE_VIEW_TEMPLATE
+from .side_view_config import DEFAULT_SIDE_VIEW_TEMPLATE, SideViewTemplateConfig
+from .global_rules import DEFAULT_WHEEL_RADIUS
 
 
 SIDE_TEMPLATE_LAYER = "SIDE_TEMPLATE"
@@ -40,12 +46,31 @@ def add_side_view_to_dxf(
     template_path: str | Path = DEFAULT_SIDE_VIEW_TEMPLATE,
     layout: SideViewLayoutConfig | None = None,
     side_style: str = "standard",
+    wheel_positions: tuple[str, ...] = ("上", "下"),
+    wheel_radius: float = DEFAULT_WHEEL_RADIUS,
 ) -> SideViewGeometry:
-    geometry = build_side_view_geometry(tile_section, layout=layout)
+    geometry = build_side_view_geometry(
+        tile_section,
+        template=SideViewTemplateConfig(wheel_radius=wheel_radius),
+        layout=layout,
+    )
     _ensure_side_layers(doc, output_mode)
-    _copy_side_template_entities(doc, modelspace, Path(template_path), geometry, side_style=side_style)
+    _copy_side_template_entities(
+        doc,
+        modelspace,
+        Path(template_path),
+        geometry,
+        side_style=side_style,
+    )
     if side_style != "triple_single_down_up":
         _add_side_derived_entities(modelspace, geometry, output_mode)
+    _finalize_side_cavity_lines(
+        modelspace,
+        geometry,
+        tile_section,
+        side_style,
+        wheel_positions,
+    )
     if side_style == "bed_618":
         _add_bed_618_projected_height_dimension(modelspace, geometry)
     elif side_style == "triple_single_down_up":
@@ -218,7 +243,8 @@ def _add_triple_single_down_up_block_bread_process_dimensions(
 
 
 def _format_dimension_value(value: float, digits: int = 2) -> str:
-    return f"{value:.{digits}f}".rstrip("0").rstrip(".")
+    del digits
+    return f"{value:.2f}"
 
 
 def _ensure_side_layers(doc, output_mode: str) -> None:
@@ -248,9 +274,14 @@ def _copy_side_template_entities(
     for entity in source_doc.modelspace():
         if not _is_copyable_side_template_entity(entity):
             continue
-        try:
-            copied = entity.copy()
-        except Exception:
+        if entity.dxftype() == "DIMENSION":
+            copied = copy_template_dimension_without_associations(entity)
+        else:
+            try:
+                copied = entity.copy()
+            except Exception:
+                copied = None
+        if copied is None:
             continue
         copied.dxf.layer = _side_layer_for_template_entity(entity)
         if side_style == "triple_single_down_up":
@@ -280,7 +311,6 @@ def _copy_side_template_entities(
             except Exception:
                 pass
             _sync_dimension_block_text(copied)
-    _finalize_side_cavity_lines(modelspace, geometry, side_style)
     _bind_r80_dimensions_to_formal_arcs(modelspace, geometry)
 
 
@@ -307,7 +337,7 @@ def _bind_r80_dimensions_to_formal_arcs(
             measurement = float(dimension.get_measurement())
         except Exception:
             continue
-        if abs(measurement - radius) > 0.05:
+        if not _is_source_or_target_wheel_radius(measurement, radius):
             continue
         old_center = dimension.dxf.defpoint
         old_target = dimension.dxf.defpoint4
@@ -333,6 +363,7 @@ def _bind_r80_dimensions_to_formal_arcs(
             float(old_target.z),
         )
         _set_actual_measurement(dimension, radius)
+        dimension.dxf.text = f"R{radius:.2f}"
         try:
             dimension.render()
         except Exception:
@@ -401,7 +432,10 @@ def _update_bed_618_side_geometry(entity, geometry: SideViewGeometry) -> None:
 
 def _update_bed_618_r80_arc(entity, geometry: SideViewGeometry) -> None:
     layout = geometry.layout
-    if abs(entity.dxf.radius - geometry.template.wheel_radius) > 1e-6:
+    if not _is_source_or_target_wheel_radius(
+        float(entity.dxf.radius),
+        geometry.template.wheel_radius,
+    ):
         return
     if abs(entity.dxf.center.x - layout.center_a_x) > 0.01:
         return
@@ -409,6 +443,7 @@ def _update_bed_618_r80_arc(entity, geometry: SideViewGeometry) -> None:
         return
     center_y = _upper_left_r80_center_y(geometry)
     half_chord = _upper_left_r80_top_half_chord(geometry)
+    entity.dxf.radius = geometry.template.wheel_radius
     entity.dxf.center = (layout.center_a_x, center_y, entity.dxf.center.z)
     entity.dxf.start_angle = _angle_deg(-half_chord, layout.upper_y - center_y)
     entity.dxf.end_angle = _angle_deg(half_chord, layout.upper_y - center_y)
@@ -458,63 +493,100 @@ def _update_bed_618_slot_projection_lines(entity, geometry: SideViewGeometry) ->
 def _finalize_side_cavity_lines(
     modelspace,
     geometry: SideViewGeometry,
+    tile_section: TileSection | BlockGuideSection,
     side_style: str,
+    wheel_positions: tuple[str, ...],
 ) -> None:
+    projection = derive_cavity_projection_profile(
+        tile_section,
+        geometry.derived.guide_thickness,
+    )
+    base_y = geometry.layout.lower_y + geometry.derived.slot_base_height
     if side_style == "bed_618":
-        base_y = geometry.layout.lower_y + geometry.derived.slot_base_height
-        top_y = base_y + geometry.derived.guide_thickness
         opening = geometry.derived.upper_cavity_notch_opening
-        _rebuild_two_boundary_cavity_lines(
+        _rebuild_cavity_projection_lines(
             modelspace,
             geometry,
-            (
-                (base_y, geometry.layout.center_a_x, opening),
-                (top_y, geometry.layout.center_a_x, opening),
+            tuple(
+                (
+                    base_y + offset,
+                    geometry.layout.center_a_x,
+                    opening,
+                )
+                for offset in projection.offsets
             ),
         )
         return
 
-    is_block_up_down = (
-        side_style == "double_head_up_down"
-        and abs(
-            geometry.derived.side_projected_slot_height
-            - geometry.derived.slot_base_height
-        )
-        <= 0.001
+    projected_offset = (
+        geometry.derived.side_projected_slot_height
+        - geometry.derived.slot_base_height
     )
-    if not is_block_up_down:
-        return
-    base_y = geometry.layout.lower_y + geometry.derived.slot_base_height
-    top_y = base_y + geometry.derived.guide_thickness
-    _rebuild_two_boundary_cavity_lines(
+    if side_style == "double_head_up_down" and not any(
+        abs(offset - projected_offset) <= 0.001
+        for offset in projection.offsets
+    ):
+        _remove_side_dimension_by_measurement(
+            modelspace,
+            geometry.derived.side_projected_slot_height,
+        )
+    centers = (
+        geometry.layout.center_a_x,
+        geometry.layout.center_b_x,
+    )
+    _rebuild_cavity_projection_lines(
         modelspace,
         geometry,
-        (
+        tuple(
             (
-                base_y,
-                geometry.layout.center_b_x,
-                geometry.derived.lower_cavity_notch_opening,
-            ),
-            (
-                top_y,
-                geometry.layout.center_a_x,
-                geometry.derived.upper_cavity_notch_opening,
-            ),
+                base_y + offset,
+                tuple(
+                    center_x
+                    for center_x, position in zip(
+                        centers,
+                        wheel_positions,
+                    )
+                    if position
+                    == ("下" if role.startswith("lower_") else "上")
+                ),
+                geometry.derived.lower_cavity_notch_opening
+                if role.startswith("lower_")
+                else geometry.derived.upper_cavity_notch_opening,
+            )
+            for offset, role in zip(
+                projection.offsets,
+                projection.surface_roles,
+            )
         ),
     )
 
 
-def _rebuild_two_boundary_cavity_lines(
+def _remove_side_dimension_by_measurement(
+    modelspace,
+    measurement: float,
+) -> None:
+    for dimension in list(modelspace.query("DIMENSION")):
+        if dimension.dxf.layer != SIDE_DIMENSION_LAYER:
+            continue
+        try:
+            current = float(dimension.get_measurement())
+        except Exception:
+            continue
+        if abs(current - measurement) <= 0.01:
+            modelspace.delete_entity(dimension)
+
+
+def _rebuild_cavity_projection_lines(
     modelspace,
     geometry: SideViewGeometry,
-    boundaries: tuple[tuple[float, float, float], ...],
+    boundaries: tuple[tuple[float, tuple[float, ...] | float, float], ...],
 ) -> None:
     layout = geometry.layout
     y_values = tuple(boundary[0] for boundary in boundaries)
     lower_y = min(y_values) - 0.6
     upper_y = max(y_values) + 0.6
     for entity in list(modelspace.query("LINE")):
-        if entity.dxf.layer != SIDE_DERIVED_LAYER:
+        if entity.dxf.layer not in {SIDE_DERIVED_LAYER, SIDE_CAVITY_LAYER}:
             continue
         if abs(float(entity.dxf.start.y) - float(entity.dxf.end.y)) > 0.001:
             continue
@@ -532,28 +604,60 @@ def _rebuild_two_boundary_cavity_lines(
         "color": 256,
         "linetype": "BYLAYER",
     }
-    for y, center_x, opening in boundaries:
-        half_opening = max(opening, 0.0) / 2.0
-        left_gap = center_x - half_opening
-        right_gap = center_x + half_opening
-        if layout.left_x < left_gap:
+    wheel_arcs = [
+        entity
+        for entity in modelspace.query("ARC")
+        if entity.dxf.layer == SIDE_TEMPLATE_LAYER
+        and abs(
+            float(entity.dxf.radius) - geometry.template.wheel_radius
+        )
+        <= 0.001
+        and layout.left_x - 0.01
+        <= float(entity.dxf.center.x)
+        <= layout.right_x + 0.01
+    ]
+    for y, _centers, _opening in boundaries:
+        gaps = [
+            gap
+            for arc in wheel_arcs
+            if (gap := horizontal_arc_gap(arc, y)) is not None
+        ]
+        for start_x, end_x in _subtract_side_gaps(
+            layout.left_x,
+            layout.right_x,
+            gaps,
+        ):
             modelspace.add_line(
-                (layout.left_x, y),
-                (left_gap, y),
+                (start_x, y),
+                (end_x, y),
                 dxfattribs=attributes,
             )
-        if right_gap < layout.right_x:
-            modelspace.add_line(
-                (right_gap, y),
-                (layout.right_x, y),
-                dxfattribs=attributes,
-            )
+
+
+def _subtract_side_gaps(
+    start_x: float,
+    end_x: float,
+    gaps: list[tuple[float, float]],
+) -> list[tuple[float, float]]:
+    segments = [(start_x, end_x)]
+    for gap_start, gap_end in sorted(gaps):
+        next_segments = []
+        for segment_start, segment_end in segments:
+            if gap_end <= segment_start or gap_start >= segment_end:
+                next_segments.append((segment_start, segment_end))
+                continue
+            if segment_start < gap_start:
+                next_segments.append((segment_start, gap_start))
+            if gap_end < segment_end:
+                next_segments.append((gap_end, segment_end))
+        segments = next_segments
+    return segments
 
 
 def _update_down_up_r80_arc(entity, geometry: SideViewGeometry) -> None:
     layout = geometry.layout
     radius = geometry.template.wheel_radius
-    if abs(entity.dxf.radius - radius) > 1e-6:
+    if not _is_source_or_target_wheel_radius(float(entity.dxf.radius), radius):
         return
     depth = geometry.derived.wheel_notch_depth
     if depth <= 0.0 or depth >= radius:
@@ -561,11 +665,13 @@ def _update_down_up_r80_arc(entity, geometry: SideViewGeometry) -> None:
     half_chord = _wheel_notch_half_chord(radius, depth)
     if abs(entity.dxf.center.x - layout.center_a_x) <= 0.01 and entity.dxf.center.y < layout.lower_y:
         center_y = layout.lower_y + depth - radius
+        entity.dxf.radius = radius
         entity.dxf.center = (layout.center_a_x, center_y, entity.dxf.center.z)
         entity.dxf.start_angle = _angle_deg(half_chord, radius - depth)
         entity.dxf.end_angle = _angle_deg(-half_chord, radius - depth)
     elif abs(entity.dxf.center.x - layout.center_b_x) <= 0.01 and entity.dxf.center.y > layout.upper_y:
         center_y = layout.upper_y - geometry.derived.side_clearance_height + radius
+        entity.dxf.radius = radius
         half_chord = _upper_left_r80_top_half_chord_from_center_y(radius, layout.upper_y, center_y)
         entity.dxf.center = (layout.center_b_x, center_y, entity.dxf.center.z)
         entity.dxf.start_angle = _angle_deg(-half_chord, layout.upper_y - center_y)
@@ -575,10 +681,11 @@ def _update_down_up_r80_arc(entity, geometry: SideViewGeometry) -> None:
 def _update_double_head_up_down_r80_arc(entity, geometry: SideViewGeometry) -> None:
     layout = geometry.layout
     radius = geometry.template.wheel_radius
-    if abs(entity.dxf.radius - radius) > 1e-6:
+    if not _is_source_or_target_wheel_radius(float(entity.dxf.radius), radius):
         return
     if abs(entity.dxf.center.x - layout.center_a_x) <= 0.01 and entity.dxf.center.y > layout.upper_y:
         center_y = _upper_left_r80_center_y(geometry)
+        entity.dxf.radius = radius
         half_chord = _upper_left_r80_top_half_chord(geometry)
         entity.dxf.center = (layout.center_a_x, center_y, entity.dxf.center.z)
         entity.dxf.start_angle = _angle_deg(-half_chord, layout.upper_y - center_y)
@@ -589,6 +696,7 @@ def _update_double_head_up_down_r80_arc(entity, geometry: SideViewGeometry) -> N
         if depth <= 0.0 or depth >= radius:
             return
         center_y = layout.lower_y + depth - radius
+        entity.dxf.radius = radius
         half_chord = _wheel_notch_half_chord(radius, depth)
         entity.dxf.center = (layout.center_b_x, center_y, entity.dxf.center.z)
         entity.dxf.start_angle = _angle_deg(half_chord, radius - depth)
@@ -773,7 +881,10 @@ def _split_lower_cavity_notch_line(entity, geometry: SideViewGeometry, center_x:
 
 def _update_upper_left_r80_arc(entity, geometry: SideViewGeometry) -> None:
     layout = geometry.layout
-    if abs(entity.dxf.radius - geometry.template.wheel_radius) > 1e-6:
+    if not _is_source_or_target_wheel_radius(
+        float(entity.dxf.radius),
+        geometry.template.wheel_radius,
+    ):
         return
     upper_wheel_centers = (layout.center_a_x, layout.center_b_x)
     if all(abs(entity.dxf.center.x - center_x) > 0.01 for center_x in upper_wheel_centers):
@@ -781,12 +892,20 @@ def _update_upper_left_r80_arc(entity, geometry: SideViewGeometry) -> None:
     if entity.dxf.center.y < layout.upper_y:
         return
     center_x = entity.dxf.center.x
-    radius = entity.dxf.radius
+    radius = geometry.template.wheel_radius
+    entity.dxf.radius = radius
     center_y = _upper_left_r80_center_y(geometry)
     half_chord = _upper_left_r80_top_half_chord(geometry)
     entity.dxf.center = (center_x, center_y, entity.dxf.center.z)
     entity.dxf.start_angle = _angle_deg(-half_chord, layout.upper_y - center_y)
     entity.dxf.end_angle = _angle_deg(half_chord, layout.upper_y - center_y)
+
+
+def _is_source_or_target_wheel_radius(value: float, target: float) -> bool:
+    return (
+        abs(value - DEFAULT_WHEEL_RADIUS) <= 0.001
+        or abs(value - target) <= 0.001
+    )
 
 
 def _update_upper_left_r80_top_connectors(entity, geometry: SideViewGeometry) -> None:

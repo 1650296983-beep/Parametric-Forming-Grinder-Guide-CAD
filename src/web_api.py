@@ -7,6 +7,7 @@ the existing Python domain modules.
 
 from __future__ import annotations
 
+from dataclasses import replace
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
@@ -33,6 +34,7 @@ from .dual_guide_engine import DualGuideTemplateEngine
 from .dual_guide_input import build_dual_guide_profile_from_input
 from .geometry import TileSection
 from .groove_profile import determine_groove_profile, normalize_shape
+from .global_rules import DEFAULT_WHEEL_RADIUS
 from .guide_design_input import build_single_guide_profile_from_input, machine_template_rules
 from .machine_config import MachineConfig, load_machine_config
 from .output_naming import build_machine_output_stem
@@ -59,6 +61,10 @@ class DesignInput(BaseModel):
     product_shape_before: str
     tolerance: dict[str, float | None] = Field(default_factory=dict)
     relief: str = "4-1"
+    single_side_or_high_requirement: bool = False
+    high_symmetry_requirement: bool = False
+    large_tile_clearance: bool = False
+    wheel_radius: float = Field(default=DEFAULT_WHEEL_RADIUS, gt=0.0)
 
 
 class GenerationRequest(BaseModel):
@@ -260,7 +266,7 @@ def _load_matching_machine(design: DesignInput) -> MachineConfig:
         )
     if design.template_coordinate_system != machine.template_coordinate_system:
         raise HTTPException(status_code=422, detail="模板坐标系与所选机台配置不一致。")
-    return machine
+    return replace(machine, wheel_radius=design.wheel_radius)
 
 
 def _build_profile_for_design(
@@ -311,6 +317,10 @@ def _build_dual_profile_for_web_design(
         "pre_grinding_shape": preform_map[pre_grinding_shape],
         "guide_profile_source": groove.guide_profile_source,
         "relief": design.relief,
+        "single_side_or_high_requirement": design.single_side_or_high_requirement,
+        "high_symmetry_requirement": design.high_symmetry_requirement,
+        "large_tile_clearance": design.large_tile_clearance,
+        "wheel_radius": design.wheel_radius,
     }
     finished, pre_grinding, profile, dual_decision = build_dual_guide_profile_from_input(
         dual_input,
@@ -327,6 +337,7 @@ def _build_dual_profile_for_web_design(
         "wheel_sequence": list(machine.wheel_positions),
         "first_wheel_side": design.first_wheel_side,
         "template_coordinate_system": machine.template_coordinate_system,
+        "wheel_radius": machine.wheel_radius,
         "input_rule_valid": True,
         "input_mode": "web_explicit_input",
     }
@@ -429,6 +440,7 @@ def _machine_payload(machine: MachineConfig) -> dict[str, Any]:
         "section_outer_width": machine.section_outer_width,
         "section_center_opening": machine.section_center_opening,
         "section_slot_base_height": machine.section_slot_base_height,
+        "wheel_radius": machine.wheel_radius,
         "template_coordinate_system": machine.template_coordinate_system,
         "supported_by_web_generation": machine.guide_sections in {1, 2},
     }

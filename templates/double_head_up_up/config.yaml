@@ -6,7 +6,6 @@ guide_sections: 1
 side_fixed_spans: [90.0, 200.0, 145.0]
 section_template: section_template.dxf
 side_template: side_template.dxf
-block_thickness_clearance_mid: 0.09
 section_outer_width: 35.0
 section_center_opening: 2.0
 section_slot_base_height: 18.0
@@ -22,7 +21,4 @@ layout:
   template_max_y: -150.0
   block_side_mode: "fixed_projected_height"
   block_side_projected_slot_height: 18.0
-  block_upper_wheel_cut_in_ratio: 0.6
-  block_to_tile_lower_wheel_cut_in_ratio: 0.6
-  block_to_tile_upper_wheel_cut_in: 0.2
 side_template_copy_min_x: 3300.0

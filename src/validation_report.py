@@ -6,10 +6,13 @@ from typing import Any
 
 from .block_geometry import BlockGuideSection
 from .geometry import TileSection
+from .dimension_precision import build_dimension_precision_file_audit
 from .inspection import inspect_release_dxf
 from .machine_config import MachineConfig
+from .release_entity_audit import build_parametric_duplicate_audit
 from .spec_parser import BlockSpec, FinishedSpec
 from .side_view import build_side_view_geometry
+from .side_view_config import SideViewTemplateConfig
 
 
 WORKFLOW_STEPS = (
@@ -70,10 +73,20 @@ def build_validation_report_payload(
     dimension_definition_point_audit: dict[str, Any] | None = None,
 ) -> dict[str, Any]:
     guide = profile.guide_spec
-    side = build_side_view_geometry(profile, layout=machine.side_layout)  # type: ignore[arg-type]
+    side = build_side_view_geometry(
+        profile,
+        template=SideViewTemplateConfig(wheel_radius=machine.wheel_radius),
+        layout=machine.side_layout,
+    )  # type: ignore[arg-type]
     inspection_path = Path(release_inspection_dxf or release_dxf)
     if inspection_path.exists():
         release_inspection = inspect_release_dxf(profile, machine, inspection_path)
+        duplicate_entity_audit = build_parametric_duplicate_audit(
+            inspection_path
+        )
+        dimension_precision_audit = build_dimension_precision_file_audit(
+            inspection_path
+        )
     else:
         release_inspection = {
             "dxf_path": str(inspection_path),
@@ -86,10 +99,26 @@ def build_validation_report_payload(
                 }
             ],
         }
+        duplicate_entity_audit = {
+            "audited_entity_count": 0,
+            "duplicate_groups": [],
+            "release_allowed": False,
+        }
+        dimension_precision_audit = {
+            "checked_dimension_count": 0,
+            "invalid_dimensions": [],
+            "release_allowed": False,
+        }
     required_dimensions = _required_dimension_roles_payload(release_inspection)
     dual_spec_validation = _dual_spec_validation_payload(profile, input_rule)
 
     release_allowed = bool(release_inspection["release_allowed"])
+    release_allowed = release_allowed and bool(
+        duplicate_entity_audit["release_allowed"]
+    )
+    release_allowed = release_allowed and bool(
+        dimension_precision_audit["release_allowed"]
+    )
     if dimension_definition_point_audit is not None:
         release_allowed = release_allowed and bool(
             dimension_definition_point_audit.get("release_allowed")
@@ -112,6 +141,7 @@ def build_validation_report_payload(
             "guide_length": machine.guide_length,
             "wheel_positions": list(machine.wheel_positions),
             "guide_sections": machine.guide_sections,
+            "wheel_radius": machine.wheel_radius,
             "side_fixed_spans": list(machine.side_fixed_spans),
             "section_template_path": str(machine.section_template_path),
             "side_template_path": str(machine.side_template_path),
@@ -123,7 +153,7 @@ def build_validation_report_payload(
             "slot_width": _slot_width_payload(profile),
             "guide_thickness": {
                 "formula": (
-                    "preform_block_thickness_mid + block_thickness_clearance_mid"
+                    "preform_block_thickness_mid + global_thickness_clearance"
                     if (
                         isinstance(profile, BlockGuideSection)
                         or isinstance(profile, TileSection)
@@ -170,6 +200,8 @@ def build_validation_report_payload(
         "dual_spec_validation": dual_spec_validation,
         "inspection": release_inspection,
         "dimension_definition_point_audit": dimension_definition_point_audit,
+        "parametric_duplicate_audit": duplicate_entity_audit,
+        "dimension_precision_audit": dimension_precision_audit,
         "release_allowed": release_allowed,
     }
 
@@ -519,7 +551,11 @@ def _slot_width_payload(profile: TileSection | BlockGuideSection) -> dict[str, A
 
 
 def _side_projected_slot_height_payload(profile: TileSection | BlockGuideSection, machine: MachineConfig) -> dict[str, Any]:
-    side = build_side_view_geometry(profile, layout=machine.side_layout)  # type: ignore[arg-type]
+    side = build_side_view_geometry(
+        profile,
+        template=SideViewTemplateConfig(wheel_radius=machine.wheel_radius),
+        layout=machine.side_layout,
+    )  # type: ignore[arg-type]
     if isinstance(profile, TileSection) and machine.section_style == "triple_single_down_up_flat_arc":
         return {
             "formula": "fixed_slot_base_height",
@@ -541,8 +577,9 @@ def _side_projected_slot_height_payload(profile: TileSection | BlockGuideSection
         return {
             "formula": "fixed_machine_slot_base_height",
             "fixed_slot_base_height": profile.guide_spec.slot_base_height,
-            "lower_wheel_cut_in": machine.side_layout.block_lower_wheel_cut_in,
-            "upper_wheel_cut_in": machine.side_layout.block_upper_wheel_cut_in,
+            "wheel_cut_in_formula": "preform_thickness_mid * 0.6",
+            "lower_wheel_cut_in": side.derived.wheel_cut_in_depth,
+            "upper_wheel_cut_in": side.derived.wheel_cut_allowance,
             "result": side.derived.side_projected_slot_height,
         }
     if (
@@ -656,7 +693,7 @@ def _wheel_notch_payload(
         "adjusted_wheel_center_y": adjusted_wheel_center_y,
         "wheel_center_shift": adjusted_wheel_center_y - natural_wheel_center_y,
         "lower_wheel_center_y": adjusted_wheel_center_y,
-        "note": "上下砂轮的R80缺口均先按各自机台吃入量计算自然开口；若不小于产品长度，则调整对应R80圆心，使开口不超过 product_length - 0.2，并同步更新连接线。",
+        "note": "上下砂轮的R80缺口均按成型磨前厚度中值的0.6倍计算自然开口；若不小于产品长度，则调整对应R80圆心，使开口不超过 product_length - 0.2，并同步更新连接线。",
     }
 
 

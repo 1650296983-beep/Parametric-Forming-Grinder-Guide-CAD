@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 import ast
 
+from .global_rules import DEFAULT_WHEEL_RADIUS
 from .side_view_config import SideViewLayoutConfig
 
 
@@ -30,8 +31,8 @@ class MachineConfig:
     section_template_path: Path
     side_template_path: Path
     side_layout: SideViewLayoutConfig
+    wheel_radius: float = DEFAULT_WHEEL_RADIUS
     block_outer_width: float = 35.0
-    block_thickness_clearance_mid: float = 0.12
     section_style: str = "standard"
     section_outer_width: float = 33.0
     section_center_opening: float = 1.5
@@ -81,31 +82,9 @@ class MachineConfig:
             raise ValueError(
                 f"Machine '{self.machine_id}' requires block_fixed_top_gap."
             )
-        if mode == "slot_base_plus_wheel_cut_in" and (
-            (
-                self.side_layout.block_lower_wheel_cut_in is None
-                and self.side_layout.block_lower_wheel_cut_in_ratio is None
-            )
-            or (
-                self.side_layout.block_upper_wheel_cut_in is None
-                and self.side_layout.block_upper_wheel_cut_in_ratio is None
-            )
-        ):
+        if self.wheel_radius <= 0.0:
             raise ValueError(
-                f"Machine '{self.machine_id}' requires lower and upper block wheel cut-ins."
-            )
-        lower_cut_in_defined = (
-            self.side_layout.block_to_tile_lower_wheel_cut_in is not None
-            or self.side_layout.block_to_tile_lower_wheel_cut_in_ratio is not None
-        )
-        upper_cut_in_defined = (
-            self.side_layout.block_to_tile_upper_wheel_cut_in is not None
-            or self.side_layout.block_to_tile_upper_wheel_cut_in_ratio is not None
-        )
-        if not lower_cut_in_defined or not upper_cut_in_defined:
-            raise ValueError(
-                f"Machine '{self.machine_id}' requires explicit block-to-tile lower "
-                "and upper wheel cut-ins or cut-in ratios."
+                f"Machine '{self.machine_id}' must define a positive wheel_radius."
             )
 
 
@@ -143,39 +122,12 @@ def load_machine_config(machine_id: str) -> MachineConfig:
                 layout_raw.get("block_projected_top_mode", "wheel_cut_depth")
             ),
             block_fixed_top_gap=_optional_float(layout_raw.get("block_fixed_top_gap")),
-            block_lower_wheel_cut_in=_optional_float(
-                layout_raw.get("block_lower_wheel_cut_in")
-            ),
-            block_upper_wheel_cut_in=_optional_float(
-                layout_raw.get("block_upper_wheel_cut_in")
-            ),
-            block_lower_wheel_cut_in_ratio=_optional_float(
-                layout_raw.get("block_lower_wheel_cut_in_ratio")
-            ),
-            block_upper_wheel_cut_in_ratio=_optional_float(
-                layout_raw.get("block_upper_wheel_cut_in_ratio")
-            ),
             fixed_tile_side_projected_slot_height=float(
                 layout_raw.get("fixed_tile_side_projected_slot_height", 0.0)
             ),
-            tile_upper_wheel_cut_in_ratio=float(
-                layout_raw.get("tile_upper_wheel_cut_in_ratio", 0.0)
-            ),
-            block_to_tile_lower_wheel_cut_in=_optional_float(
-                layout_raw.get("block_to_tile_lower_wheel_cut_in")
-            ),
-            block_to_tile_upper_wheel_cut_in=_optional_float(
-                layout_raw.get("block_to_tile_upper_wheel_cut_in")
-            ),
-            block_to_tile_lower_wheel_cut_in_ratio=_optional_float(
-                layout_raw.get("block_to_tile_lower_wheel_cut_in_ratio")
-            ),
-            block_to_tile_upper_wheel_cut_in_ratio=_optional_float(
-                layout_raw.get("block_to_tile_upper_wheel_cut_in_ratio")
-            ),
         ),
+        wheel_radius=float(raw.get("wheel_radius", DEFAULT_WHEEL_RADIUS)),
         block_outer_width=float(raw.get("block_outer_width", 35.0)),
-        block_thickness_clearance_mid=float(raw.get("block_thickness_clearance_mid", 0.12)),
         section_style=str(raw.get("section_style", "standard")),
         section_outer_width=float(raw.get("section_outer_width", 33.0)),
         section_center_opening=float(raw.get("section_center_opening", 1.5)),

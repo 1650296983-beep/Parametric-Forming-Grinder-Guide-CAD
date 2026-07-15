@@ -1,11 +1,18 @@
+import logging
+
 import ezdxf
 import pytest
 
+from src.block_geometry import build_block_guide_section
 from src.dxf_writer import write_dxf
-from src.geometry import build_tile_section
+from src.geometry import build_block_to_tile_section, build_tile_section
 from src.machine_config import load_machine_config
 from src.side_view import build_side_view_geometry
-from src.spec_parser import parse_company_tile_spec
+from src.spec_parser import (
+    parse_block_spec,
+    parse_company_bread_spec,
+    parse_company_tile_spec,
+)
 
 
 def test_bed_618_config_matches_clean_template():
@@ -45,22 +52,22 @@ def test_bed_618_release_uses_fixed_20p9_slot_base_and_single_upper_wheel(tmp_pa
     assert profile.guide_spec.slot_base_height == pytest.approx(20.9)
     assert profile.guide_spec.guide_thickness == pytest.approx(1.83)
     assert side.derived.side_projected_slot_height == pytest.approx(20.9)
-    assert side.derived.side_clearance_height == pytest.approx(4.47)
+    assert side.derived.side_clearance_height == pytest.approx(4.636605623)
 
-    assert measurements["20.9"][0] == pytest.approx(20.9)
     assert measurements["20.90"][0] == pytest.approx(20.9)
-    assert measurements["2.0"][0] == pytest.approx(2.0)
-    assert measurements["40"][0] == pytest.approx(40.0)
+    assert measurements["20.90"][0] == pytest.approx(20.9)
+    assert measurements["2.00"][0] == pytest.approx(2.0)
+    assert measurements["40.00"][0] == pytest.approx(40.0)
     assert measurements["1.83"][0] == pytest.approx(1.83)
-    assert measurements["4.47"][0] == pytest.approx(4.47)
-    side_clearance_dim = _dimension_by_text(doc, "4.47")
+    assert measurements["4.64"][0] == pytest.approx(4.636605623)
+    side_clearance_dim = _dimension_by_text(doc, "4.64")
     assert side_clearance_dim.dxf.defpoint.x > machine.side_layout.right_x
     assert side_clearance_dim.dxf.defpoint2.x == pytest.approx(machine.side_layout.right_x)
     assert side_clearance_dim.dxf.defpoint3.x == pytest.approx(machine.side_layout.right_x)
-    assert abs(side_clearance_dim.dxf.defpoint2.y - side_clearance_dim.dxf.defpoint3.y) == pytest.approx(4.47)
-    for label in {"27.0", "2.0", "40", "20.9", "1.83", "6.21±0.01", "R17.45"}:
+    assert abs(side_clearance_dim.dxf.defpoint2.y - side_clearance_dim.dxf.defpoint3.y) == pytest.approx(4.636605623)
+    for label in {"27.00", "2.00", "40.00", "20.90", "1.83", "6.21±0.01", "R17.45"}:
         assert _dimension_by_text(doc, label).dxf.dimstyle == "TH_GBDIM"
-    secondary_relief_dim = _dimension_by_text(doc, "2-r0.5")
+    secondary_relief_dim = _dimension_by_text(doc, "2-R0.50")
     assert secondary_relief_dim.dxf.dimstyle == "TH_GBDIM"
     assert secondary_relief_dim.dxf.text_midpoint.x - secondary_relief_dim.dxf.defpoint.x == pytest.approx(
         3247.827 - 3242.602,
@@ -70,9 +77,9 @@ def test_bed_618_release_uses_fixed_20p9_slot_base_and_single_upper_wheel(tmp_pa
         62.252 - 58.200,
         abs=0.01,
     )
-    slot_base_dim = _dimension_by_text(doc, "20.9")
-    assert _dimension_block_has_horizontal_line_at_y(doc, "20.9", slot_base_dim.dxf.defpoint2.y)
-    assert _dimension_block_has_horizontal_line_at_y(doc, "20.9", slot_base_dim.dxf.defpoint3.y)
+    slot_base_dim = _dimension_by_text(doc, "20.90")
+    assert _dimension_block_has_horizontal_line_at_y(doc, "20.90", slot_base_dim.dxf.defpoint2.y)
+    assert _dimension_block_has_horizontal_line_at_y(doc, "20.90", slot_base_dim.dxf.defpoint3.y)
     _assert_r_dimensions_target_visible_slot_arcs(doc, profile)
 
     r80_arcs = [
@@ -92,6 +99,90 @@ def test_bed_618_release_uses_fixed_20p9_slot_base_and_single_upper_wheel(tmp_pa
     assert _has_side_derived_horizontal_line(doc, machine.side_layout.lower_y + 20.9)
     assert _has_side_derived_horizontal_line(doc, machine.side_layout.lower_y + 20.9 + 1.83)
     assert not any("DEBUG" in entity.dxf.layer for entity in doc.modelspace())
+
+
+def test_bed_618_debug_keeps_one_r_form_dimension_for_block_to_tile(tmp_path, caplog):
+    machine = load_machine_config("bed_618")
+    finished = parse_company_tile_spec(
+        "R9.6*R9.6*8.6(-0.07/-0.09)*42.6*2.1(+0.01/-0.01)"
+    )
+    preform = parse_block_spec("42.6*8.6(-0.07/-0.09)*2.1(+0.01/-0.01)")
+    profile = build_block_to_tile_section(
+        finished,
+        preform,
+        outer_width=machine.section_outer_width,
+        center_opening=machine.section_center_opening,
+        slot_base_height=machine.section_slot_base_height,
+        arc_side="upper",
+    )
+    debug_path = tmp_path / "block_to_tile_debug.dxf"
+
+    caplog.set_level(logging.WARNING)
+    write_dxf(profile, debug_path, output_mode="debug", machine_id=machine.machine_id)
+    doc = ezdxf.readfile(debug_path)
+    dimension_texts = [
+        entity.dxf.text
+        for entity in doc.modelspace().query("DIMENSION")
+        if entity.dxf.layer == "DIMENSION"
+    ]
+
+    assert profile.process_type == "block_to_tile"
+    assert dimension_texts.count("R9.60") == 1
+    assert not any(
+        "copy process ignored DIMASSOC" in record.getMessage()
+        for record in caplog.records
+    )
+
+
+def test_bed_618_debug_keeps_two_r_form_dimensions_for_same_r_tile(tmp_path):
+    machine = load_machine_config("bed_618")
+    spec = parse_company_tile_spec(
+        "R9.6*R9.6*8.6(-0.07/-0.09)*42.6*2.1(+0.01/-0.01)"
+    )
+    profile = build_tile_section(
+        spec,
+        outer_width=machine.section_outer_width,
+        center_opening=machine.section_center_opening,
+        slot_base_height=machine.section_slot_base_height,
+    )
+    debug_path = tmp_path / "same_r_tile_debug.dxf"
+
+    write_dxf(profile, debug_path, output_mode="debug", machine_id=machine.machine_id)
+    doc = ezdxf.readfile(debug_path)
+    dimension_texts = [
+        entity.dxf.text
+        for entity in doc.modelspace().query("DIMENSION")
+        if entity.dxf.layer == "DIMENSION"
+    ]
+
+    assert dimension_texts.count("R9.60") == 2
+
+
+def test_bed_618_rectangular_block_groove_has_no_finished_r_form_dimension(tmp_path):
+    machine = load_machine_config("bed_618")
+    finished = parse_company_bread_spec("R9.6*42.6*8.6*2.1")
+    preform = parse_block_spec("42.6*8.6(-0.07/-0.09)*2.1(+0.01/-0.01)")
+    profile = build_block_guide_section(
+        preform,
+        slot_reference="width",
+        slot_clearance=None,
+        outer_width=machine.section_outer_width,
+        slot_base_height=machine.section_slot_base_height,
+        center_opening=machine.section_center_opening,
+        finished_spec=finished,
+        process_type="block_to_bread_rectangular",
+    )
+    debug_path = tmp_path / "rectangular_block_debug.dxf"
+
+    write_dxf(profile, debug_path, output_mode="debug", machine_id=machine.machine_id)
+    doc = ezdxf.readfile(debug_path)
+    dimension_texts = [
+        entity.dxf.text
+        for entity in doc.modelspace().query("DIMENSION")
+        if entity.dxf.layer == "DIMENSION"
+    ]
+
+    assert "R9.60" not in dimension_texts
 
 
 def _dimension_measurements_by_text(doc) -> dict[str, list[float]]:

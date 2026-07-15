@@ -9,10 +9,9 @@ side_fixed_spans: [99.0, 90.0, 90.0, 180.0, 131.0]
 section_template: full_template.dxf
 side_template: full_template.dxf
 block_outer_width: 40.0
-block_thickness_clearance_mid: 0.09
 section_style: triple_double_down_up_up
 section_outer_width: 40.0
-section_center_opening: 4.0
+section_center_opening: 2.0
 section_slot_base_height: 12.0
 supported_section_profiles: ["rectangular_block", "bread_big_r_block_preform", "same_r_tile"]
 layout:
@@ -27,7 +26,3 @@ layout:
   template_max_y: -10.0
   block_side_mode: "fixed_projected_height"
   block_side_projected_slot_height: 18.0
-  block_lower_wheel_cut_in_ratio: 0.6
-  block_upper_wheel_cut_in_ratio: 0.6
-  block_to_tile_lower_wheel_cut_in_ratio: 0.6
-  block_to_tile_upper_wheel_cut_in: 0.2

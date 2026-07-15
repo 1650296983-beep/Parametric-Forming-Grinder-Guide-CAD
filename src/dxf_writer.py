@@ -20,11 +20,13 @@ from .dimension_writer import (
     add_section_template_dimensions,
     add_slot_width_dimension,
 )
+from .dimension_precision import normalize_dimension_display_precision
 from .dimension_roles import SECTION_CENTER_OPENING, set_dimension_role
 from .block_geometry import BlockGuideSection
 from .geometry import Point
 from .geometry import ArcSegment, LineSegment, SectionProfile, TileSection
 from .machine_config import MachineConfig, load_machine_config
+from .global_rules import CENTER_TRANSITION_RADIUS
 from .side_view_config import DEFAULT_SIDE_VIEW_TEMPLATE
 from .side_view_writer import (
     SIDE_CAVITY_LAYER,
@@ -54,6 +56,7 @@ def write_dxf(
     path: str | Path,
     output_mode: str = "debug",
     machine_id: str | None = None,
+    machine_config_override: MachineConfig | None = None,
 ) -> Path:
     try:
         import ezdxf
@@ -67,7 +70,9 @@ def write_dxf(
     output_path.parent.mkdir(parents=True, exist_ok=True)
     _validate_output_mode(output_mode)
 
-    machine_config = load_machine_config(machine_id) if machine_id is not None else None
+    machine_config = machine_config_override
+    if machine_config is None and machine_id is not None:
+        machine_config = load_machine_config(machine_id)
     if isinstance(profile, BlockGuideSection):
         if machine_config is None:
             raise ValueError("Block guide DXF generation requires machine_id.")
@@ -124,6 +129,7 @@ def write_dxf(
         _simplify_release_layers(doc)
         if isinstance(profile, TileSection):
             assert_side_view_consistency(doc, profile)
+    normalize_dimension_display_precision(doc, modelspace)
     doc.saveas(output_path)
     return output_path
 
@@ -171,10 +177,10 @@ def _write_template_based_dxf(
         modelspace.delete_entity(entity)
 
     if tile_section.process_type == "block_to_tile":
-        slot_geometry = (
-            _add_down_up_flat_arc_slot_entities(modelspace, tile_section, anchor)
-            if tile_section.arc_side == "lower"
-            else _add_down_up_bread_slot_entities(modelspace, tile_section, anchor)
+        slot_geometry = _add_block_to_tile_flat_arc_slot_entities(
+            modelspace,
+            tile_section,
+            anchor,
         )
     else:
         slot_geometry = _add_param_slot_entities(
@@ -216,6 +222,14 @@ def _write_template_based_dxf(
         ),
         layout=None if machine_config is None else machine_config.side_layout,
         side_style=_side_style_for_machine(machine_config),
+        wheel_positions=(
+            ("上", "下")
+            if machine_config is None
+            else machine_config.wheel_positions
+        ),
+        wheel_radius=(
+            80.0 if machine_config is None else machine_config.wheel_radius
+        ),
     )
     if output_mode == "debug":
         _assert_native_dimensions_present(modelspace, tile_section)
@@ -223,6 +237,7 @@ def _write_template_based_dxf(
     if output_mode == "release":
         _simplify_release_layers(doc)
         assert_side_view_consistency(doc, tile_section, machine_config=machine_config)
+    normalize_dimension_display_precision(doc, modelspace)
     doc.saveas(output_path)
     return output_path
 
@@ -274,10 +289,10 @@ def _write_triple_single_down_up_flat_arc_dxf(
         modelspace.delete_entity(entity)
 
     if tile_section.process_type == "block_to_tile":
-        slot_geometry = (
-            _add_down_up_flat_arc_slot_entities(modelspace, tile_section, anchor)
-            if tile_section.arc_side == "lower"
-            else _add_down_up_bread_slot_entities(modelspace, tile_section, anchor)
+        slot_geometry = _add_block_to_tile_flat_arc_slot_entities(
+            modelspace,
+            tile_section,
+            anchor,
         )
     elif tile_section.process_type == "block_to_bread":
         slot_geometry = _add_down_up_bread_slot_entities(modelspace, tile_section, anchor)
@@ -298,9 +313,12 @@ def _write_triple_single_down_up_flat_arc_dxf(
         template_path=machine_config.side_template_path,
         layout=machine_config.side_layout,
         side_style="triple_single_down_up",
+        wheel_positions=machine_config.wheel_positions,
+        wheel_radius=machine_config.wheel_radius,
     )
     if output_mode == "release":
         _simplify_release_layers(doc)
+    normalize_dimension_display_precision(doc, modelspace)
     doc.saveas(output_path)
     return output_path
 
@@ -325,7 +343,35 @@ def _is_down_up_flat_arc_template_param_entity(entity, anchor: TemplateAnchor) -
     return False
 
 
+def _add_block_to_tile_flat_arc_slot_entities(
+    modelspace,
+    tile_section: TileSection,
+    anchor: TemplateAnchor,
+) -> SlotDimensionGeometry:
+    """Build the shared six-relief topology for a block-to-tile section.
+
+    A tile made from a block has one plane and one forming-R surface.  The
+    R surface is selected by the first-wheel rule, while the six relief arcs
+    remain the same named topology on every machine.  It must never be routed
+    through the block-to-bread constructor merely because its R is upper.
+    """
+    if tile_section.arc_side == "lower":
+        return _add_lower_facing_flat_arc_slot_entities(modelspace, tile_section, anchor)
+    if tile_section.arc_side == "upper":
+        return _add_upper_facing_flat_arc_slot_entities(modelspace, tile_section, anchor)
+    raise ValueError(f"Unsupported block-to-tile arc side: {tile_section.arc_side!r}")
+
+
 def _add_down_up_flat_arc_slot_entities(
+    modelspace,
+    tile_section: TileSection,
+    anchor: TemplateAnchor,
+) -> SlotDimensionGeometry:
+    """Backward-compatible entry point for callers of the lower-R builder."""
+    return _add_block_to_tile_flat_arc_slot_entities(modelspace, tile_section, anchor)
+
+
+def _add_lower_facing_flat_arc_slot_entities(
     modelspace,
     tile_section: TileSection,
     anchor: TemplateAnchor,
@@ -333,7 +379,7 @@ def _add_down_up_flat_arc_slot_entities(
     guide = tile_section.guide_spec
     radius = tile_section.forming_spec.R_form
     relief_radius = guide.relief.relief_size / 2.0
-    center_transition_radius = 0.5
+    center_transition_radius = CENTER_TRANSITION_RADIUS
     half_slot = guide.guide_slot_width / 2.0
     opening_half = guide.center_opening / 2.0
     center_x = anchor.slot_center_x
@@ -446,10 +492,13 @@ def _add_down_up_flat_arc_slot_entities(
         upper_radius_center=(center_x, top_y),
         lower_radius_center=lower_center.as_tuple(),
         relief_radius=relief_radius,
+        center_transition_radius=center_transition_radius,
+        center_transition_left_center=center_left_relief.as_tuple(),
+        center_transition_right_center=center_right_relief.as_tuple(),
     )
 
 
-def _add_down_up_bread_slot_entities(
+def _add_upper_facing_flat_arc_slot_entities(
     modelspace,
     tile_section: TileSection,
     anchor: TemplateAnchor,
@@ -457,7 +506,7 @@ def _add_down_up_bread_slot_entities(
     guide = tile_section.guide_spec
     radius = tile_section.forming_spec.R_form
     relief_radius = guide.relief.relief_size / 2.0
-    center_transition_radius = 0.5
+    center_transition_radius = CENTER_TRANSITION_RADIUS
     half_slot = guide.guide_slot_width / 2.0
     opening_half = guide.center_opening / 2.0
     center_x = anchor.slot_center_x
@@ -469,7 +518,7 @@ def _add_down_up_bread_slot_entities(
     opening_right_x = center_x + opening_half
 
     if half_slot >= radius:
-        raise ValueError("slot width must be smaller than 2 * R_form for block-to-bread.")
+        raise ValueError("slot width must be smaller than 2 * R_form for an upper-facing R surface.")
     if guide.guide_thickness <= 2.0 * relief_radius:
         raise ValueError("Guide thickness is too small for relief geometry.")
     if guide.guide_slot_width <= guide.center_opening + 4.0 * relief_radius:
@@ -539,28 +588,30 @@ def _add_down_up_bread_slot_entities(
         "PARAM_SLOT",
     )
 
-    _add_relief_arc(
+    # All four 4-R reliefs retain the outer complement arc.  The endpoints
+    # stay unchanged, so dimensions and tangent continuity remain valid.
+    _add_outer_relief_arc(
         modelspace,
         Point(left_x, base_y),
         relief_radius,
         Point(left_x + relief_radius, base_y),
         Point(left_x, base_y + relief_radius),
     )
-    _add_relief_arc(
+    _add_outer_relief_arc(
         modelspace,
         Point(right_x, base_y),
         relief_radius,
         Point(right_x, base_y + relief_radius),
         Point(right_x - relief_radius, base_y),
     )
-    _add_relief_arc(
+    _add_outer_relief_arc(
         modelspace,
         upper_left_relief,
         relief_radius,
         Point(left_x, top_y - relief_radius),
         upper_left_intersection,
     )
-    _add_relief_arc(
+    _add_outer_relief_arc(
         modelspace,
         upper_right_relief,
         relief_radius,
@@ -615,7 +666,25 @@ def _add_down_up_bread_slot_entities(
         upper_radius_center=upper_center.as_tuple(),
         lower_radius_center=(center_x, base_y),
         relief_radius=relief_radius,
+        center_transition_radius=center_transition_radius,
+        center_transition_left_center=center_left_relief.as_tuple(),
+        center_transition_right_center=center_right_relief.as_tuple(),
     )
+
+
+def _add_down_up_bread_slot_entities(
+    modelspace,
+    tile_section: TileSection,
+    anchor: TemplateAnchor,
+) -> SlotDimensionGeometry:
+    """Build the upper-facing R topology used by the block-to-bread process.
+
+    The geometric primitive is shared with an upper-facing block-to-tile
+    section.  Keeping this process-specific entry point makes that shared
+    dependency explicit; the block-to-tile dispatch and topology audit guard
+    against accidentally treating it as a bread-only rule.
+    """
+    return _add_upper_facing_flat_arc_slot_entities(modelspace, tile_section, anchor)
 
 
 def _update_down_up_flat_arc_template_dimensions(
@@ -901,9 +970,17 @@ def _write_block_template_based_dxf(
             if is_triple_down_up
             else _side_style_for_machine(machine_config)
         ),
+        wheel_positions=machine_config.wheel_positions,
+        wheel_radius=machine_config.wheel_radius,
     )
     if output_mode == "release":
         _simplify_release_layers(doc)
+        assert_side_view_consistency(
+            doc,
+            block_section,
+            machine_config=machine_config,
+        )
+    normalize_dimension_display_precision(doc, modelspace)
     doc.saveas(output_path)
     return output_path
 
@@ -1007,6 +1084,7 @@ def _add_block_slot_entities(
 ) -> SlotDimensionGeometry:
     guide = block_section.guide_spec
     relief_radius = guide.relief.relief_size / 2.0
+    center_transition_radius = CENTER_TRANSITION_RADIUS
     half_slot = guide.guide_slot_width / 2.0
     center_x = anchor.slot_center_x
     left_x = center_x - half_slot
@@ -1016,7 +1094,7 @@ def _add_block_slot_entities(
     neck_width = guide.center_opening
     neck_left_x = center_x - neck_width / 2.0
     neck_right_x = center_x + neck_width / 2.0
-    neck_bottom_y = top_y + relief_radius
+    neck_bottom_y = top_y + center_transition_radius
     r = relief_radius
 
     if top_y - bottom_y <= 2.0 * r:
@@ -1028,11 +1106,11 @@ def _add_block_slot_entities(
     _add_line(modelspace, (neck_right_x, anchor.top), (neck_right_x, neck_bottom_y), "PARAM_SLOT")
     _add_line(modelspace, (left_x + r, bottom_y), (right_x - r, bottom_y), "PARAM_SLOT")
     _add_line(modelspace, (right_x, bottom_y + r), (right_x, top_y - r), "PARAM_SLOT")
-    _add_line(modelspace, (right_x - r, top_y), (neck_right_x + r, top_y), "PARAM_SLOT")
-    _add_line(modelspace, (neck_left_x - r, top_y), (left_x + r, top_y), "PARAM_SLOT")
+    _add_line(modelspace, (right_x - r, top_y), (neck_right_x + center_transition_radius, top_y), "PARAM_SLOT")
+    _add_line(modelspace, (neck_left_x - center_transition_radius, top_y), (left_x + r, top_y), "PARAM_SLOT")
     _add_line(modelspace, (left_x, top_y - r), (left_x, bottom_y + r), "PARAM_SLOT")
-    modelspace.add_arc((neck_right_x + r, neck_bottom_y), r, 180.0, 270.0, dxfattribs={"layer": "PARAM_SLOT"})
-    modelspace.add_arc((neck_left_x - r, neck_bottom_y), r, 270.0, 0.0, dxfattribs={"layer": "PARAM_SLOT"})
+    modelspace.add_arc((neck_right_x + center_transition_radius, neck_bottom_y), center_transition_radius, 180.0, 270.0, dxfattribs={"layer": "PARAM_SLOT"})
+    modelspace.add_arc((neck_left_x - center_transition_radius, neck_bottom_y), center_transition_radius, 270.0, 0.0, dxfattribs={"layer": "PARAM_SLOT"})
     modelspace.add_arc((right_x, top_y), r, 270.0, 180.0, dxfattribs={"layer": "PARAM_SLOT"})
     modelspace.add_arc((right_x, bottom_y), r, 180.0, 90.0, dxfattribs={"layer": "PARAM_SLOT"})
     modelspace.add_arc((left_x, top_y), r, 0.0, 270.0, dxfattribs={"layer": "PARAM_SLOT"})
@@ -1053,6 +1131,15 @@ def _add_block_slot_entities(
         upper_radius_center=(center_x, top_y),
         lower_radius_center=(center_x, bottom_y),
         relief_radius=relief_radius,
+        center_transition_radius=center_transition_radius,
+        center_transition_left_center=(
+            neck_left_x - center_transition_radius,
+            neck_bottom_y,
+        ),
+        center_transition_right_center=(
+            neck_right_x + center_transition_radius,
+            neck_bottom_y,
+        ),
     )
 
 
@@ -1400,24 +1487,28 @@ def _update_block_thickness_dimension(doc, dimension, label: str, geometry: Slot
 def _update_block_relief_radius_dimension(doc, dimension, geometry: SlotDimensionGeometry) -> None:
     old_center = dimension.dxf.defpoint
     old_target = dimension.dxf.defpoint4
-    new_center = (
-        geometry.opening_right_x + geometry.relief_radius,
-        geometry.top_y + geometry.relief_radius,
+    new_center = geometry.center_transition_right_center or (
+        geometry.opening_right_x + geometry.center_transition_radius,
+        geometry.top_y + geometry.center_transition_radius,
     )
     dimension.dxf.defpoint = (new_center[0], new_center[1], old_center.z)
     dimension.dxf.defpoint4 = (
         new_center[0],
-        new_center[1] - geometry.relief_radius,
+        new_center[1] - geometry.center_transition_radius,
         old_target.z,
     )
     dimension.dxf.text = "2-<>"
-    _set_dimension_actual_measurement(dimension, geometry.relief_radius)
+    _set_dimension_actual_measurement(dimension, geometry.center_transition_radius)
     _transform_dimension_block(
         doc,
         dimension,
         lambda point: (point.x + new_center[0] - old_center.x, point.y + new_center[1] - old_center.y, point.z),
     )
-    _set_dimension_block_text(doc, dimension, f"2-R{geometry.relief_radius:.2f}")
+    _set_dimension_block_text(
+        doc,
+        dimension,
+        f"2-R{geometry.center_transition_radius:.2f}",
+    )
 
 
 def _update_block_relief_size_dimension(
@@ -1567,7 +1658,7 @@ def _set_dimension_actual_measurement(dimension, value: float) -> None:
 
 
 def _format_compact_decimal(value: float) -> str:
-    return f"{value:.2f}".rstrip("0").rstrip(".")
+    return f"{value:.2f}"
     add_linear_dimension_with_text(
         modelspace,
         (geometry.left_x, geometry.top_y - relief_radius),
@@ -1714,6 +1805,7 @@ def _add_param_slot_entities(
     guide = tile_section.guide_spec
     R_form = tile_section.forming_spec.R_form
     relief_radius = guide.relief.relief_size / 2.0
+    center_transition_radius = CENTER_TRANSITION_RADIUS
     half_slot = guide.guide_slot_width / 2.0
     base_y = guide.slot_base_height if anchor is None else anchor.slot_base_y
     top_y = base_y + guide.guide_thickness
@@ -1731,29 +1823,76 @@ def _add_param_slot_entities(
     lower_right_intersection = _select_circle_intersection(lower_center, R_form, lower_right_relief, relief_radius, "left")
     upper_left_intersection = _select_circle_intersection(upper_center, R_form, upper_left_relief, relief_radius, "right")
     upper_right_intersection = _select_circle_intersection(upper_center, R_form, upper_right_relief, relief_radius, "left")
-    opening_left = _point_on_upper_slot_arc(upper_center, R_form, x_center - opening_half)
-    opening_right = _point_on_upper_slot_arc(upper_center, R_form, x_center + opening_half)
+    opening_left_x = x_center - opening_half
+    opening_right_x = x_center + opening_half
+    center_left_relief = _bread_center_opening_relief_center(
+        upper_center,
+        R_form,
+        opening_left_x,
+        center_transition_radius,
+        side="left",
+    )
+    center_right_relief = _bread_center_opening_relief_center(
+        upper_center,
+        R_form,
+        opening_right_x,
+        center_transition_radius,
+        side="right",
+    )
+    center_left_arc_tangent = _external_circle_tangent_point(
+        upper_center,
+        R_form,
+        center_left_relief,
+        center_transition_radius,
+    )
+    center_right_arc_tangent = _external_circle_tangent_point(
+        upper_center,
+        R_form,
+        center_right_relief,
+        center_transition_radius,
+    )
+    center_left_vertical_tangent = Point(opening_left_x, center_left_relief.y)
+    center_right_vertical_tangent = Point(opening_right_x, center_right_relief.y)
 
     _add_arc_by_points(modelspace, lower_center, R_form, lower_right_intersection, lower_left_intersection, clockwise=False, layer="PARAM_SLOT")
-    _add_arc_by_points(modelspace, upper_center, R_form, opening_left, upper_left_intersection, clockwise=False, layer="PARAM_SLOT")
-    _add_arc_by_points(modelspace, upper_center, R_form, upper_right_intersection, opening_right, clockwise=False, layer="PARAM_SLOT")
+    _add_arc_by_points(modelspace, upper_center, R_form, center_left_arc_tangent, upper_left_intersection, clockwise=False, layer="PARAM_SLOT")
+    _add_arc_by_points(modelspace, upper_center, R_form, upper_right_intersection, center_right_arc_tangent, clockwise=False, layer="PARAM_SLOT")
 
     _add_relief_arc(modelspace, upper_left_relief, relief_radius, upper_left_intersection, Point(upper_left_relief.x, upper_left_relief.y - relief_radius))
     _add_relief_arc(modelspace, lower_left_relief, relief_radius, Point(lower_left_relief.x, lower_left_relief.y + relief_radius), lower_left_intersection)
     _add_relief_arc(modelspace, lower_right_relief, relief_radius, lower_right_intersection, Point(lower_right_relief.x, lower_right_relief.y + relief_radius))
     _add_relief_arc(modelspace, upper_right_relief, relief_radius, Point(upper_right_relief.x, upper_right_relief.y - relief_radius), upper_right_intersection)
+    _add_relief_arc(
+        modelspace,
+        center_left_relief,
+        center_transition_radius,
+        center_left_arc_tangent,
+        center_left_vertical_tangent,
+    )
+    _add_relief_arc(
+        modelspace,
+        center_right_relief,
+        center_transition_radius,
+        center_right_vertical_tangent,
+        center_right_arc_tangent,
+    )
 
     _add_line(modelspace, (lower_left_relief.x, lower_left_relief.y + relief_radius), (upper_left_relief.x, upper_left_relief.y - relief_radius), "PARAM_SLOT")
     _add_line(modelspace, (lower_right_relief.x, lower_right_relief.y + relief_radius), (upper_right_relief.x, upper_right_relief.y - relief_radius), "PARAM_SLOT")
     if anchor is not None:
-        _add_top_opening_connector_lines(modelspace, opening_left, opening_right, anchor)
+        _add_top_opening_connector_lines(
+            modelspace,
+            center_left_vertical_tangent,
+            center_right_vertical_tangent,
+            anchor,
+        )
     return SlotDimensionGeometry(
         left_x=lower_left_relief.x,
         right_x=lower_right_relief.x,
         base_y=base_y,
         top_y=top_y,
-        opening_left_x=opening_left.x,
-        opening_right_x=opening_right.x,
+        opening_left_x=opening_left_x,
+        opening_right_x=opening_right_x,
         center_x=x_center,
         outer_left=(-tile_section.guide_spec.outer_width / 2.0 if anchor is None else anchor.left),
         outer_right=(tile_section.guide_spec.outer_width / 2.0 if anchor is None else anchor.right),
@@ -1762,6 +1901,9 @@ def _add_param_slot_entities(
         upper_radius_center=upper_center.as_tuple(),
         lower_radius_center=lower_center.as_tuple(),
         relief_radius=relief_radius,
+        center_transition_radius=center_transition_radius,
+        center_transition_left_center=center_left_relief.as_tuple(),
+        center_transition_right_center=center_right_relief.as_tuple(),
     )
 
 
@@ -1901,6 +2043,22 @@ def _add_relief_arc(modelspace, center: Point, radius: float, start: Point, end:
         end_angle=_angle_deg(center, end),
         dxfattribs={"layer": "PARAM_SLOT"},
     )
+
+
+def _add_outer_relief_arc(
+    modelspace,
+    center: Point,
+    radius: float,
+    inner_start: Point,
+    inner_end: Point,
+) -> None:
+    """Emit the complement of the inner relief arc.
+
+    DXF ARC entities are always counter-clockwise.  Reversing the two tangent
+    points preserves their geometry while selecting the outer segment, which
+    prevents a 4-R relief from cutting back through the product cavity.
+    """
+    _add_relief_arc(modelspace, center, radius, inner_end, inner_start)
 
 
 def _add_line(modelspace, start: tuple[float, float], end: tuple[float, float], layer: str) -> None:
@@ -2078,20 +2236,35 @@ def _assert_native_dimensions_present(modelspace, tile_section: TileSection) -> 
     ]
     guide = tile_section.guide_spec
     r_text = f"R{tile_section.forming_spec.R_form:.2f}"
-    expected = (
+    expected = [
         guide.slot_width_dimension_text,
         f"{guide.guide_thickness:.2f}",
-        r_text,
-        f"{guide.center_opening:.1f}",
-        f"{guide.outer_width:.0f}",
-        f"{guide.outer_height:.1f}",
-        f"{guide.slot_base_height:.1f}",
-    )
+        f"{guide.center_opening:.2f}",
+        f"{guide.outer_width:.2f}",
+        f"{guide.outer_height:.2f}",
+        f"{guide.slot_base_height:.2f}",
+    ]
+    expected_r_dimension_count = _expected_r_form_dimension_count(tile_section)
+    if expected_r_dimension_count:
+        expected.append(r_text)
     missing = [text for text in expected if text not in dimension_texts]
-    if dimension_texts.count(r_text) < 2:
-        missing.append(f"second {r_text}")
+    actual_r_dimension_count = dimension_texts.count(r_text)
+    if actual_r_dimension_count < expected_r_dimension_count:
+        missing.append(
+            f"R_form dimensions {actual_r_dimension_count}/{expected_r_dimension_count} ({r_text})"
+        )
     if missing:
         raise RuntimeError("Native DIMENSION generation failed; missing: " + ", ".join(missing))
+
+
+def _expected_r_form_dimension_count(tile_section: TileSection) -> int:
+    """Return the R_form callout count required by the rebuilt cavity topology."""
+    return sum(
+        1
+        for segment in tile_section.forming_profile.segments
+        if isinstance(segment, ArcSegment)
+        and abs(segment.radius - tile_section.forming_spec.R_form) <= 1e-9
+    )
 
 
 def _validate_output_mode(output_mode: str) -> None:

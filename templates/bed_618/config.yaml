@@ -25,6 +25,3 @@ layout:
   block_side_mode: "fixed_projected_height"
   block_side_projected_slot_height: 20.9
   block_projected_top_mode: "guide_thickness"
-  block_upper_wheel_cut_in_ratio: 0.6
-  block_to_tile_lower_wheel_cut_in_ratio: 0.6
-  block_to_tile_upper_wheel_cut_in: 0.2

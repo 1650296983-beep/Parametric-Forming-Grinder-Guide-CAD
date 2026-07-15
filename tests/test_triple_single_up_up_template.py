@@ -4,6 +4,7 @@ import ezdxf
 import pytest
 
 from src.block_geometry import build_block_guide_section
+from src.global_rules import HIGH_REQUIREMENT_THICKNESS_CLEARANCE
 from src.dxf_writer import write_dxf
 from src.machine_config import load_machine_config
 from src.side_view import build_side_view_geometry
@@ -18,7 +19,7 @@ def test_triple_single_up_up_config_matches_clean_template():
     assert machine.wheel_positions == ("上", "上")
     assert machine.guide_sections == 1
     assert machine.block_outer_width == pytest.approx(40.0)
-    assert machine.block_thickness_clearance_mid == pytest.approx(0.09)
+    assert HIGH_REQUIREMENT_THICKNESS_CLEARANCE == pytest.approx(0.09)
     assert machine.side_layout.block_fixed_top_gap == pytest.approx(3.0)
     assert machine.section_template_path.exists()
     assert machine.side_template_path.exists()
@@ -32,7 +33,7 @@ def test_triple_single_up_up_block_release_updates_native_dimensions(tmp_path):
         slot_reference="length",
         slot_clearance=0.05,
         outer_width=40.0,
-        thickness_clearance_mid=machine.block_thickness_clearance_mid,
+        thickness_clearance_mid=HIGH_REQUIREMENT_THICKNESS_CLEARANCE,
     )
     release_path = tmp_path / "triple_single_up_up_release.dxf"
 
@@ -54,7 +55,7 @@ def test_triple_single_up_up_block_release_updates_native_dimensions(tmp_path):
     assert side.derived.side_clearance_height == pytest.approx(expected_clearance)
     assert measurements["9.15±0.01"][0] == pytest.approx(9.15)
     assert measurements["2.59"][0] == pytest.approx(2.59)
-    assert measurements["3"][0] == pytest.approx(3.0)
+    assert measurements["3.00"][0] == pytest.approx(3.0)
     clearance_label = f"{expected_clearance:.2f}"
     assert measurements[clearance_label] == pytest.approx(
         [expected_clearance, expected_clearance]

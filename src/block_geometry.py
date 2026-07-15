@@ -9,6 +9,7 @@ from .spec_parser import (
     ProductPreFormTolerance,
     ReliefSpec,
 )
+from .global_rules import BLOCK_THICKNESS_CLEARANCE
 
 
 @dataclass(frozen=True)
@@ -74,7 +75,11 @@ def build_block_guide_section(
         chord_width=slot_reference_value,
         machining_allowance=machining_allowance,
         guide_extra_clearance=guide_extra_clearance,
-        thickness_clearance_mid=0.12 if thickness_clearance_mid is None else thickness_clearance_mid,
+        thickness_clearance_mid=(
+            BLOCK_THICKNESS_CLEARANCE
+            if thickness_clearance_mid is None
+            else thickness_clearance_mid
+        ),
         slot_width_tolerance=slot_width_tolerance,
         preform_tolerance=preform_tolerance,
         relief=relief,

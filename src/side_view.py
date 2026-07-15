@@ -6,6 +6,10 @@ from math import sqrt
 from .block_geometry import BlockGuideSection
 from .geometry import TileSection
 from .side_view_config import SideViewLayoutConfig, SideViewTemplateConfig
+from .global_rules import WHEEL_CUT_IN_RATIO
+
+
+GLOBAL_WHEEL_CUT_IN_RATIO = WHEEL_CUT_IN_RATIO
 
 
 @dataclass(frozen=True)
@@ -104,15 +108,11 @@ def _build_block_side_view_geometry(
     mode = layout.block_side_mode
     process_thickness = section.process_thickness
     opening_limit = max(section.process_length - 0.2, 0.1)
-    lower_requested_cut_in = _configured_block_cut_in(
-        layout.block_lower_wheel_cut_in,
-        layout.block_lower_wheel_cut_in_ratio,
-        process_thickness,
+    lower_requested_cut_in = (
+        process_thickness * GLOBAL_WHEEL_CUT_IN_RATIO
     )
-    upper_requested_cut_in = _configured_block_cut_in(
-        layout.block_upper_wheel_cut_in,
-        layout.block_upper_wheel_cut_in_ratio,
-        process_thickness,
+    upper_requested_cut_in = (
+        process_thickness * GLOBAL_WHEEL_CUT_IN_RATIO
     )
     lower_opening, effective_lower_cut_in = _limited_r80_opening(
         template.wheel_radius,
@@ -217,20 +217,6 @@ def _build_block_side_view_geometry(
     )
 
 
-def _configured_block_cut_in(
-    fixed_value: float | None,
-    ratio: float | None,
-    process_thickness: float,
-) -> float:
-    if fixed_value is not None:
-        return fixed_value
-    if ratio is not None:
-        return process_thickness * ratio
-    # Existing configurations without a dedicated block value use the shared
-    # process rule rather than a product-specific magic number.
-    return process_thickness * 0.6
-
-
 def _require_layout_value(value: float | None, name: str) -> float:
     if value is None:
         raise ValueError(f"Block side-view configuration is missing {name}.")
@@ -248,27 +234,8 @@ def _tile_wheel_cut_ins(
     layout: SideViewLayoutConfig,
     default_upper_cut_in: float,
 ) -> tuple[float, float]:
-    if tile_section.process_type == "block_to_tile":
-        lower = layout.block_to_tile_lower_wheel_cut_in
-        upper = layout.block_to_tile_upper_wheel_cut_in
-        lower_ratio = layout.block_to_tile_lower_wheel_cut_in_ratio
-        upper_ratio = layout.block_to_tile_upper_wheel_cut_in_ratio
-        if lower is None and lower_ratio is not None:
-            lower = tile_section.process_thickness * lower_ratio
-        if upper is None and upper_ratio is not None:
-            upper = tile_section.process_thickness * upper_ratio
-        if lower is None or upper is None:
-            raise ValueError(
-                "block_to_tile requires explicit lower and upper wheel cut-ins "
-                "or cut-in ratios in the selected machine configuration."
-            )
-        return lower, upper
-    upper = (
-        tile_section.process_thickness * layout.tile_upper_wheel_cut_in_ratio
-        if layout.tile_upper_wheel_cut_in_ratio > 0.0
-        else default_upper_cut_in
-    )
-    return tile_section.process_thickness * 0.6, upper
+    cut_in = tile_section.process_thickness * GLOBAL_WHEEL_CUT_IN_RATIO
+    return cut_in, cut_in
 
 
 def _limited_r80_opening(

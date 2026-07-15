@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dataclasses import dataclass
+from dataclasses import asdict, dataclass
 from typing import Any
 
 from .block_geometry import BlockGuideSection, build_block_guide_section
@@ -10,6 +10,11 @@ from .geometry import (
     build_tile_section,
 )
 from .machine_config import MachineConfig
+from .global_rules import (
+    BLOCK_THICKNESS_CLEARANCE,
+    default_thickness_clearance,
+    process_options_from_mapping,
+)
 from .spec_parser import (
     BlockSpec,
     FinishedSpec,
@@ -29,8 +34,9 @@ class DualGuideInputDecision:
     guide_profile_source: str
     final_section_profile_type: str
     R_form_source: str
+    process_options: dict[str, Any]
 
-    def as_dict(self) -> dict[str, str]:
+    def as_dict(self) -> dict[str, Any]:
         return {
             "finished_product_spec": self.finished_product_spec,
             "pre_grinding_spec": self.pre_grinding_spec,
@@ -39,6 +45,7 @@ class DualGuideInputDecision:
             "guide_profile_source": self.guide_profile_source,
             "final_section_profile_type": self.final_section_profile_type,
             "R_form_source": self.R_form_source,
+            "process_options": dict(self.process_options),
         }
 
 
@@ -70,6 +77,7 @@ def build_dual_guide_profile_from_input(
     pre_grinding_shape = str(input_data["pre_grinding_shape"])
     profile_source = str(input_data["guide_profile_source"])
     relief = parse_relief_spec(str(input_data.get("relief", "4-1")))
+    process_options = process_options_from_mapping(input_data)
 
     if finished_shape == "bread":
         finished_spec = parse_company_bread_spec(finished_raw)
@@ -85,6 +93,10 @@ def build_dual_guide_profile_from_input(
 
     if pre_grinding_shape == "block":
         pre_grinding_spec = parse_block_spec(pre_grinding_raw)
+        thickness_clearance = (
+            process_options.thickness_clearance_override
+            or BLOCK_THICKNESS_CLEARANCE
+        )
         if profile_source in {
             "pre_grinding_spec",
             "pre_grinding_spec_rectangular_envelope",
@@ -93,9 +105,9 @@ def build_dual_guide_profile_from_input(
                 pre_grinding_spec,
                 relief=relief,
                 slot_reference=str(input_data.get("slot_reference", "width")),
-                slot_clearance=None,
+                slot_clearance=process_options.slot_clearance_override,
                 outer_width=machine.section_outer_width,
-                thickness_clearance_mid=machine.block_thickness_clearance_mid,
+                thickness_clearance_mid=thickness_clearance,
                 slot_base_height=machine.section_slot_base_height,
                 center_opening=machine.section_center_opening,
                 finished_spec=finished_spec,
@@ -109,6 +121,7 @@ def build_dual_guide_profile_from_input(
                 guide_profile_source="pre_grinding_spec_rectangular_envelope",
                 final_section_profile_type="rectangular_block",
                 R_form_source="finished_product_target_only_not_guide_profile",
+                process_options=asdict(process_options),
             )
             return finished_spec, pre_grinding_spec, profile, decision
 
@@ -122,11 +135,13 @@ def build_dual_guide_profile_from_input(
                 finished_spec,
                 pre_grinding_spec,
                 relief=relief,
-                thickness_clearance_mid=machine.block_thickness_clearance_mid,
+                thickness_clearance_mid=thickness_clearance,
+                tolerance_slot_clearance=process_options.slot_clearance_override,
                 outer_width=machine.section_outer_width,
                 slot_base_height=_block_to_tile_slot_base_height(
                     pre_grinding_spec,
                     machine,
+                    thickness_clearance,
                 ),
                 center_opening=machine.section_center_opening,
                 arc_side=arc_side,
@@ -139,6 +154,7 @@ def build_dual_guide_profile_from_input(
                 guide_profile_source=profile_source,
                 final_section_profile_type=f"flat_arc_{arc_side}_big_r_block_preform",
                 R_form_source="max(finished_product_R_outer, finished_product_R_inner)",
+                process_options=asdict(process_options),
             )
             return finished_spec, pre_grinding_spec, profile, decision
 
@@ -162,6 +178,14 @@ def build_dual_guide_profile_from_input(
         profile = build_tile_section(
             pre_grinding_spec,
             relief=relief,
+            thickness_clearance_mid=(
+                process_options.thickness_clearance_override
+                or default_thickness_clearance(
+                    "same_r_tile",
+                    pre_grinding_spec.chord_width,
+                )
+            ),
+            tolerance_slot_clearance=process_options.slot_clearance_override,
             outer_width=machine.section_outer_width,
             slot_base_height=machine.section_slot_base_height,
             center_opening=machine.section_center_opening,
@@ -174,6 +198,7 @@ def build_dual_guide_profile_from_input(
             guide_profile_source=profile_source,
             final_section_profile_type="same_r_tile",
             R_form_source="pre_grinding_spec_equal_R",
+            process_options=asdict(process_options),
         )
         return finished_spec, pre_grinding_spec, profile, decision
 
@@ -194,11 +219,12 @@ def _first_wheel_side(machine: MachineConfig) -> str:
 def _block_to_tile_slot_base_height(
     preform: BlockSpec,
     machine: MachineConfig,
+    thickness_clearance_mid: float,
 ) -> float:
     top_gap = machine.side_layout.block_fixed_top_gap
     if machine.side_layout.block_side_mode != "fixed_top_gap":
         return machine.section_slot_base_height
     if top_gap is None:
         raise ValueError("fixed_top_gap block side-view mode requires block_fixed_top_gap.")
-    guide_thickness = preform.thickness_mid + machine.block_thickness_clearance_mid
+    guide_thickness = preform.thickness_mid + thickness_clearance_mid
     return 27.0 - top_gap - guide_thickness

@@ -13,6 +13,7 @@ export interface Machine {
   section_slot_base_height: number;
   template_coordinate_system: string;
   supported_by_web_generation: boolean;
+  wheel_radius: number;
 }
 
 export interface DesignInput {
@@ -31,6 +32,10 @@ export interface DesignInput {
    */
   tolerance?: Record<string, number | null>;
   relief: string;
+  single_side_or_high_requirement: boolean;
+  high_symmetry_requirement: boolean;
+  large_tile_clearance: boolean;
+  wheel_radius: number;
 }
 
 export interface ValidationResult {
@@ -44,6 +49,12 @@ export interface ValidationResult {
     arc_side: string | null;
     flat_side: string | null;
     warnings: string[];
+    process_options: {
+      single_side_or_high_requirement: boolean;
+      high_symmetry_requirement: boolean;
+      large_tile_clearance: boolean;
+      wheel_radius: number;
+    };
   };
   derived: {
     slot_width: number;

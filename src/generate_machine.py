@@ -12,6 +12,7 @@ from .block_geometry import BlockGuideSection, build_block_guide_section
 from .dxf_writer import write_dxf
 from .dual_guide_release_audit import write_dimension_definition_point_audit
 from .guide_design_input import build_single_guide_profile_from_input
+from .global_rules import BLOCK_THICKNESS_CLEARANCE
 from .geometry import (
     TileSection,
     build_block_to_tile_section,
@@ -30,6 +31,7 @@ from .spec_parser import (
     parse_relief_spec,
 )
 from .side_view import build_side_view_geometry
+from .side_view_config import SideViewTemplateConfig
 from .validation_report import write_validation_report_json
 from .validator import validate_tile_section
 
@@ -75,6 +77,11 @@ def main() -> int:
         if args.input_json is not None
         else None
     )
+    if explicit_input is not None:
+        machine = replace(
+            machine,
+            wheel_radius=float(explicit_input.get("wheel_radius", machine.wheel_radius)),
+        )
     name = _resolve_output_name(args.name, explicit_input, machine.machine_name, args.spec)
     debug_dxf = dxf_dir / f"{name}（调试）.dxf"
     release_dxf = dxf_dir / f"{name}.dxf"
@@ -99,7 +106,7 @@ def main() -> int:
             args.block_slot_clearance,
             machine=machine,
             block_outer_width=machine.block_outer_width,
-            block_thickness_clearance_mid=machine.block_thickness_clearance_mid,
+            default_block_thickness_clearance=BLOCK_THICKNESS_CLEARANCE,
             thickness_clearance_mid=args.thickness_clearance,
             preform_spec=args.preform_spec,
         )
@@ -108,12 +115,24 @@ def main() -> int:
         if not validation.ok:
             raise ValueError("Tile geometry validation failed: " + "; ".join(validation.errors))
 
-    write_dxf(profile, debug_dxf, output_mode="debug", machine_id=args.machine_id)
+    write_dxf(
+        profile,
+        debug_dxf,
+        output_mode="debug",
+        machine_id=args.machine_id,
+        machine_config_override=machine,
+    )
     if release_dxf.exists():
         release_dxf.unlink()
     if release_candidate_dxf.exists():
         release_candidate_dxf.unlink()
-    write_dxf(profile, release_candidate_dxf, output_mode="release", machine_id=args.machine_id)
+    write_dxf(
+        profile,
+        release_candidate_dxf,
+        output_mode="release",
+        machine_id=args.machine_id,
+        machine_config_override=machine,
+    )
     dimension_audit = write_dimension_definition_point_audit(
         release_candidate_dxf,
         profile,
@@ -177,7 +196,11 @@ def write_machine_report(
     report_path: Path,
 ) -> Path:
     machine = load_machine_config(machine_id)
-    side = build_side_view_geometry(profile, layout=machine.side_layout)  # type: ignore[arg-type]
+    side = build_side_view_geometry(
+        profile,
+        template=SideViewTemplateConfig(wheel_radius=machine.wheel_radius),
+        layout=machine.side_layout,
+    )  # type: ignore[arg-type]
     guide = profile.guide_spec
     release_doc = ezdxf.readfile(release_dxf)
     debug_doc = ezdxf.readfile(debug_dxf)
@@ -206,7 +229,10 @@ def write_machine_report(
             "release_hides_debug_layers": _release_hides_debug_layers(release_doc),
             "release_hides_debug_formula_text": not _formula_texts_present(release_doc),
             "debug_contains_debug_layer": _contains_debug_layer(debug_doc),
-            "r80_arc_count": _r80_arc_count(release_doc),
+            "wheel_arc_count": _wheel_arc_count(
+                release_doc,
+                machine.wheel_radius,
+            ),
             "guide_length_matches_config": machine.guide_length == 435.0,
             "wheel_positions_match_config": list(machine.wheel_positions),
         },
@@ -229,7 +255,7 @@ def _build_profile(
     block_slot_clearance: float,
     machine=None,
     block_outer_width: float = 35.0,
-    block_thickness_clearance_mid: float = 0.12,
+    default_block_thickness_clearance: float = BLOCK_THICKNESS_CLEARANCE,
     thickness_clearance_mid: float | None = None,
     preform_spec: str | None = None,
 ) -> tuple[FinishedSpec | BlockSpec, TileSection | BlockGuideSection]:
@@ -251,7 +277,7 @@ def _build_profile(
                     slot_reference="width",
                     slot_clearance=None,
                     thickness_clearance_mid=(
-                        machine.block_thickness_clearance_mid
+                        default_block_thickness_clearance
                         if thickness_clearance_mid is None
                         else thickness_clearance_mid
                     ),
@@ -272,7 +298,7 @@ def _build_profile(
                 block_preform,
                 relief=relief,
                 thickness_clearance_mid=(
-                    machine.block_thickness_clearance_mid
+                    default_block_thickness_clearance
                     if thickness_clearance_mid is None
                     else thickness_clearance_mid
                 ),
@@ -282,7 +308,7 @@ def _build_profile(
                     - machine.side_layout.block_fixed_top_gap
                     - block_preform.thickness_mid
                     - (
-                        machine.block_thickness_clearance_mid
+                        default_block_thickness_clearance
                         if thickness_clearance_mid is None
                         else thickness_clearance_mid
                     )
@@ -327,7 +353,7 @@ def _build_profile(
         slot_clearance=block_slot_clearance,
         outer_width=block_outer_width,
         thickness_clearance_mid=(
-            block_thickness_clearance_mid
+            default_block_thickness_clearance
             if thickness_clearance_mid is None
             else thickness_clearance_mid
         ),
@@ -408,11 +434,13 @@ def _formula_texts_present(doc) -> bool:
     return False
 
 
-def _r80_arc_count(doc) -> int:
+def _wheel_arc_count(doc, wheel_radius: float) -> int:
     return sum(
         1
         for entity in doc.modelspace()
-        if entity.dxftype() == "ARC" and entity.dxf.layer == "SIDE_TEMPLATE" and abs(entity.dxf.radius - 80.0) < 1e-6
+        if entity.dxftype() == "ARC"
+        and entity.dxf.layer == "SIDE_TEMPLATE"
+        and abs(entity.dxf.radius - wheel_radius) < 1e-6
     )
 
 

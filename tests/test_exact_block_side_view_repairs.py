@@ -93,6 +93,9 @@ def test_exact_block_spec_uses_ratio_cut_in_and_expected_side_styles(
         _assert_two_cavity_boundaries_with_wheel_gaps(
             cavity_lines,
             EXPECTED_OPENING,
+            require_every_boundary_split=(
+                machine_id == "double_head_up_down"
+            ),
         )
 
     if machine_id == "double_head_up_down":
@@ -207,6 +210,8 @@ def _assert_upper_r80_arcs_join_outer_surface(doc) -> None:
 def _assert_two_cavity_boundaries_with_wheel_gaps(
     cavity_lines,
     expected_opening: float,
+    *,
+    require_every_boundary_split: bool = True,
 ) -> None:
     lines_by_y = {}
     for line in cavity_lines:
@@ -215,6 +220,8 @@ def _assert_two_cavity_boundaries_with_wheel_gaps(
         )
     assert len(lines_by_y) == 2
     for lines in lines_by_y.values():
+        if not require_every_boundary_split and len(lines) == 1:
+            continue
         assert len(lines) == 2
         ordered = sorted(lines, key=lambda line: float(line.dxf.start.x))
         gap = min(

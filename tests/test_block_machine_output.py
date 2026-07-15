@@ -5,6 +5,7 @@ import ezdxf
 import pytest
 
 from src.block_geometry import build_block_guide_section
+from src.global_rules import HIGH_REQUIREMENT_THICKNESS_CLEARANCE
 from src.dxf_writer import write_dxf
 from src.side_view import build_side_view_geometry
 from src.machine_config import load_machine_config
@@ -22,7 +23,7 @@ def test_double_head_up_up_block_spec_uses_selected_slot_reference(tmp_path):
         spec,
         slot_reference="length",
         slot_clearance=0.05,
-        thickness_clearance_mid=machine.block_thickness_clearance_mid,
+        thickness_clearance_mid=HIGH_REQUIREMENT_THICKNESS_CLEARANCE,
     )
     side = build_side_view_geometry(profile, layout=machine.side_layout)
     release_path = tmp_path / "block_release.dxf"
@@ -47,7 +48,7 @@ def test_double_head_up_up_block_spec_uses_selected_slot_reference(tmp_path):
     assert measurements[clearance_label] == pytest.approx(
         [side.derived.side_clearance_height] * 2
     )
-    assert "18.00" not in measurements
+    assert measurements["18.00"][0] == pytest.approx(18.0)
     assert _section_dimension_block_text(doc, "9.01±0.01").startswith("9.01{\\H0.7x;\\S+0.01^ -0.01;}")
 
     r80_centers = [
@@ -129,7 +130,7 @@ def test_double_head_up_up_side_r80_closes_for_variable_thickness(tmp_path):
         spec,
         slot_reference="length",
         slot_clearance=0.05,
-        thickness_clearance_mid=machine.block_thickness_clearance_mid,
+        thickness_clearance_mid=HIGH_REQUIREMENT_THICKNESS_CLEARANCE,
     )
     side = build_side_view_geometry(profile, layout=machine.side_layout)
     release_path = tmp_path / "block_9p1_release.dxf"

@@ -3,10 +3,12 @@ from __future__ import annotations
 from pathlib import Path
 from dataclasses import dataclass
 
+from .block_geometry import BlockGuideSection
+from .cavity_projection import derive_cavity_projection_profile
 from .geometry import TileSection
 from .machine_config import MachineConfig
 from .side_view import SideViewGeometry, build_side_view_geometry
-from .side_view_config import DEFAULT_SIDE_VIEW_TEMPLATE
+from .side_view_config import DEFAULT_SIDE_VIEW_TEMPLATE, SideViewTemplateConfig
 from .side_view_writer import (
     SIDE_CENTER_LAYER,
     SIDE_DEBUG_LAYER,
@@ -42,16 +44,28 @@ class SideClearanceConsistency:
 
 def assert_side_view_consistency(
     doc,
-    tile_section: TileSection,
+    tile_section: TileSection | BlockGuideSection,
     machine_config: MachineConfig | None = None,
 ) -> None:
     geometry = build_side_view_geometry(
         tile_section,
+        template=(
+            None
+            if machine_config is None
+            else SideViewTemplateConfig(
+                wheel_radius=machine_config.wheel_radius
+            )
+        ),
         layout=None if machine_config is None else machine_config.side_layout,
     )
     projected = measure_side_projected_slot_consistency(doc, geometry)
     clearance = measure_side_clearance_consistency(doc, geometry)
-    if not projected.ok or not clearance.ok:
+    cavity_projection_ok = cavity_projection_matches_pre_grinding_shape(
+        doc,
+        tile_section,
+        geometry,
+    )
+    if not cavity_projection_ok or not clearance.ok:
         raise ValueError(
             "Side view derived dimension validation failed: "
             f"projected(expected={projected.expected:.6f}, "
@@ -64,7 +78,46 @@ def assert_side_view_consistency(
             f"dimension_points={_fmt_optional(clearance.measured_dimension_points)}, "
             f"group_42={_fmt_optional(clearance.measured_dimension_group_42)}, "
             f"text_label={clearance.text_label!r})."
+            f" cavity_projection_matches_pre_grinding_shape={cavity_projection_ok}."
         )
+
+
+def cavity_projection_matches_pre_grinding_shape(
+    doc,
+    section: TileSection | BlockGuideSection,
+    geometry: SideViewGeometry,
+) -> bool:
+    projection = derive_cavity_projection_profile(
+        section,
+        geometry.derived.guide_thickness,
+    )
+    base_y = geometry.layout.lower_y + geometry.derived.slot_base_height
+    expected = sorted(
+        round(base_y + offset, 6)
+        for offset in projection.offsets
+    )
+    observed = sorted(
+        {
+            round(float(entity.dxf.start.y), 6)
+            for entity in doc.modelspace().query("LINE")
+            if entity.dxf.layer == SIDE_DERIVED_LAYER
+            and abs(
+                float(entity.dxf.start.y) - float(entity.dxf.end.y)
+            )
+            <= 0.001
+            and geometry.layout.left_x - 0.001
+            <= (
+                float(entity.dxf.start.x) + float(entity.dxf.end.x)
+            )
+            / 2.0
+            <= geometry.layout.right_x + 0.001
+            and any(
+                abs(float(entity.dxf.start.y) - expected_y) <= 0.001
+                for expected_y in expected
+            )
+        }
+    )
+    return observed == expected
 
 
 def write_side_view_report(
@@ -334,7 +387,10 @@ def _measure_side_clearance_from_geometry(doc, geometry: SideViewGeometry) -> fl
             continue
         if abs(entity.dxf.radius - geometry.template.wheel_radius) > 1e-6:
             continue
-        if abs(entity.dxf.center.x - geometry.layout.center_a_x) > 0.01:
+        if min(
+            abs(entity.dxf.center.x - geometry.layout.center_a_x),
+            abs(entity.dxf.center.x - geometry.layout.center_b_x),
+        ) > 0.01:
             continue
         if entity.dxf.center.y < geometry.layout.upper_y:
             continue

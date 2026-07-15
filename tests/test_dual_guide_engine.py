@@ -5,6 +5,12 @@ import ezdxf
 import pytest
 
 from src.block_geometry import build_block_guide_section
+from src.dimension_roles import (
+    SECTION_CENTER_OPENING,
+    get_dimension_role,
+)
+from src.dual_guide_release_audit import build_dimension_definition_point_audit
+from src.global_rules import BLOCK_THICKNESS_CLEARANCE
 from src.dual_guide_engine import DualGuideTemplateEngine
 from src.dual_guide_input import build_dual_guide_profile_from_input
 from src.machine_config import load_machine_config
@@ -40,7 +46,7 @@ def test_dual_guide_engine_updates_both_sections_synchronously(tmp_path):
         slot_reference="length",
         slot_clearance=0.05,
         outer_width=machine.block_outer_width,
-        thickness_clearance_mid=machine.block_thickness_clearance_mid,
+        thickness_clearance_mid=BLOCK_THICKNESS_CLEARANCE,
     )
 
     result = DualGuideTemplateEngine(machine).write_debug_release_and_report(profile, spec, tmp_path)
@@ -48,11 +54,11 @@ def test_dual_guide_engine_updates_both_sections_synchronously(tmp_path):
     report = result["report"]
 
     assert report["shared_parameters"]["slot_width"] == pytest.approx(9.15)
-    assert report["shared_parameters"]["guide_thickness"] == pytest.approx(3.09)
+    assert report["shared_parameters"]["guide_thickness"] == pytest.approx(3.12)
     assert report["formulas"]["slot_width"] == "9.10 + 0.05 = 9.15"
-    assert report["formulas"]["guide_thickness"] == "3.00 + 0.09 = 3.09"
-    assert report["formulas"]["slot_depth"] == "27.00 - 3.00 - 3.09 = 20.91"
-    assert report["thickness_clearance"] == pytest.approx(0.09)
+    assert report["formulas"]["guide_thickness"] == "3.00 + 0.12 = 3.12"
+    assert report["formulas"]["slot_depth"] == "27.00 - 3.00 - 3.12 = 20.88"
+    assert report["thickness_clearance"] == pytest.approx(0.12)
     assert report["shared_parameters"]["relief_size"] == pytest.approx(1.0)
     assert report["shared_parameters"]["relief_radius"] == pytest.approx(0.5)
     assert report["shared_parameters"]["relief_equivalent"] == "4-1"
@@ -72,21 +78,24 @@ def test_dual_guide_engine_updates_both_sections_synchronously(tmp_path):
     for bounds in slots.values():
         assert bounds["slot_width"] == pytest.approx(9.15)
     for section in report["sections"]:
-        assert section["guide_thickness"] == pytest.approx(3.09)
-        assert section["slot_depth"] == pytest.approx(20.91)
+        assert section["guide_thickness"] == pytest.approx(3.12)
+        assert section["slot_depth"] == pytest.approx(20.88)
     measurements = _dimension_measurements_by_text(release_doc)
     assert measurements["9.15±0.01"] == pytest.approx([9.15, 9.15])
-    assert measurements["3.09"] == pytest.approx([3.09, 3.09])
+    assert sum(
+        value == pytest.approx(3.12)
+        for value in measurements["3.12"]
+    ) >= 2
     assert "4.29" not in measurements
     expected_wheel_dimension = (
         machine.side_layout.block_fixed_top_gap
         + report["upper_wheel_notch_safety"]["effective_cut_in_depth"]
     )
     wheel_dimension_label = f"{expected_wheel_dimension:.2f}"
-    assert measurements[wheel_dimension_label] == pytest.approx(
-        [expected_wheel_dimension] * 6,
-        abs=0.001,
-    )
+    assert sum(
+        value == pytest.approx(expected_wheel_dimension, abs=0.001)
+        for value in measurements[wheel_dimension_label]
+    ) == 6
     effective_cut_in_label = (
         f"{report['upper_wheel_notch_safety']['effective_cut_in_depth']:.2f}"
     )
@@ -116,11 +125,119 @@ def test_dual_guide_engine_updates_both_sections_synchronously(tmp_path):
 
     debug_doc = ezdxf.readfile(result["debug_dxf"])
     debug_measurements = _dimension_measurements_by_text(debug_doc)
-    assert debug_measurements["产品厚度 3（参考）"] == pytest.approx([3.0, 3.0])
-    assert {entity.dxf.layer for entity in debug_doc.modelspace() if entity.dxftype() == "DIMENSION" and entity.dxf.text == "产品厚度 3（参考）"} == {
+    assert debug_measurements["产品厚度 3.00（参考）"] == pytest.approx([3.0, 3.0])
+    assert {entity.dxf.layer for entity in debug_doc.modelspace() if entity.dxftype() == "DIMENSION" and entity.dxf.text == "产品厚度 3.00（参考）"} == {
         "PRODUCT_REFERENCE"
     }
     assert len(list(Path(tmp_path).glob("*.dxf"))) == 2
+
+
+@pytest.mark.parametrize(
+    ("machine_id", "expected_center_opening"),
+    (
+        ("triple_double_down_up_up", 2.0),
+        ("triple_double_up_up_up", 1.0),
+    ),
+)
+def test_dual_guides_bind_machine_specific_center_opening_and_relief_annotations(
+    tmp_path,
+    machine_id: str,
+    expected_center_opening: float,
+):
+    machine = load_machine_config(machine_id)
+    spec = parse_block_spec("9.1*4*3")
+    profile = build_block_guide_section(
+        spec,
+        relief=parse_relief_spec("4-1"),
+        slot_reference="length",
+        slot_clearance=0.05,
+        outer_width=machine.block_outer_width,
+        thickness_clearance_mid=BLOCK_THICKNESS_CLEARANCE,
+    )
+
+    result = DualGuideTemplateEngine(machine).write_debug_release_and_report(
+        profile,
+        spec,
+        tmp_path,
+    )
+    doc = ezdxf.readfile(result["release_dxf"])
+    center_opening_dimensions = [
+        dimension
+        for dimension in doc.modelspace().query("DIMENSION")
+        if get_dimension_role(dimension) == SECTION_CENTER_OPENING
+    ]
+    relief_dimensions = [
+        dimension
+        for dimension in doc.modelspace().query("DIMENSION")
+        if dimension.dxf.text == "4-R0.50"
+    ]
+    audit = result["report"]["dimension_definition_point_audit"]
+
+    assert machine.section_center_opening == pytest.approx(expected_center_opening)
+    assert len(center_opening_dimensions) == 2
+    assert [dimension.get_measurement() for dimension in center_opening_dimensions] == pytest.approx(
+        [expected_center_opening, expected_center_opening]
+    )
+    assert len(relief_dimensions) == 2
+    assert all((int(dimension.dxf.dimtype) & 0x0F) == 4 for dimension in relief_dimensions)
+    assert audit["required_roles"][SECTION_CENTER_OPENING]["status"] == "PASS"
+    assert audit["required_roles"]["relief"]["status"] == "PASS"
+    assert all(
+        entry["annotation_block_bound"] is True
+        for entry in audit["dimensions"]
+        if entry["dimension_role"] == "relief"
+    )
+
+
+def test_dual_guide_release_audit_rejects_relief_annotation_block_misalignment(tmp_path):
+    machine = load_machine_config("triple_double_down_up_up")
+    spec = parse_block_spec("9.1*4*3")
+    profile = build_block_guide_section(
+        spec,
+        relief=parse_relief_spec("4-1"),
+        slot_reference="length",
+        slot_clearance=0.05,
+        outer_width=machine.block_outer_width,
+        thickness_clearance_mid=BLOCK_THICKNESS_CLEARANCE,
+    )
+    release_path = DualGuideTemplateEngine(machine).write_debug_release_and_report(
+        profile,
+        spec,
+        tmp_path,
+    )["release_dxf"]
+    doc = ezdxf.readfile(release_path)
+    relief_dimension = next(
+        dimension
+        for dimension in doc.modelspace().query("DIMENSION")
+        if dimension.dxf.text == "4-R0.50"
+    )
+    for entity in doc.blocks[relief_dimension.dxf.geometry]:
+        for attribute in (
+            "start",
+            "end",
+            "center",
+            "insert",
+            "location",
+            "vtx0",
+            "vtx1",
+            "vtx2",
+            "vtx3",
+        ):
+            if not entity.dxf.hasattr(attribute):
+                continue
+            point = entity.dxf.get(attribute)
+            entity.dxf.set(attribute, (point.x + 2.0, point.y + 2.0, point.z))
+    doc.saveas(release_path)
+
+    audit = build_dimension_definition_point_audit(release_path, profile, machine)
+
+    assert any(
+        entry["dimension_role"] == "relief"
+        and entry["annotation_block_bound"] is False
+        and entry["bound_to_geometry"] is False
+        for entry in audit["dimensions"]
+    )
+    assert audit["release_allowed"] is False
 
 
 def test_dual_guide_engine_down_up_up_enforces_lower_wheel_notch_safety(tmp_path):
@@ -132,7 +249,7 @@ def test_dual_guide_engine_down_up_up_enforces_lower_wheel_notch_safety(tmp_path
         slot_reference="length",
         slot_clearance=0.05,
         outer_width=machine.block_outer_width,
-        thickness_clearance_mid=machine.block_thickness_clearance_mid,
+        thickness_clearance_mid=BLOCK_THICKNESS_CLEARANCE,
     )
 
     result = DualGuideTemplateEngine(machine).write_debug_release_and_report(profile, spec, tmp_path)
@@ -165,10 +282,10 @@ def test_dual_guide_engine_down_up_up_enforces_lower_wheel_notch_safety(tmp_path
     assert safety["lower_cavity_notch_opening_less_than_product_length"] is True
     assert safety["lower_cavity_notch_opening_within_limit"] is True
     assert report["shared_parameters"]["slot_width"] == pytest.approx(9.15)
-    assert report["shared_parameters"]["guide_thickness"] == pytest.approx(3.09)
+    assert report["shared_parameters"]["guide_thickness"] == pytest.approx(3.12)
     assert report["shared_parameters"]["lower_cavity_notch_opening"] == pytest.approx(8.9)
     assert report["formulas"]["slot_width"] == "9.10 + 0.05 = 9.15"
-    assert report["formulas"]["guide_thickness"] == "3.00 + 0.09 = 3.09"
+    assert report["formulas"]["guide_thickness"] == "3.00 + 0.12 = 3.12"
     assert report["formulas"]["slot_depth"] == "fixed section_slot_base_height = 12.00"
     assert report["checks"]["section_1.slot_width == section_2.slot_width"] is True
     assert report["checks"]["section_1.guide_thickness == section_2.guide_thickness"] is True
@@ -187,7 +304,10 @@ def test_dual_guide_engine_down_up_up_enforces_lower_wheel_notch_safety(tmp_path
 
     measurements = _dimension_measurements_by_text(release_doc)
     assert measurements["9.15±0.01"] == pytest.approx([9.15, 9.15])
-    assert measurements["3.09"] == pytest.approx([3.09, 3.09])
+    assert sum(
+        value == pytest.approx(3.12)
+        for value in measurements["3.12"]
+    ) >= 2
     assert "R23.57" not in measurements
     assert not any("6.6" in text or "2.4" in text or "2.46" in text for text in measurements)
     assert not _legacy_substrings_in_dimension_blocks(release_doc, ("R23.57", "6.6", "2.4", "2.46"))
@@ -275,6 +395,13 @@ def test_dual_guide_engine_down_up_up_supports_same_r_tile(tmp_path):
         == "DASHED"
         and release_doc.layers.get(entity.dxf.layer).dxf.color == 3
         for entity in cavity_lines
+    )
+    assert all(
+        item["pre_grinding_shape"] == "tile"
+        and item["expected_line_count"] == 4
+        and len(item["observed_line_levels"]) == 4
+        and item["matches_pre_grinding_shape"] is True
+        for item in report["cavity_projection_audit"]
     )
     dimension_audit = json.loads(
         result["dimension_definition_point_audit_json"].read_text(

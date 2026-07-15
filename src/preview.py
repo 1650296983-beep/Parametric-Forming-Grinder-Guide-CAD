@@ -312,25 +312,25 @@ def _draw_dimension_annotations(
     _plot_dimension_line(ax, (x_center - opening_half, guide.outer_height), (x_center - opening_half, opening_dim_y), color)
     _plot_dimension_line(ax, (x_center + opening_half, guide.outer_height), (x_center + opening_half, opening_dim_y), color)
     _plot_dimension_line(ax, (x_center - opening_half, opening_dim_y), (x_center + opening_half, opening_dim_y), color)
-    ax.text(x_center, opening_dim_y + 0.45, f"{guide.center_opening:.1f}", ha="center", va="bottom", **text_style)
+    ax.text(x_center, opening_dim_y + 0.45, f"{guide.center_opening:.2f}", ha="center", va="bottom", **text_style)
 
     outer_width_y = guide.outer_height + 7.2
     _plot_dimension_line(ax, (-half_outer, guide.outer_height), (-half_outer, outer_width_y), color)
     _plot_dimension_line(ax, (half_outer, guide.outer_height), (half_outer, outer_width_y), color)
     _plot_dimension_line(ax, (-half_outer, outer_width_y), (half_outer, outer_width_y), color)
-    ax.text(x_center, outer_width_y + 0.45, f"{guide.outer_width:.0f}", ha="center", va="bottom", **text_style)
+    ax.text(x_center, outer_width_y + 0.45, f"{guide.outer_width:.2f}", ha="center", va="bottom", **text_style)
 
     outer_height_x = -half_outer - 5.2
     _plot_dimension_line(ax, (-half_outer, 0.0), (outer_height_x, 0.0), color)
     _plot_dimension_line(ax, (-half_outer, guide.outer_height), (outer_height_x, guide.outer_height), color)
     _plot_dimension_line(ax, (outer_height_x, 0.0), (outer_height_x, guide.outer_height), color)
-    ax.text(outer_height_x - 0.45, guide.outer_height / 2.0, f"{guide.outer_height:.1f}", ha="right", va="center", **text_style)
+    ax.text(outer_height_x - 0.45, guide.outer_height / 2.0, f"{guide.outer_height:.2f}", ha="right", va="center", **text_style)
 
     slot_base_x = half_outer + 7.0
     _plot_dimension_line(ax, (half_outer, 0.0), (slot_base_x, 0.0), color)
     _plot_dimension_line(ax, (right_x, base_y), (slot_base_x, base_y), color)
     _plot_dimension_line(ax, (slot_base_x, 0.0), (slot_base_x, base_y), color)
-    ax.text(slot_base_x + 0.45, base_y / 2.0, f"{guide.slot_base_height:.1f}", va="center", **text_style)
+    ax.text(slot_base_x + 0.45, base_y / 2.0, f"{guide.slot_base_height:.2f}", va="center", **text_style)
 
 
 def _plot_dimension_line(ax: plt.Axes, start: tuple[float, float], end: tuple[float, float], color: str) -> None:

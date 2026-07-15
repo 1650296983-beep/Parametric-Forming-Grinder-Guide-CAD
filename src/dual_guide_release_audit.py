@@ -6,12 +6,17 @@ from pathlib import Path
 from typing import Any
 
 from .block_geometry import BlockGuideSection
+from .dimension_roles import get_dimension_role
 from .geometry import TileSection
+from .global_rules import (
+    DIMENSION_POINT_BINDING_TOLERANCE,
+    WHEEL_CUT_IN_RATIO,
+)
 from .machine_config import MachineConfig
 from .side_view_writer import SIDE_CAVITY_LAYER, SIDE_DERIVED_RELEASE_LAYER
 
 
-POINT_TOLERANCE = 0.01
+POINT_TOLERANCE = DIMENSION_POINT_BINDING_TOLERANCE
 FORMAL_GEOMETRY_LAYERS = {
     "FIXED_TEMPLATE",
     "PARAM_SLOT",
@@ -62,6 +67,7 @@ def build_dimension_definition_point_audit(
         measurement = _measurement(dimension)
         display_text = _dimension_display_text(doc, dimension)
         role = _dimension_role(
+            dimension,
             display_text,
             measurement,
             profile,
@@ -153,6 +159,20 @@ def build_dimension_definition_point_audit(
             defpoint3 = None
             binding_mode = "unresolved"
 
+        annotation_block_bound = None
+        if (
+            machine.guide_sections == 2
+            and role == "relief"
+            and dimension.dxf.hasattr("defpoint4")
+        ):
+            annotation_block_bound = _dimension_block_references_point(
+                doc,
+                dimension,
+                dimension.dxf.defpoint4,
+            )
+            if not annotation_block_bound:
+                point_error = max(point_error, POINT_TOLERANCE + 1.0)
+
         entries.append(
             {
                 "dimension_handle": dimension.dxf.handle,
@@ -169,6 +189,7 @@ def build_dimension_definition_point_audit(
                     else round(point_error, 6)
                 ),
                 "binding_mode": binding_mode,
+                "annotation_block_bound": annotation_block_bound,
                 "bound_to_geometry": point_error <= POINT_TOLERANCE,
             }
         )
@@ -288,11 +309,15 @@ def _duplicate_line_handles(lines: list[Any]) -> list[list[str]]:
 
 
 def _dimension_role(
+    dimension: Any,
     display_text: str,
     measurement: float | None,
     profile: TileSection | BlockGuideSection,
     machine: MachineConfig,
 ) -> str:
+    explicit_role = get_dimension_role(dimension)
+    if explicit_role is not None:
+        return explicit_role
     normalized = display_text.replace(" ", "")
     guide = profile.guide_spec
     r_form = profile.forming_spec.R_form if isinstance(profile, TileSection) else None
@@ -310,7 +335,12 @@ def _dimension_role(
     if _close(measurement, 12.70):
         return "upper_wheel_related"
     opening = min(
-        _natural_opening(profile.process_thickness if isinstance(profile, TileSection) else profile.block_spec.thickness_mid),
+        _natural_opening(
+            profile.process_thickness
+            if isinstance(profile, TileSection)
+            else profile.block_spec.thickness_mid,
+            machine.wheel_radius,
+        ),
         (profile.process_length if isinstance(profile, TileSection) else profile.block_spec.length) - 0.2,
     )
     if _close(measurement, opening):
@@ -320,8 +350,8 @@ def _dimension_role(
     for value in (99.0, 90.0, 180.0, 131.0):
         if _close(measurement, value):
             return f"fixed_span_{value:g}"
-    if _close(measurement, 80.0):
-        return "wheel_radius_R80"
+    if _close(measurement, machine.wheel_radius):
+        return "wheel_radius"
     if _close(measurement, 40.0):
         return "fixed_section_width_40"
     if _close(measurement, 27.0):
@@ -338,12 +368,31 @@ def _required_role_audit(
     profile: TileSection | BlockGuideSection,
     machine: MachineConfig,
 ) -> dict[str, Any]:
-    if machine.machine_id != "triple_double_down_up_up":
-        return {}
-
     requirements = {
-        "slot_width": (profile.guide_spec.guide_slot_width, 2),
-        "guide_thickness": (profile.guide_spec.guide_thickness, 2),
+        "slot_width": (
+            profile.guide_spec.guide_slot_width,
+            machine.guide_sections,
+        ),
+        "guide_thickness": (
+            profile.guide_spec.guide_thickness,
+            machine.guide_sections,
+        ),
+    }
+    if machine.guide_sections == 2:
+        requirements.update(
+            {
+                "section_center_opening": (
+                    machine.section_center_opening,
+                    machine.guide_sections,
+                ),
+                "relief": (
+                    profile.guide_spec.relief.relief_size / 2.0,
+                    machine.guide_sections,
+                ),
+            }
+        )
+    if machine.machine_id == "triple_double_down_up_up":
+        requirements.update({
         "lower_wheel_crown_depth": (
             _lower_wheel_crown_depth(profile, machine),
             2,
@@ -354,7 +403,8 @@ def _required_role_audit(
                 _natural_opening(
                     profile.process_thickness
                     if isinstance(profile, TileSection)
-                    else profile.block_spec.thickness_mid
+                    else profile.block_spec.thickness_mid,
+                    machine.wheel_radius,
                 ),
                 (
                     profile.process_length
@@ -370,8 +420,11 @@ def _required_role_audit(
         "fixed_span_90": (90.0, 4),
         "fixed_span_180": (180.0, 2),
         "fixed_span_131": (131.0, 2),
-    }
-    if isinstance(profile, TileSection):
+        })
+    if (
+        isinstance(profile, TileSection)
+        and machine.machine_id == "triple_double_down_up_up"
+    ):
         requirements["R_form"] = (profile.forming_spec.R_form, 2)
     payload = {}
     for role, (expected, minimum_count) in requirements.items():
@@ -395,6 +448,34 @@ def _required_role_audit(
             "status": status,
         }
     return payload
+
+
+def _dimension_block_references_point(doc: Any, dimension: Any, point: Any) -> bool:
+    """Confirm that a rendered annotation still reaches its geometric target."""
+    if not dimension.dxf.hasattr("geometry"):
+        return False
+    block_name = dimension.dxf.geometry
+    if block_name not in doc.blocks:
+        return False
+    target = (float(point.x), float(point.y))
+    for entity in doc.blocks[block_name]:
+        for attribute in (
+            "start",
+            "end",
+            "center",
+            "insert",
+            "location",
+            "vtx0",
+            "vtx1",
+            "vtx2",
+            "vtx3",
+        ):
+            if not entity.dxf.hasattr(attribute):
+                continue
+            candidate = entity.dxf.get(attribute)
+            if hypot(float(candidate.x) - target[0], float(candidate.y) - target[1]) <= POINT_TOLERANCE:
+                return True
+    return False
 
 
 def _diameter_center_and_endpoint(
@@ -616,9 +697,8 @@ def _round_optional(value: float | None) -> float | None:
     return None if value is None else round(value, 6)
 
 
-def _natural_opening(thickness: float) -> float:
-    radius = 80.0
-    depth = thickness * 0.6
+def _natural_opening(thickness: float, radius: float) -> float:
+    depth = thickness * WHEEL_CUT_IN_RATIO
     return 2.0 * sqrt(max(0.0, radius * radius - (radius - depth) ** 2))
 
 
@@ -636,9 +716,13 @@ def _lower_wheel_crown_depth(
         if isinstance(profile, TileSection)
         else profile.block_spec.length
     )
-    opening = min(_natural_opening(thickness), product_length - 0.2)
-    effective_depth = 80.0 - sqrt(
-        max(0.0, 80.0 * 80.0 - (opening / 2.0) ** 2)
+    radius = machine.wheel_radius
+    opening = min(
+        _natural_opening(thickness, radius),
+        product_length - 0.2,
+    )
+    effective_depth = radius - sqrt(
+        max(0.0, radius * radius - (opening / 2.0) ** 2)
     )
     return machine.section_slot_base_height + effective_depth
 

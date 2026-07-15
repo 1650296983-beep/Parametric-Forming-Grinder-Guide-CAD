@@ -16,13 +16,14 @@ def test_side_projected_slot_height_is_12p50_from_formula():
     )
 
 
-def test_side_clearance_height_is_13p37_from_formula():
+def test_side_clearance_height_uses_global_cut_in_and_opening_limit():
     tile_section = build_tile_section(parse_company_tile_spec("R17.45*R15.8*6.20(-0.02/-0.04)*15.5*1.65"))
     side_view = build_side_view_geometry(tile_section)
     derived = side_view.derived
 
     assert derived.guide_thickness == pytest.approx(1.83)
-    assert derived.side_clearance_height == pytest.approx(13.37)
+    assert derived.wheel_cut_allowance == pytest.approx(0.366605623)
+    assert derived.side_clearance_height == pytest.approx(13.536605623)
     assert derived.side_clearance_height == pytest.approx(
         derived.guide_outer_height
         - derived.slot_base_height
@@ -38,8 +39,8 @@ def test_side_clearance_height_changes_with_guide_thickness():
     thin_clearance = build_side_view_geometry(thin).derived.side_clearance_height
     thick_clearance = build_side_view_geometry(thick).derived.side_clearance_height
 
-    assert thin_clearance == pytest.approx(13.82)
-    assert thick_clearance == pytest.approx(12.82)
+    assert thin_clearance == pytest.approx(13.837859141)
+    assert thick_clearance == pytest.approx(13.234925836)
     assert thin_clearance > thick_clearance
 
 

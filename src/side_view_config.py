@@ -34,13 +34,4 @@ class SideViewLayoutConfig:
     block_side_projected_slot_height: float | None = None
     block_projected_top_mode: str = "wheel_cut_depth"
     block_fixed_top_gap: float | None = None
-    block_lower_wheel_cut_in: float | None = None
-    block_upper_wheel_cut_in: float | None = None
-    block_lower_wheel_cut_in_ratio: float | None = None
-    block_upper_wheel_cut_in_ratio: float | None = None
     fixed_tile_side_projected_slot_height: float = 0.0
-    tile_upper_wheel_cut_in_ratio: float = 0.0
-    block_to_tile_lower_wheel_cut_in: float | None = None
-    block_to_tile_upper_wheel_cut_in: float | None = None
-    block_to_tile_lower_wheel_cut_in_ratio: float | None = None
-    block_to_tile_upper_wheel_cut_in_ratio: float | None = None

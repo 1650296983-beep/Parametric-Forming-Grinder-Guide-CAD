@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 from math import isclose
 
+from .global_rules import format_dimension
+
 
 THICKNESS_TOLERANCE = 0.001
 
@@ -224,7 +226,7 @@ class ReliefSpec:
 
     @property
     def relief_label(self) -> str:
-        return f"{self.relief_count}-r{self.relief_size / 2.0:g}"
+        return f"{self.relief_count}-R{format_dimension(self.relief_size / 2.0)}"
 
 
 @dataclass(frozen=True)
@@ -420,9 +422,7 @@ def validate_company_tile_spec(
 
 
 def _format_dimension_value(value: float) -> str:
-    if isclose(value * 100.0, round(value * 100.0), abs_tol=1e-9):
-        return f"{value:.2f}"
-    return f"{value:.3f}"
+    return format_dimension(value)
 
 
 def _round_half_up(value: float, digits: int = 2) -> float:

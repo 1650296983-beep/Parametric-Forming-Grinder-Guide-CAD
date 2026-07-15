@@ -28,8 +28,9 @@ def test_guide_slot_is_arc_based_not_rectangular(tmp_path):
         "DEBUG_CONTROL",
         "DEBUG_POINTS",
         "REFERENCE_PROFILE",
-        "SIDE_TEMPLATE",
-        "SIDE_DIMENSION",
+            "SIDE_TEMPLATE",
+            "SIDE_DERIVED",
+            "SIDE_DIMENSION",
         "SIDE_DEBUG",
         "SIDE_CENTER",
     }
@@ -44,7 +45,7 @@ def test_guide_slot_is_arc_based_not_rectangular(tmp_path):
 
     assert len(slot_arcs) >= 7
     assert len(r_form_arcs) >= 3
-    assert len(relief_arcs) == 4
+    assert len(relief_arcs) == 6
     assert not _has_short_center_opening_arc(r_form_arcs, tile_section.guide_spec.center_opening / 2.0)
     assert _has_center_opening_lines(slot_lines, width=1.5)
     assert _slot_width_from_relief_centers(relief_arcs) == pytest.approx(6.21)
@@ -77,16 +78,16 @@ def test_fixed_template_and_dimension_entities_are_present(tmp_path):
     assert native_dimension_texts.count("R17.45") == 2
     assert any("1.5" in text for text in native_dimension_texts)
     assert any("12.0" in text for text in native_dimension_texts)
-    assert any(text == "33" for text in native_dimension_texts)
+    assert any(text == "33.00" for text in native_dimension_texts)
     assert any("27.0" in text for text in native_dimension_texts)
     assert any("6.21±0.01" in text for text in displayed_texts)
     assert any("1.83" in text for text in displayed_texts)
     assert displayed_texts.count("R17.45") == 2
     assert any("1.5" in text for text in displayed_texts)
     assert any("12.0" in text for text in displayed_texts)
-    assert any(text == "33" for text in displayed_texts)
+    assert any(text == "33.00" for text in displayed_texts)
     assert any("27.0" in text for text in displayed_texts)
-    assert any("4-r0.5" in text for text in displayed_texts)
+    assert any("4-R0.50" in text for text in displayed_texts)
 
 
 def test_release_dxf_has_only_native_dimensions_and_text_notes(tmp_path):
@@ -135,13 +136,13 @@ def test_release_dxf_has_only_native_dimensions_and_text_notes(tmp_path):
     assert any("6.21±0.01" in text for text in dimension_texts)
     assert any("1.83" in text for text in dimension_texts)
     assert dimension_texts.count("R17.45") == 2
-    assert any("1.5" in text for text in dimension_texts)
-    assert any("12.0" in text for text in dimension_texts)
-    assert any(text == "33" for text in dimension_texts)
+    assert any("1.50" in text for text in dimension_texts)
+    assert any("12.00" in text for text in dimension_texts)
+    assert any(text == "33.00" for text in dimension_texts)
     assert any("27.0" in text for text in dimension_texts)
-    assert any("4-r0.5" in text for text in dimension_texts)
+    assert any("4-R0.50" in text for text in dimension_texts)
     assert any("6.21±0.01" in text for text in displayed_texts)
-    assert any("4-r0.5" in text for text in displayed_texts)
+    assert any("4-R0.50" in text for text in displayed_texts)
     _assert_drawing_standard_layers(doc)
 
 
@@ -197,7 +198,13 @@ def _slot_width_from_relief_centers(relief_arcs) -> float:
 
 
 def _guide_thickness_from_relief_centers(relief_arcs) -> float:
-    ys = sorted(round(arc.dxf.center.y, 6) for arc in relief_arcs)
+    xs = [round(arc.dxf.center.x, 6) for arc in relief_arcs]
+    outer_xs = {min(xs), max(xs)}
+    ys = sorted(
+        round(arc.dxf.center.y, 6)
+        for arc in relief_arcs
+        if round(arc.dxf.center.x, 6) in outer_xs
+    )
     return ys[-1] - ys[0]
 
 

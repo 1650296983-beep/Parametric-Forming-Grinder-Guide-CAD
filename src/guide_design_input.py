@@ -15,6 +15,11 @@ from .groove_profile import (
     normalize_shape,
     resolve_arc_center_side,
 )
+from .global_rules import (
+    BLOCK_THICKNESS_CLEARANCE,
+    default_thickness_clearance,
+    process_options_from_mapping,
+)
 from .machine_config import MachineConfig
 from .spec_parser import (
     BlockSpec,
@@ -74,6 +79,7 @@ class GuideDesignDecision:
     dimension_source: dict[str, str]
     confidence: str
     tolerance: dict[str, float | None]
+    process_options: dict[str, Any]
     approved_reference_overrides: tuple[str, ...] = ()
     warnings: tuple[str, ...] = ()
 
@@ -145,6 +151,7 @@ def build_single_guide_profile_from_input(
     )
 
     relief = parse_relief_spec(str(normalized.get("relief", "4-1")))
+    process_options = process_options_from_mapping(normalized)
     pre_grinding_spec = (
         parse_block_spec(pre_grinding_raw)
         if pre_grinding_shape == "block"
@@ -204,14 +211,18 @@ def build_single_guide_profile_from_input(
     if pre_grinding_shape == "block":
         if not isinstance(pre_grinding_spec, BlockSpec):
             raise TypeError("rectangular_block pre-grinding input must parse as BlockSpec.")
+        thickness_clearance = (
+            process_options.thickness_clearance_override
+            or BLOCK_THICKNESS_CLEARANCE
+        )
         if finished_shape == "bread":
             profile = build_block_guide_section(
                 pre_grinding_spec,
                 relief=relief,
                 slot_reference="width",
-                slot_clearance=None,
+                slot_clearance=process_options.slot_clearance_override,
                 outer_width=machine.section_outer_width,
-                thickness_clearance_mid=machine.block_thickness_clearance_mid,
+                thickness_clearance_mid=thickness_clearance,
                 slot_base_height=machine.section_slot_base_height,
                 center_opening=machine.section_center_opening,
                 finished_spec=finished_spec,
@@ -228,11 +239,13 @@ def build_single_guide_profile_from_input(
                 finished_spec,
                 pre_grinding_spec,
                 relief=relief,
-                thickness_clearance_mid=machine.block_thickness_clearance_mid,
+                thickness_clearance_mid=thickness_clearance,
+                tolerance_slot_clearance=process_options.slot_clearance_override,
                 outer_width=machine.section_outer_width,
                 slot_base_height=_block_to_tile_slot_base_height(
                     pre_grinding_spec,
                     machine,
+                    thickness_clearance,
                 ),
                 center_opening=machine.section_center_opening,
                 arc_side=groove.arc_side,
@@ -267,6 +280,7 @@ def build_single_guide_profile_from_input(
             dimension_source=dict(groove.dimension_source),
             confidence=groove.confidence,
             tolerance=tolerance,
+            process_options=asdict(process_options),
             approved_reference_overrides=machine.approved_reference_overrides,
             warnings=groove.warnings,
         )
@@ -284,7 +298,14 @@ def build_single_guide_profile_from_input(
     profile = build_tile_section(
         pre_grinding_spec,
         relief=relief,
-        thickness_clearance_mid=machine.block_thickness_clearance_mid,
+        thickness_clearance_mid=(
+            process_options.thickness_clearance_override
+            or default_thickness_clearance(
+                "same_r_tile",
+                pre_grinding_spec.chord_width,
+            )
+        ),
+        tolerance_slot_clearance=process_options.slot_clearance_override,
         outer_width=machine.section_outer_width,
         slot_base_height=machine.section_slot_base_height,
         center_opening=machine.section_center_opening,
@@ -316,6 +337,7 @@ def build_single_guide_profile_from_input(
         dimension_source=dict(groove.dimension_source),
         confidence=groove.confidence,
         tolerance=tolerance,
+        process_options=asdict(process_options),
         approved_reference_overrides=machine.approved_reference_overrides,
         warnings=groove.warnings,
     )
@@ -578,13 +600,12 @@ def _machine_first_wheel_side(machine: MachineConfig) -> str:
 def _block_to_tile_slot_base_height(
     preform: BlockSpec,
     machine: MachineConfig,
+    thickness_clearance_mid: float,
 ) -> float:
     top_gap = machine.side_layout.block_fixed_top_gap
     if machine.side_layout.block_side_mode != "fixed_top_gap":
         return machine.section_slot_base_height
     if top_gap is None:
         raise ValueError("fixed_top_gap block side-view mode requires block_fixed_top_gap.")
-    guide_thickness = (
-        preform.thickness_mid + machine.block_thickness_clearance_mid
-    )
+    guide_thickness = preform.thickness_mid + thickness_clearance_mid
     return 27.0 - top_gap - guide_thickness

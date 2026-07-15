@@ -73,7 +73,7 @@ def test_v1_parametric_rules_and_release_annotations(tmp_path, raw_spec):
     r_form_arcs = [arc for arc in slot_arcs if arc.dxf.radius == pytest.approx(tile_section.forming_spec.R_form)]
     relief_arcs = [arc for arc in slot_arcs if arc.dxf.radius == pytest.approx(0.5)]
     assert len(r_form_arcs) >= 2
-    assert len(relief_arcs) == 4
+    assert len(relief_arcs) == 6
 
     dimension_texts = [
         entity.dxf.text
@@ -85,10 +85,10 @@ def test_v1_parametric_rules_and_release_annotations(tmp_path, raw_spec):
     assert guide.slot_width_dimension_text in dimension_texts
     assert f"R{tile_section.forming_spec.R_form:.2f}" in dimension_texts
     assert f"{guide.guide_thickness:.2f}" in dimension_texts
-    assert f"{guide.center_opening:.1f}" in dimension_texts
-    assert f"{guide.slot_base_height:.1f}" in dimension_texts
-    assert f"{guide.outer_width:.0f}" in dimension_texts
-    assert f"{guide.outer_height:.1f}" in dimension_texts
+    assert f"{guide.center_opening:.2f}" in dimension_texts
+    assert f"{guide.slot_base_height:.2f}" in dimension_texts
+    assert f"{guide.outer_width:.2f}" in dimension_texts
+    assert f"{guide.outer_height:.2f}" in dimension_texts
     assert guide.slot_width_dimension_text in displayed_texts
     assert f"{guide.guide_thickness:.2f}" in displayed_texts
     assert f"R{tile_section.forming_spec.R_form:.2f}" in displayed_texts
@@ -97,10 +97,10 @@ def test_v1_parametric_rules_and_release_annotations(tmp_path, raw_spec):
     assert dimension_measurements[f"R{tile_section.forming_spec.R_form:.2f}"] == pytest.approx(
         [tile_section.forming_spec.R_form, tile_section.forming_spec.R_form]
     )
-    assert dimension_measurements[f"{guide.center_opening:.1f}"][0] == pytest.approx(guide.center_opening)
-    assert dimension_measurements[f"{guide.slot_base_height:.1f}"][0] == pytest.approx(guide.slot_base_height)
-    assert dimension_measurements[f"{guide.outer_width:.0f}"][0] == pytest.approx(guide.outer_width)
-    assert dimension_measurements[f"{guide.outer_height:.1f}"][0] == pytest.approx(guide.outer_height)
+    assert dimension_measurements[f"{guide.center_opening:.2f}"][0] == pytest.approx(guide.center_opening)
+    assert dimension_measurements[f"{guide.slot_base_height:.2f}"][0] == pytest.approx(guide.slot_base_height)
+    assert dimension_measurements[f"{guide.outer_width:.2f}"][0] == pytest.approx(guide.outer_width)
+    assert dimension_measurements[f"{guide.outer_height:.2f}"][0] == pytest.approx(guide.outer_height)
 
     assert not any(entity.dxf.layer == "DEBUG_CONTROL" for entity in entities)
     assert not any(entity.dxf.layer == "DEBUG_POINTS" for entity in entities)
@@ -160,11 +160,11 @@ def test_single_real_company_spec_r16_release_output(tmp_path):
     assert measurements["5.01±0.01"][0] == pytest.approx(5.01)
     assert measurements["1.88"][0] == pytest.approx(1.88)
     assert measurements["R16.00"] == pytest.approx([16.0, 16.0])
-    assert measurements["4-r0.5"][0] == pytest.approx(0.5)
+    assert measurements["4-R0.50"][0] == pytest.approx(0.5)
     assert group_42["5.01±0.01"][0] == pytest.approx(5.01)
     assert group_42["1.88"][0] == pytest.approx(1.88)
     assert group_42["R16.00"] == pytest.approx([16.0, 16.0])
-    assert group_42["4-r0.5"][0] == pytest.approx(0.5)
+    assert group_42["4-R0.50"][0] == pytest.approx(0.5)
     section_geometry = _section_geometry_measurements(entities)
     assert section_geometry["slot_width"] == pytest.approx(5.01)
     assert section_geometry["guide_thickness"] == pytest.approx(1.88)
@@ -177,19 +177,19 @@ def test_single_real_company_spec_r16_release_output(tmp_path):
     side_measurements = _side_dimension_measurements_by_text(doc)
     side_group_42 = _side_dimension_group_42_by_text(doc)
     assert side_measurements["12.50"][0] == pytest.approx(12.50)
-    assert side_measurements["13.32"][0] == pytest.approx(13.32)
+    assert side_measurements["13.42"][0] == pytest.approx(13.418117965)
     assert side_group_42["12.50"][0] == pytest.approx(12.50)
-    assert side_group_42["13.32"][0] == pytest.approx(13.32)
+    assert side_group_42["13.42"][0] == pytest.approx(13.418117965)
     side_geometry = _side_geometry_measurements(entities)
     assert side_geometry["projected_slot_height"] == pytest.approx(12.50, abs=0.001)
-    assert side_geometry["clearance_height"] == pytest.approx(13.32, abs=0.001)
+    assert side_geometry["clearance_height"] == pytest.approx(13.418117965, abs=0.001)
     assert side_geometry["fixed_spans"] == pytest.approx([90.0, 200.0, 145.0, 435.0])
     assert side_geometry["r80_count"] == 2
     assert "13.30" not in _side_dimension_block_texts(doc)
 
     slot_arcs = [entity for entity in entities if entity.dxf.layer == "PARAM_SLOT" and entity.dxftype() == "ARC"]
     assert sum(1 for arc in slot_arcs if arc.dxf.radius == pytest.approx(16.0)) == 3
-    assert sum(1 for arc in slot_arcs if arc.dxf.radius == pytest.approx(0.5)) == 4
+    assert sum(1 for arc in slot_arcs if arc.dxf.radius == pytest.approx(0.5)) == 6
     assert not any(
         entity.dxf.layer == "FIXED_TEMPLATE"
         and entity.dxftype() == "ARC"
@@ -291,9 +291,16 @@ def _section_geometry_measurements(entities) -> dict[str, object]:
     arcs = [entity for entity in entities if entity.dxf.layer == "PARAM_SLOT" and entity.dxftype() == "ARC"]
     relief = [arc for arc in arcs if arc.dxf.radius == pytest.approx(0.5)]
     r_form = [arc.dxf.radius for arc in arcs if arc.dxf.radius == pytest.approx(16.0)]
+    xs = [round(arc.dxf.center.x, 6) for arc in relief]
+    outer_xs = {min(xs), max(xs)}
+    outer_relief = [
+        arc
+        for arc in relief
+        if round(arc.dxf.center.x, 6) in outer_xs
+    ]
     return {
         "slot_width": max(arc.dxf.center.x for arc in relief) - min(arc.dxf.center.x for arc in relief),
-        "guide_thickness": max(arc.dxf.center.y for arc in relief) - min(arc.dxf.center.y for arc in relief),
+        "guide_thickness": max(arc.dxf.center.y for arc in outer_relief) - min(arc.dxf.center.y for arc in outer_relief),
         "relief_radius": relief[0].dxf.radius,
         "r_form_radii": r_form,
     }

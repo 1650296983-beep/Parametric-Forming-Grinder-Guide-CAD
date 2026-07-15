@@ -161,8 +161,8 @@ def test_relief_defaults_to_4_1_and_can_be_overridden():
 
     assert default_guide.relief.relief_count == 4
     assert default_guide.relief.relief_size == pytest.approx(1.0)
-    assert default_guide.relief.relief_label == "4-r0.5"
-    assert custom_guide.relief.relief_label == "4-r0.3"
+    assert default_guide.relief.relief_label == "4-R0.50"
+    assert custom_guide.relief.relief_label == "4-R0.30"
 
 
 def test_guide_template_fixed_dimensions_are_retained():

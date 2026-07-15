@@ -11,7 +11,6 @@ section_style: triple_single_down_up_flat_arc
 section_outer_width: 40.0
 section_center_opening: 2.0
 section_slot_base_height: 12.0
-block_thickness_clearance_mid: 0.12
 template_coordinate_system: section_xy_y_up
 template_axis_rotation_deg: 0.0
 template_mirror_x: false
@@ -33,9 +32,4 @@ layout:
   template_min_y: -120.0
   template_max_y: 150.0
   fixed_tile_side_projected_slot_height: 12.0
-  tile_upper_wheel_cut_in_ratio: 0.6
-  block_to_tile_lower_wheel_cut_in: 0.1
-  block_to_tile_upper_wheel_cut_in: 0.45
   block_side_mode: "slot_base_plus_wheel_cut_in"
-  block_lower_wheel_cut_in: 0.3
-  block_upper_wheel_cut_in: 0.3
