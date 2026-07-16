@@ -24,7 +24,6 @@ jobs:
       attestations: write
     env:
       RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.ref_name }}
-      MPLCONFIGDIR: ${{ runner.temp }}\matplotlib
       TAURI_SIGNING_PRIVATE_KEY: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY }}
       TAURI_SIGNING_PRIVATE_KEY_PASSWORD: ${{ secrets.TAURI_SIGNING_PRIVATE_KEY_PASSWORD }}
       WINDOWS_CERTIFICATE: ${{ secrets.WINDOWS_CERTIFICATE }}
@@ -85,9 +84,13 @@ jobs:
         run: python -m pip install -r requirements-packaging.txt
 
       - name: Run full Python tests
+        env:
+          MPLCONFIGDIR: ${{ runner.temp }}\matplotlib
         run: python -m pytest
 
       - name: Run all seven machine regressions
+        env:
+          MPLCONFIGDIR: ${{ runner.temp }}\matplotlib
         run: |
           python scripts/run_regression_tests.py
           python -c "import json; p=json.load(open('tests/regression/regression_summary.json', encoding='utf-8')); assert p['total_cases']==7 and p['passed']==7 and p['failed']==0, p"

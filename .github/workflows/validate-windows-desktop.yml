@@ -49,6 +49,8 @@ jobs:
         run: python -m pip install -r requirements-packaging.txt
 
       - name: Run full Python tests
+        env:
+          MPLCONFIGDIR: ${{ runner.temp }}\matplotlib
         run: python -m pytest
 
       - name: Run all seven machine regressions
