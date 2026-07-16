@@ -750,7 +750,7 @@ function Rules() {
 function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolean) => void }) {
   const [settings, setSettings] = useState<DesktopSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [version, setVersion] = useState("1.0.0");
+  const [version, setVersion] = useState("1.0.1");
   const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
   const [updateMessage, setUpdateMessage] = useState("尚未检查更新。");
   const [checking, setChecking] = useState(false);

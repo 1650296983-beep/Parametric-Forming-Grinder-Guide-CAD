@@ -18,7 +18,7 @@ def test_desktop_versions_are_consistent() -> None:
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
-    assert json.loads(completed.stdout)["version"] == "1.0.0"
+    assert json.loads(completed.stdout)["version"] == "1.0.1"
 
 
 def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> None:

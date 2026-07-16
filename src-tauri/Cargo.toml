@@ -1,6 +1,6 @@
 [package]
 name = "forming-grinder-cad-desktop"
-version = "1.0.0"
+version = "1.0.1"
 description = "Parametric Forming-Grinder Guide CAD desktop shell"
 authors = ["Forming Grinder CAD Maintainers"]
 edition = "2021"
