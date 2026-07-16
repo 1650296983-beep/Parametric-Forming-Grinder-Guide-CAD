@@ -64,7 +64,16 @@ def main() -> int:
             process.wait(timeout=5)
     if process.poll() is None:
         raise SystemExit("sidecar process remains after termination")
-    print(json.dumps({"health": "ok", "terminated": True, "unicode_data_root": str(data_root)}, ensure_ascii=False))
+    print(
+        json.dumps(
+            {
+                "health": "ok",
+                "terminated": True,
+                "unicode_data_root": str(data_root),
+            },
+            ensure_ascii=True,
+        )
+    )
     return 0
 
 
