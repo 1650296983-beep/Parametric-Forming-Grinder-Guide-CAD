@@ -3,8 +3,12 @@ from __future__ import annotations
 import os
 from math import sqrt
 from pathlib import Path
+import tempfile
 
-os.environ.setdefault("MPLCONFIGDIR", "/private/tmp/cad_matplotlib_cache")
+os.environ.setdefault(
+    "MPLCONFIGDIR",
+    str(Path(tempfile.gettempdir()) / "cad_matplotlib_cache"),
+)
 
 import matplotlib
 

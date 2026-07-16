@@ -177,7 +177,10 @@ def run_case(case_dir: Path) -> dict[str, Any]:
         audit = build_regression_audit(machine, paths["release_dxf"], paths["debug_dxf"], report)
         write_json(paths["audit_json"], audit)
         result["generation_ok"] = True
-        result["key_values"] = extract_key_values(report)
+        result["key_values"] = extract_key_values(
+            report,
+            release_dxf=paths["release_dxf"],
+        )
     except Exception as exc:
         result["generation_errors"].append(f"Generation failed: {exc}")
     return result
@@ -347,7 +350,7 @@ def parse_optional_tolerance(value: Any) -> ProductPreFormTolerance | None:
 
 
 def build_regression_audit(machine: MachineConfig, release_dxf: Path, debug_dxf: Path, report: dict[str, Any]) -> dict[str, Any]:
-    key_values = extract_key_values(report)
+    key_values = extract_key_values(report, release_dxf=release_dxf)
     safety = lower_wheel_safety_payload(report)
     audit = {
         "machine_id": machine.machine_id,
@@ -367,7 +370,11 @@ def build_regression_audit(machine: MachineConfig, release_dxf: Path, debug_dxf:
     return audit
 
 
-def extract_key_values(report: dict[str, Any]) -> dict[str, Any]:
+def extract_key_values(
+    report: dict[str, Any],
+    *,
+    release_dxf: Path | None = None,
+) -> dict[str, Any]:
     if "machine" in report:
         machine = report["machine"]
         process = report["process_parameters"]
@@ -393,6 +400,10 @@ def extract_key_values(report: dict[str, Any]) -> dict[str, Any]:
             "release_allowed": report.get("release_allowed"),
         }
     safety = report.get("lower_wheel_notch_safety", {})
+    release_path = release_dxf
+    if release_path is None:
+        configured_path = report.get("release_dxf")
+        release_path = Path(configured_path) if isinstance(configured_path, str) else None
     return {
         "machine_id": report["machine_id"],
         "guide_length": report["guide_length"],
@@ -403,7 +414,11 @@ def extract_key_values(report: dict[str, Any]) -> dict[str, Any]:
         "R_form": report["shared_parameters"].get("R_form"),
         "lower_cavity_notch_opening": safety.get("lower_cavity_notch_opening"),
         "fixed_template_dimensions": report.get("fixed_template_geometry"),
-        "release_layers": summarize_dxf(Path(report["release_dxf"]))["layers"] if Path(report["release_dxf"]).exists() else [],
+        "release_layers": (
+            summarize_dxf(release_path)["layers"]
+            if release_path is not None and release_path.exists()
+            else []
+        ),
         "dimension_checks": report.get("side_view_dimension_audit", []),
         "required_dimension_roles": report.get(
             "dimension_definition_point_audit",
@@ -579,7 +594,18 @@ def compare_case(case_dir: Path) -> dict[str, Any]:
 
     expected_report = read_json(case_dir / "expected_report.json")
     actual_report = read_json(case_dir / "actual_report.json")
-    compare_values(extract_key_values(expected_report), extract_key_values(actual_report), "report", differences)
+    compare_values(
+        extract_key_values(
+            expected_report,
+            release_dxf=case_dir / "expected_release.dxf",
+        ),
+        extract_key_values(
+            actual_report,
+            release_dxf=case_dir / "actual_release.dxf",
+        ),
+        "report",
+        differences,
+    )
 
     expected_audit = read_json(case_dir / "expected_audit.json")
     actual_audit = read_json(case_dir / "actual_audit.json")

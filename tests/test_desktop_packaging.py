@@ -55,6 +55,7 @@ def test_windows_validation_workflow_never_publishes_or_requires_signing_secrets
         ROOT / ".github" / "workflows" / "validate-windows-desktop.yml"
     ).read_text(encoding="utf-8")
     assert "workflow_dispatch:" in workflow
+    assert "pull_request:" in workflow
     assert "actions/upload-artifact@v4" in workflow
     assert "createUpdaterArtifacts = $false" in workflow
     assert "release_created=false" in workflow

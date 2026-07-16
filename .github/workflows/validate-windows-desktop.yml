@@ -2,6 +2,9 @@ name: Validate Windows desktop package
 
 on:
   workflow_dispatch:
+  pull_request:
+    branches:
+      - main
 
 concurrency:
   group: validate-windows-desktop-${{ github.ref }}
@@ -50,6 +53,8 @@ jobs:
 
       - name: Run all seven machine regressions
         shell: pwsh
+        env:
+          MPLCONFIGDIR: ${{ runner.temp }}\matplotlib
         run: |
           python scripts/run_regression_tests.py
           python -c "import json; p=json.load(open('tests/regression/regression_summary.json', encoding='utf-8')); assert p['total_cases']==7 and p['passed']==7 and p['failed']==0, p"
