@@ -88,8 +88,9 @@ src-tauri/target/release/bundle/macos/Forming Grinder CAD.app
 ```
 
 This local build disables updater artifact creation because it is not a public
-release. It is not Developer-ID notarized; macOS may require an explicit local
-Open action on another Mac.
+release. The script applies an ad-hoc signature to the complete bundle after
+the Python sidecar is copied. It is not Developer-ID notarized; macOS may
+require an explicit local Open action on another Mac.
 
 ## Local user data
 
