@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import subprocess
+
+import pytest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="start_web.sh is a POSIX development entrypoint; Linux CI validates it.",
+)
 def test_start_web_script_has_valid_bash_syntax() -> None:
     script = PROJECT_ROOT / "scripts" / "start_web.sh"
 
