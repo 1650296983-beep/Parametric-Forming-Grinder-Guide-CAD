@@ -4,13 +4,12 @@ import asyncio
 from datetime import datetime, timezone
 import json
 from pathlib import Path
-from types import SimpleNamespace
 
 from fastapi import HTTPException
 import pytest
 
 import src.web_api as web_api
-from src.auth import AuthenticatedUser, authenticate, create_session_token, require_user
+from src.auth import AuthenticatedUser, LOCAL_ADMIN, require_user
 from src.web_api import (
     BulkDeleteRequest,
     DesignInput,
@@ -249,7 +248,7 @@ def test_task_repository_deletes_only_expired_completed_tasks(tmp_path: Path) ->
     assert (tmp_path / "oldrunning01").is_dir()
 
 
-def test_operator_can_delete_own_task_but_not_legacy_or_other_users_task(
+def test_local_administrator_can_delete_owned_legacy_and_other_users_tasks(
     tmp_path: Path,
     monkeypatch,
 ) -> None:
@@ -270,23 +269,13 @@ def test_operator_can_delete_own_task_but_not_legacy_or_other_users_task(
             repository.initialize(task_dir, task_id=task_id, created_by=owner)
             repository.finish(task_dir, status="passed")
 
-    operator = AuthenticatedUser(username="operator", role="operator")
-    result = delete_task("abc123def456", user=operator)
+    result = delete_task("abc123def456", user=LOCAL_ADMIN)
     assert result == {"task_id": "abc123def456", "status": "deleted"}
     assert not (tmp_path / "abc123def456").exists()
 
     for task_id in ("def456abc123", "legacy123456"):
-        with pytest.raises(HTTPException) as forbidden:
-            delete_task(task_id, user=operator)
-        assert forbidden.value.status_code == 403
-        assert (tmp_path / task_id).is_dir()
-
-    admin_result = delete_task(
-        "legacy123456",
-        user=AuthenticatedUser(username="admin", role="administrator"),
-    )
-    assert admin_result == {"task_id": "legacy123456", "status": "deleted"}
-    assert not (tmp_path / "legacy123456").exists()
+        assert delete_task(task_id, user=LOCAL_ADMIN) == {"task_id": task_id, "status": "deleted"}
+        assert not (tmp_path / task_id).exists()
 
 
 def test_bulk_delete_returns_deleted_and_skipped_tasks(tmp_path: Path, monkeypatch) -> None:
@@ -311,17 +300,16 @@ def test_bulk_delete_returns_deleted_and_skipped_tasks(tmp_path: Path, monkeypat
         BulkDeleteRequest(
             task_ids=["owned1234567", "other1234567", "running12345", "missing12345"]
         ),
-        user=AuthenticatedUser(username="operator", role="operator"),
+        user=LOCAL_ADMIN,
     )
 
-    assert result["deleted"] == ["owned1234567"]
+    assert result["deleted"] == ["owned1234567", "other1234567"]
     assert [item["task_id"] for item in result["skipped"]] == [
-        "other1234567",
         "running12345",
         "missing12345",
     ]
     assert not (tmp_path / "owned1234567").exists()
-    assert (tmp_path / "other1234567").is_dir()
+    assert not (tmp_path / "other1234567").exists()
     assert (tmp_path / "running12345").is_dir()
 
 
@@ -344,7 +332,7 @@ def test_task_file_payload_only_exposes_generated_task_files(tmp_path: Path) -> 
     assert payload["report_json"]["name"] == "guide_report.json"
 
 
-def test_operator_file_payload_exposes_only_release_dxf(tmp_path: Path) -> None:
+def test_local_administrator_file_payload_exposes_audit_artifacts(tmp_path: Path) -> None:
     task_dir = tmp_path / "abc123def456"
     dxf_dir = task_dir / "artifacts" / "dxf"
     preview_dir = task_dir / "artifacts" / "preview"
@@ -366,39 +354,20 @@ def test_operator_file_payload_exposes_only_release_dxf(tmp_path: Path) -> None:
         "abc123def456",
         task_dir,
         report,
-        user=AuthenticatedUser(username="operator", role="operator"),
+        user=LOCAL_ADMIN,
     )
 
-    assert set(payload) == {"release_dxf"}
+    assert set(payload) == {"release_dxf", "debug_dxf", "preview_png", "dimension_audit"}
     assert payload["release_dxf"]["name"] == "guide.dxf"
 
 
-def test_environment_configured_session_preserves_server_role(monkeypatch) -> None:
-    monkeypatch.setenv("CAD_ADMIN_USERNAME", "admin")
-    monkeypatch.setenv("CAD_ADMIN_PASSWORD", "admin-password")
-    monkeypatch.setenv("CAD_SESSION_SECRET", "session-signing-secret")
-    monkeypatch.setenv("CAD_OPERATOR_ACCOUNTS_JSON", '{"operator":"operator-password"}')
-    monkeypatch.setenv("CAD_ADDITIONAL_OPERATOR_ACCOUNTS_JSON", '{"吴跃":"123","魏文嵩":"123"}')
-
-    administrator = authenticate("admin", "admin-password")
-    operator = authenticate("operator", "operator-password")
-
-    assert administrator == AuthenticatedUser(username="admin", role="administrator")
-    assert operator == AuthenticatedUser(username="operator", role="operator")
-    assert authenticate("operator", "wrong-password") is None
-    assert authenticate("吴跃", "123") == AuthenticatedUser(username="吴跃", role="operator")
-    assert authenticate("魏文嵩", "123") == AuthenticatedUser(username="魏文嵩", role="operator")
-    token = create_session_token(operator)
-    request = SimpleNamespace(cookies={"cad_session": token})
-    assert require_user(request) == operator
+def test_local_identity_is_always_administrator() -> None:
+    assert require_user(object()) == LOCAL_ADMIN
+    assert LOCAL_ADMIN.is_administrator is True
 
 
-def test_http_authentication_and_operator_artifact_guard(tmp_path: Path, monkeypatch) -> None:
+def test_http_api_uses_local_administrator_without_login(tmp_path: Path, monkeypatch) -> None:
     monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
-    monkeypatch.setenv("CAD_ADMIN_USERNAME", "admin")
-    monkeypatch.setenv("CAD_ADMIN_PASSWORD", "admin-password")
-    monkeypatch.setenv("CAD_SESSION_SECRET", "session-signing-secret")
-    monkeypatch.setenv("CAD_OPERATOR_ACCOUNTS_JSON", '{"operator":"operator-password"}')
     task_dir = tmp_path / "abc123def456" / "artifacts"
     dxf_dir = task_dir / "dxf"
     preview_dir = task_dir / "preview"
@@ -417,25 +386,17 @@ def test_http_authentication_and_operator_artifact_guard(tmp_path: Path, monkeyp
         encoding="utf-8",
     )
 
-    unauthorized_status, _, _ = _call_asgi("GET", "/api/machines")
-    login_status, login_headers, login_body = _call_asgi(
-        "POST",
-        "/api/auth/login",
-        body=b'{"username":"operator","password":"operator-password"}',
-        headers={"content-type": "application/json"},
-    )
-    cookie = login_headers["set-cookie"].split(";", 1)[0]
-    machine_status, _, _ = _call_asgi("GET", "/api/machines", headers={"cookie": cookie})
+    me_status, _, me_body = _call_asgi("GET", "/api/auth/me")
+    machine_status, _, _ = _call_asgi("GET", "/api/machines")
     release_status, _, _ = _call_asgi(
-        "GET", "/api/tasks/abc123def456/files/artifacts/dxf/guide.dxf", headers={"cookie": cookie}
+        "GET", "/api/tasks/abc123def456/files/artifacts/dxf/guide.dxf"
     )
     debug_status, _, _ = _call_asgi(
-        "GET", "/api/tasks/abc123def456/files/artifacts/dxf/guide-debug.dxf", headers={"cookie": cookie}
+        "GET", "/api/tasks/abc123def456/files/artifacts/dxf/guide-debug.dxf"
     )
 
-    assert unauthorized_status == 401
-    assert login_status == 200
-    assert json.loads(login_body) == {"username": "operator", "role": "operator"}
+    assert me_status == 200
+    assert json.loads(me_body) == {"username": "local-admin", "role": "administrator"}
     assert machine_status == 200
     assert release_status == 200
-    assert debug_status == 403
+    assert debug_status == 200

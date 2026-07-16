@@ -18,3 +18,10 @@ def test_start_web_script_has_valid_bash_syntax() -> None:
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_start_web_script_does_not_require_login_secrets() -> None:
+    script = (PROJECT_ROOT / "scripts" / "start_web.sh").read_text(encoding="utf-8")
+
+    assert "CAD_ADMIN_PASSWORD" not in script
+    assert "CAD_SESSION_SECRET" not in script

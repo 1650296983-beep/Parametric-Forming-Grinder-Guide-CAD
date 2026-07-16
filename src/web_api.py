@@ -17,20 +17,22 @@ import os
 import subprocess
 import sys
 
-from fastapi import Depends, FastAPI, HTTPException, Request, Response, status
+from fastapi import Depends, FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from .block_geometry import BlockGuideSection
 from .auth import (
-    SESSION_COOKIE_NAME,
-    SESSION_TTL_SECONDS,
     AuthenticatedUser,
-    authenticate,
-    create_session_token,
     require_user,
-    session_cookie_secure,
+)
+from desktop.runtime_paths import (
+    get_runtime_paths,
+    is_desktop_mode,
+    read_settings,
+    resource_root,
+    write_settings,
 )
 from .dual_guide_engine import DualGuideTemplateEngine
 from .dual_guide_input import build_dual_guide_profile_from_input
@@ -38,6 +40,7 @@ from .dwg_converter import (
     AUTOCAD_2007_DWG_VERSION,
     AUTOCAD_2007_FORMAT_LABEL,
     DwgConversionError,
+    autocad_detection_payload,
     convert_release_dxf_to_autocad_2007_dwg,
     dwg_conversion_available,
 )
@@ -52,9 +55,9 @@ from .spec_parser import parse_company_bread_spec, parse_company_tile_spec
 from .web_task_repository import StoredWebTask, WebTaskRepository
 
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+PROJECT_ROOT = resource_root()
 TEMPLATE_ROOT = PROJECT_ROOT / "templates"
-WEB_OUTPUT_ROOT = PROJECT_ROOT / "output" / "web_tasks"
+WEB_OUTPUT_ROOT = get_runtime_paths().tasks
 
 
 class DesignInput(BaseModel):
@@ -81,21 +84,26 @@ class GenerationRequest(BaseModel):
     design: DesignInput
 
 
-class LoginRequest(BaseModel):
-    username: str = Field(min_length=1, max_length=128)
-    password: str = Field(min_length=1, max_length=512)
-
-
 class BulkDeleteRequest(BaseModel):
     task_ids: list[str] = Field(min_length=1, max_length=500)
 
 
-app = FastAPI(title="Forming Grinder Guide CAD API", version="0.1.0")
+class DesktopSettingsUpdate(BaseModel):
+    autocad_core_console: str | None = Field(default=None, max_length=4096)
+
+
+app = FastAPI(title="Forming Grinder Guide CAD API", version="1.0.0")
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://127.0.0.1:5173"],
+    allow_origins=[
+        "http://localhost:5173",
+        "http://127.0.0.1:5173",
+        "http://tauri.localhost",
+        "tauri://localhost",
+        "https://tauri.localhost",
+    ],
     allow_credentials=True,
-    allow_methods=["GET", "POST", "DELETE"],
+    allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type"],
 )
 
@@ -105,27 +113,13 @@ def health() -> dict[str, str]:
     return {"status": "ok"}
 
 
-@app.post("/api/auth/login")
-def login(credentials: LoginRequest, response: Response) -> dict[str, str]:
-    user = authenticate(credentials.username, credentials.password)
-    if user is None:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="用户名或密码错误。")
-    response.set_cookie(
-        key=SESSION_COOKIE_NAME,
-        value=create_session_token(user),
-        max_age=SESSION_TTL_SECONDS,
-        httponly=True,
-        secure=session_cookie_secure(),
-        samesite="strict",
-        path="/",
-    )
-    return {"username": user.username, "role": user.role}
-
-
-@app.post("/api/auth/logout", dependencies=[Depends(require_user)])
-def logout(response: Response) -> dict[str, str]:
-    response.delete_cookie(SESSION_COOKIE_NAME, path="/")
-    return {"status": "ok"}
+@app.post("/api/desktop/shutdown", include_in_schema=False)
+def desktop_shutdown() -> dict[str, str]:
+    callback = getattr(app.state, "request_desktop_shutdown", None)
+    if callback is None:
+        raise HTTPException(status_code=409, detail="当前不是受管桌面 sidecar。")
+    callback()
+    return {"status": "stopping"}
 
 
 @app.get("/api/auth/me")
@@ -141,6 +135,33 @@ def list_machines() -> list[dict[str, Any]]:
         machine = load_machine_config(config_path.parent.name)
         machines.append(_machine_payload(machine))
     return machines
+
+
+@app.get("/api/settings", dependencies=[Depends(require_user)])
+def get_desktop_settings() -> dict[str, Any]:
+    settings = read_settings()
+    return {
+        "autocad_core_console": settings.get("autocad_core_console"),
+        "autocad": autocad_detection_payload(),
+        "app_data_root": str(get_runtime_paths().app_data_root),
+    }
+
+
+@app.put("/api/settings", dependencies=[Depends(require_user)])
+def update_desktop_settings(update: DesktopSettingsUpdate) -> dict[str, Any]:
+    value = update.autocad_core_console.strip() if update.autocad_core_console else None
+    if value:
+        candidate = Path(value).expanduser()
+        expected_name = "AcCoreConsole.exe" if sys.platform == "win32" else "AcCoreConsole"
+        if not candidate.is_file() or candidate.name.lower() != expected_name.lower():
+            raise HTTPException(status_code=422, detail="请选择有效的 AcCoreConsole 可执行文件。")
+    settings = read_settings()
+    if value:
+        settings["autocad_core_console"] = value
+    else:
+        settings.pop("autocad_core_console", None)
+    write_settings(settings)
+    return get_desktop_settings()
 
 
 @app.post("/api/designs/validate", dependencies=[Depends(require_user)])
@@ -190,7 +211,8 @@ def list_tasks(
         raise HTTPException(status_code=422, detail="历史任务数量必须在 1 到 500 之间。")
     retention_days = _task_retention_days()
     repository = WebTaskRepository(WEB_OUTPUT_ROOT)
-    repository.delete_expired(retention_days)
+    if retention_days > 0:
+        repository.delete_expired(retention_days)
     records = repository.list()
     return {
         "items": [_task_summary_payload(record, user) for record in records[:limit]],
@@ -229,18 +251,13 @@ def delete_task(
     task_id: str,
     user: AuthenticatedUser = Depends(require_user),
 ) -> dict[str, str]:
-    """Delete a completed task when the current user owns it or is an administrator."""
+    """Delete one completed local task."""
     repository = WebTaskRepository(WEB_OUTPUT_ROOT)
     record = repository.get(task_id)
     if record is None:
         raise HTTPException(status_code=404, detail="任务不存在。")
     if record.status == "running":
         raise HTTPException(status_code=409, detail="执行中的任务不能删除。")
-    if not _user_can_delete_task(record, user):
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="普通用户只能删除自己创建的任务；历史遗留任务由管理员处理。",
-        )
     if not repository.delete(task_id):
         raise HTTPException(status_code=404, detail="任务不存在。")
     return {"task_id": task_id, "status": "deleted"}
@@ -251,7 +268,7 @@ def bulk_delete_tasks(
     request: BulkDeleteRequest,
     user: AuthenticatedUser = Depends(require_user),
 ) -> dict[str, Any]:
-    """Delete authorized completed tasks and report every skipped item."""
+    """Delete completed local tasks and report every skipped item."""
     repository = WebTaskRepository(WEB_OUTPUT_ROOT)
     deleted: list[str] = []
     skipped: list[dict[str, str]] = []
@@ -262,14 +279,6 @@ def bulk_delete_tasks(
             continue
         if record.status == "running":
             skipped.append({"task_id": task_id, "reason": "执行中的任务不能删除。"})
-            continue
-        if not _user_can_delete_task(record, user):
-            skipped.append(
-                {
-                    "task_id": task_id,
-                    "reason": "普通用户只能删除自己创建的任务；历史遗留任务由管理员处理。",
-                }
-            )
             continue
         if repository.delete(task_id):
             deleted.append(task_id)
@@ -291,17 +300,19 @@ def generate_design(
     # produces an output directory that looks like a legitimate task.
     validate_design(request.design)
     task_id, task_dir, input_path = _initialize_task(request.design, user)
-    command = [
-        sys.executable,
-        "-m",
-        "src.generate_machine",
+    command = [sys.executable]
+    if getattr(sys, "frozen", False):
+        command.append("generate-machine")
+    else:
+        command.extend(("-m", "src.generate_machine"))
+    command.extend([
         "--machine-id",
         machine.machine_id,
         "--input-json",
         str(input_path),
         "--output-dir",
         str(task_dir / "artifacts"),
-    ]
+    ])
     try:
         completed = subprocess.run(
             command,
@@ -377,8 +388,6 @@ def read_task_file(
     requested = (task_dir / relative_path).resolve()
     if not requested.is_relative_to(task_dir) or not requested.is_file():
         raise HTTPException(status_code=404, detail="生成文件不存在。")
-    if not user.is_administrator and not _is_operator_visible_file(task_dir, requested):
-        raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="普通用户只能下载正式 release DXF 或 DWG。")
     return FileResponse(
         requested,
         filename=requested.name,
@@ -601,7 +610,9 @@ def _initialize_task(
     design: DesignInput,
     user: AuthenticatedUser | None,
 ) -> tuple[str, Path, Path]:
-    WebTaskRepository(WEB_OUTPUT_ROOT).delete_expired(_task_retention_days())
+    retention_days = _task_retention_days()
+    if retention_days > 0:
+        WebTaskRepository(WEB_OUTPUT_ROOT).delete_expired(retention_days)
     task_id = uuid4().hex[:12]
     task_dir = WEB_OUTPUT_ROOT / task_id
     task_dir.mkdir(parents=True, exist_ok=False)
@@ -634,7 +645,7 @@ def _task_summary_payload(
         "created_at": record.created_at,
         "updated_at": record.updated_at,
         "created_by": record.created_by,
-        "can_delete": record.status != "running" and _user_can_delete_task(record, user),
+        "can_delete": record.status != "running",
         "status": record.status,
         "error": record.error,
         "machine_id": machine_id,
@@ -648,11 +659,6 @@ def _task_summary_payload(
         "preview": _task_preview_payload(record.task_id, record.task_dir, report),
         "files": _task_file_payload(record.task_id, record.task_dir, report, user=user),
     }
-
-
-def _user_can_delete_task(record: StoredWebTask, user: AuthenticatedUser) -> bool:
-    """Keep ownership policy in the API instead of trusting UI-provided identity."""
-    return user.is_administrator or record.created_by == user.username
 
 
 def _task_derived_payload(report: dict[str, Any]) -> dict[str, Any]:
@@ -700,19 +706,14 @@ def _task_file_payload(
     report: dict[str, Any],
     user: AuthenticatedUser | None = None,
 ) -> dict[str, dict[str, str]]:
-    """Expose only the artifacts the authenticated role is allowed to download."""
+    """Expose only generated artifacts contained by the selected task."""
     files: dict[str, dict[str, str]] = {}
     path_keys = {
         "release_dwg": "AutoCAD 2007 DWG",
+        "debug_dxf": "debug DXF",
         "release_dxf": "release DXF",
+        "preview_png": "截面预览图",
     }
-    if user is None or user.is_administrator:
-        path_keys = {
-            "release_dwg": "AutoCAD 2007 DWG",
-            "debug_dxf": "debug DXF",
-            "release_dxf": "release DXF",
-            "preview_png": "截面预览图",
-        }
     for report_key, label in path_keys.items():
         raw_path = report.get("paths", {}).get(report_key)
         if not raw_path:
@@ -725,8 +726,6 @@ def _task_file_payload(
                 "name": candidate.name,
                 "url": f"/api/tasks/{task_id}/files/{relative_path}",
             }
-    if user is not None and not user.is_administrator:
-        return files
     for candidate in task_dir.glob("**/*dimension_definition_point_audit.json"):
         relative_path = candidate.relative_to(task_dir).as_posix()
         files["dimension_audit"] = {
@@ -763,32 +762,14 @@ def _task_preview_payload(
     }
 
 
-def _is_operator_visible_file(task_dir: Path, requested: Path) -> bool:
-    """Operators may inspect previews and download formal release drawings."""
-    report_path = next(iter(task_dir.glob("**/*_report.json")), None)
-    if report_path is None:
-        return False
-    try:
-        paths = json.loads(report_path.read_text(encoding="utf-8")).get("paths", {})
-        release_path = Path(str(paths["release_dxf"])).resolve()
-        preview_path = Path(str(paths["preview_png"])).resolve()
-    except (KeyError, TypeError, ValueError, json.JSONDecodeError):
-        return False
-    allowed_paths = {release_path, preview_path}
-    raw_dwg_path = paths.get("release_dwg")
-    if raw_dwg_path:
-        allowed_paths.add(Path(str(raw_dwg_path)).resolve())
-    return requested in allowed_paths
-
-
 def _task_retention_days() -> int:
-    raw_value = os.getenv("CAD_TASK_RETENTION_DAYS", "30")
+    raw_value = os.getenv("CAD_TASK_RETENTION_DAYS", "0" if is_desktop_mode() else "30")
     try:
         retention_days = int(raw_value)
     except ValueError as error:
         raise HTTPException(status_code=503, detail="CAD_TASK_RETENTION_DAYS 必须是整数。") from error
-    if not 1 <= retention_days <= 3650:
-        raise HTTPException(status_code=503, detail="CAD_TASK_RETENTION_DAYS 必须在 1 到 3650 之间。")
+    if not 0 <= retention_days <= 3650:
+        raise HTTPException(status_code=503, detail="CAD_TASK_RETENTION_DAYS 必须在 0 到 3650 之间；0 表示长期保留。")
     return retention_days
 
 
@@ -810,7 +791,10 @@ def _add_autocad_2007_dwg_export(report: dict[str, Any]) -> None:
         export["error"] = "report.json 未包含 release_dxf 路径。"
         return
     try:
-        dwg_path = convert_release_dxf_to_autocad_2007_dwg(Path(str(raw_release_path)))
+        dwg_path = convert_release_dxf_to_autocad_2007_dwg(
+            Path(str(raw_release_path)),
+            release_allowed=bool(report.get("release_allowed")),
+        )
     except DwgConversionError as error:
         export["error"] = str(error)
         return

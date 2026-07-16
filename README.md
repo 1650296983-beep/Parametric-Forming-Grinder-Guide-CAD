@@ -127,15 +127,9 @@ Then start both the API and frontend from the repository root with one command:
 ./scripts/start_web.sh
 ```
 
-Before the first start, copy `.env.example` to `.env` and configure the login
-accounts and a long random `CAD_SESSION_SECRET`.  Credentials must remain in
-the local `.env`, never in source control.  `CAD_ADMIN_USERNAME` can be set to
-`sz2026`; set its password in `CAD_ADMIN_PASSWORD`.  Ordinary users are added
-through `CAD_OPERATOR_ACCOUNTS_JSON`, for example
-`{"operator_1":"a-local-password"}`.
-Additional local accounts may be supplied through
-`CAD_ADDITIONAL_OPERATOR_ACCOUNTS_JSON`; both variables remain in the ignored
-`.env` file and are merged by the authentication service.
+The application uses one local administrator identity. It has no login,
+password database, session token, device authorization, or central account
+service. `.env` is optional and is used only for local path/retention overrides.
 
 Open `http://127.0.0.1:5173`. Press `Ctrl+C` in that terminal to stop the
 frontend and any API process started by the script. Generated Web tasks are written under
@@ -147,21 +141,16 @@ tasks that predate the history feature are reconstructed from `input.json` and
 `report.json`; new tasks also write `task_status.json` so running state and failure
 reasons remain visible. The history page supports status/specification filtering,
 batch selection, a visible task-detail drawer, validation summaries, previews,
-and the same role-based file permissions as the generation result page.
-Administrators can delete any completed task. Ordinary users can delete only
-tasks created by their authenticated username; legacy tasks without ownership
-metadata remain administrator-only. Batch deletion reports skipped running or
-unauthorized tasks instead of silently failing. Completed tasks older than
+and the same local-administrator permissions as the generation result page.
+The local administrator can delete completed tasks; running tasks remain
+protected. Batch deletion reports skipped running or missing tasks. Completed tasks older than
 `CAD_TASK_RETENTION_DAYS` (30 days by default) are deleted automatically when
 task history is loaded or a new task starts; running tasks are never purged.
 
 The generated preview is a dimensioned guide-rail section only: it does not
 contain a side view.  It is available in the result page for visual checking,
-but it is not listed as a normal-user download. Ordinary users can download the
-validated release DXF and, when conversion succeeds, the AutoCAD 2007/LT 2007
-DWG. Administrators can additionally access the
-debug DXF, preview PNG, validation report, and dimension-definition-point
-audit for maintenance and diagnosis.
+and the local administrator can download the validated release DXF/DWG plus
+debug DXF, preview PNG, validation report, and dimension-definition-point audit.
 
 After a DXF passes the existing release gate, the Web service uses an installed
 AutoCAD Core Console to create a genuine `AC1021` DWG beside it. AutoCAD 2024 for
@@ -175,6 +164,18 @@ three-head dual-guide machines (`triple_double_down_up_up` and
 `triple_double_up_up_up`). Dual-guide jobs are generated only through
 `DualGuideTemplateEngine`; both sections must pass synchronization and dimension
 definition-point audits before a formal DXF is exposed.
+
+## Desktop applications and signed releases
+
+The production desktop uses Tauri 2 plus a PyInstaller onedir Python sidecar.
+It runs fully offline, binds the API only to a dynamic `127.0.0.1` port, stores
+mutable Windows data under `%LOCALAPPDATA%\FormingGrinderCAD`, detects a locally
+installed AutoCAD for release-gated AC1021 DWG conversion, and supports
+public-key-verified GitHub Release updates. Production does not depend on Vite.
+
+Build, signing-key, GitHub Secrets, first-release, rollback, SmartScreen,
+private-repository and troubleshooting instructions are in
+[`docs/desktop_release.md`](docs/desktop_release.md).
 
 ## Template Asset Delivery
 

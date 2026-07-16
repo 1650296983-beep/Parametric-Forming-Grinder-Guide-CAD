@@ -4,8 +4,10 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from desktop.runtime_paths import resource_root
 
-PROJECT_ROOT = Path(__file__).resolve().parent.parent
+
+PROJECT_ROOT = resource_root()
 LEGACY_TEMPLATE_ROOT = PROJECT_ROOT / "templates" / "legacy_reference"
 
 

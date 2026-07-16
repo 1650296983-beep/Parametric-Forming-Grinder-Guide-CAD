@@ -78,7 +78,31 @@ export interface GeneratedFile {
 
 export interface UserSession {
   username: string;
-  role: "administrator" | "operator";
+  role: "administrator";
+}
+
+export interface EngineStatus {
+  running: boolean;
+  apiBaseUrl: string | null;
+  error: string | null;
+}
+
+export interface AutoCadInstallation {
+  path: string;
+  version: string | null;
+  source: string;
+}
+
+export interface DesktopSettings {
+  autocad_core_console: string | null;
+  app_data_root: string;
+  autocad: {
+    available: boolean;
+    path: string | null;
+    version: string | null;
+    source: string | null;
+    detected: AutoCadInstallation[];
+  };
 }
 
 export interface GenerationResult {
