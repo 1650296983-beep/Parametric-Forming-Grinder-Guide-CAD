@@ -34,6 +34,34 @@ def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> Non
     assert "engine.stop()" in rust
 
 
+def test_windows_release_hides_console_and_downloads_use_save_dialog() -> None:
+    main = (ROOT / "src-tauri" / "src" / "main.rs").read_text(encoding="utf-8")
+    rust = (ROOT / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
+    capability = json.loads(
+        (ROOT / "src-tauri" / "capabilities" / "default.json").read_text(encoding="utf-8")
+    )
+    app = (ROOT / "frontend" / "src" / "App.tsx").read_text(encoding="utf-8")
+
+    assert 'windows_subsystem = "windows"' in main
+    assert "tauri_plugin_fs::init()" in rust
+    assert "dialog:allow-save" in capability["permissions"]
+    assert "fs:allow-write-file" in capability["permissions"]
+    assert "await save(" in app
+    assert "await writeFile(target, content)" in app
+    assert "已保存到：" in app
+    assert 'source.protocol !== "http:"' in app
+    assert '"127.0.0.1"' in app
+
+
+def test_windows_ui_uses_native_smooth_chinese_font_stack() -> None:
+    styles = (ROOT / "frontend" / "src" / "styles.css").read_text(encoding="utf-8")
+
+    assert '"Segoe UI Variable Text"' in styles
+    assert '"Microsoft YaHei UI"' in styles
+    assert '"Cascadia Mono"' in styles
+    assert "font-weight: 800" not in styles
+
+
 def test_release_workflow_is_tag_gated_and_checks_all_release_blockers() -> None:
     workflow = (ROOT / ".github" / "workflows" / "release-windows.yml").read_text(encoding="utf-8")
     assert 'tags:' in workflow and '"v*"' in workflow

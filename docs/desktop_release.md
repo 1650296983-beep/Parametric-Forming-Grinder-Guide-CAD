@@ -16,6 +16,8 @@ DXF/DWG remains behind the existing release gate.
 5. On quit, Tauri requests `/api/desktop/shutdown`, waits for graceful Uvicorn
    shutdown, and force-kills only as a fallback. The Settings page can restart
    an abnormally exited engine.
+6. Windows release builds use the GUI subsystem, and both the Tauri process and
+   Python sidecar run without a console window.
 
 The localhost service has one local administrator and no login database,
 password, session token, device authorization, offline licence, or remote
@@ -116,6 +118,11 @@ NSIS uses `currentUser` installation. Uninstalling, updating, or reinstalling
 the application directory does not target `%LOCALAPPDATA%\FormingGrinderCAD`.
 To verify preservation, create a task, record its task ID and file hashes,
 upgrade/uninstall-reinstall, then confirm the same directory and hashes remain.
+
+Generated DXF, DWG, PNG, JSON, and report files remain in the task directory
+until the user explicitly deletes that task. The UI “另存为” action opens the
+native save dialog, writes only to the user-selected destination, and displays
+the completed path. Canceling the dialog leaves the task copy unchanged.
 
 ## AutoCAD detection and AC1021 conversion
 
@@ -261,6 +268,12 @@ require a clean Windows VM before publishing.
   security software blocking localhost rather than another process on port 8000.
 - **No DWG:** confirm AutoCAD is installed, reselect `AcCoreConsole.exe`, and
   keep using the validated DXF while conversion is diagnosed.
+- **Cannot find an exported file:** use “另存为” on the generation result or
+  history task. The native dialog chooses the destination and the row then
+  displays the complete saved path.
+- **Console window appears:** confirm the installer came from a release build;
+  debug builds intentionally retain a console, while NSIS validation/release
+  builds compile the Tauri entry point as a Windows GUI application.
 - **Updater offline:** CAD remains available; retry after GitHub is reachable.
 - **Signature error:** do not bypass it. Verify `latest.json`, `.sig`, public key,
   release asset URL, and signing Secret pairing.

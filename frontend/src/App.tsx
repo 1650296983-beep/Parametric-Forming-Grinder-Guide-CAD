@@ -2,12 +2,13 @@ import { useEffect, useMemo, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
-import { open } from "@tauri-apps/plugin-dialog";
+import { open, save } from "@tauri-apps/plugin-dialog";
+import { writeFile } from "@tauri-apps/plugin-fs";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { api } from "./api";
 import { resetApiBaseUrl } from "./api";
-import type { DesignInput, DesktopSettings, GenerationResult, Machine, TaskDetail, TaskHistoryResult, TaskStatus, TaskSummary, ValidationResult } from "./types";
+import type { DesignInput, DesktopSettings, GeneratedFile, GenerationResult, Machine, TaskDetail, TaskHistoryResult, TaskStatus, TaskSummary, ValidationResult } from "./types";
 
 type Page = "workspace" | "history" | "templates" | "rules" | "settings";
 type Step = 1 | 2 | 3;
@@ -48,6 +49,41 @@ const formatProfile = (profile: string) =>
     flat_arc_groove: "平面 + 圆弧槽",
     same_r_tile_groove: "上下同 R 型腔",
   })[profile] ?? profile;
+
+const isTauri = () => "__TAURI_INTERNALS__" in window;
+
+const saveGeneratedFile = async (file: GeneratedFile): Promise<string | null> => {
+  if (!isTauri()) {
+    const anchor = document.createElement("a");
+    anchor.href = file.url;
+    anchor.download = file.name;
+    anchor.rel = "noreferrer";
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    return "浏览器默认下载目录";
+  }
+
+  const source = new URL(file.url);
+  if (source.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(source.hostname)) {
+    throw new Error("只允许保存本地 CAD 引擎生成的文件。");
+  }
+
+  const safeName = file.name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_");
+  const extension = safeName.includes(".") ? safeName.split(".").pop()?.toLowerCase() : undefined;
+  const target = await save({
+    defaultPath: safeName,
+    filters: extension ? [{ name: file.label, extensions: [extension] }] : undefined,
+  });
+  if (!target) return null;
+
+  const response = await fetch(source);
+  if (!response.ok) throw new Error(`本地文件读取失败（HTTP ${response.status}）。`);
+  const content = new Uint8Array(await response.arrayBuffer());
+  if (content.byteLength === 0) throw new Error("生成文件为空，未执行保存。");
+  await writeFile(target, content);
+  return target;
+};
 
 export default function App() {
   const [page, setPage] = useState<Page>("workspace");
@@ -454,11 +490,40 @@ function SectionPreview({ profile }: { profile: string }) {
   return <div className="drawing-canvas"><div className="axis horizontal" /><div className="axis vertical" /><div className={`slot-figure ${profile}`}><span className="slot-label">型腔</span><i /><b /><em /></div><div className="dimension-line width"><span>槽宽</span></div><div className="dimension-line height"><span>导轨厚度</span></div></div>;
 }
 
+function ArtifactSaveButton({ file }: { file: GeneratedFile }) {
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [message, setMessage] = useState<string | null>(null);
+
+  const saveFile = async () => {
+    setState("saving");
+    setMessage(null);
+    try {
+      const target = await saveGeneratedFile(file);
+      if (!target) {
+        setState("idle");
+        return;
+      }
+      setState("saved");
+      setMessage(`已保存到：${target}`);
+    } catch (error) {
+      setState("error");
+      setMessage(error instanceof Error ? `保存失败：${error.message}` : "保存失败，请重新选择保存位置。");
+    }
+  };
+
+  return <div className={`artifact-save ${state}`}>
+    <button type="button" onClick={() => void saveFile()} disabled={state === "saving"}>
+      {state === "saving" ? "保存中…" : state === "saved" ? "再次另存" : "另存为"}
+    </button>
+    {message && <small role="status" title={message}>{message}</small>}
+  </div>;
+}
+
 function Generation({ isGenerating, state, error, validation, result }: { isGenerating: boolean; state: "idle" | "passed" | "failed"; error: string | null; validation: ValidationResult | null; result: GenerationResult | null }) {
   const stages = ["读取机台配置", "解析产品规格", "重建参数化槽口", "生成候选 release DXF", "运行完整校验", "晋级正式 release"];
   const passed = state === "passed";
   const files = result?.files ?? {};
-  return <section className={`generation-view panel ${passed ? "result-passed" : ""}`}><div className={`result-icon ${passed ? "success" : state === "failed" ? "failure" : "running"}`}>{passed ? "✓" : state === "failed" ? "!" : "…"}</div><p className="eyebrow">生成任务</p><h2>{isGenerating ? "正在重建图纸与校验" : passed ? "正式图纸已通过校验" : "正式 release 未输出"}</h2><p>{isGenerating ? "后端正在按固定工作流生成候选文件。" : passed ? "release.dxf 已由候选文件晋级。" : error ?? "任务结束。"}</p>{passed && result?.preview && <div className="output-preview"><img src={result.preview.url} alt="带尺寸标注的导轨截面预览" /></div>}<ol className="generation-steps">{stages.map((label, index) => <li key={label} className={isGenerating && index > 2 ? "waiting" : passed || (!isGenerating && index < 5) ? "ok" : state === "failed" && index === 4 ? "bad" : "waiting"}><span>{passed || (!isGenerating && index < 5) ? "✓" : index + 1}</span>{label}</li>)}</ol>{validation && <div className="result-summary"><strong>{formatProfile(validation.decision.groove_profile)}</strong><span>槽宽 {validation.derived.slot_width.toFixed(2)} mm</span><span>导轨厚度 {validation.derived.guide_thickness.toFixed(2)} mm</span></div>}{passed && <div className="output-files"><h3>可下载文件</h3>{Object.entries(files).map(([key, file]) => <a key={key} href={file.url} target="_blank" rel="noreferrer"><span>▧</span><div><strong>{file.label}</strong><small>{file.name}</small></div><b>下载</b></a>)}</div>}</section>;
+  return <section className={`generation-view panel ${passed ? "result-passed" : ""}`}><div className={`result-icon ${passed ? "success" : state === "failed" ? "failure" : "running"}`}>{passed ? "✓" : state === "failed" ? "!" : "…"}</div><p className="eyebrow">生成任务</p><h2>{isGenerating ? "正在重建图纸与校验" : passed ? "正式图纸已通过校验" : "正式 release 未输出"}</h2><p>{isGenerating ? "后端正在按固定工作流生成候选文件。" : passed ? "release.dxf 已由候选文件晋级。" : error ?? "任务结束。"}</p>{passed && result?.preview && <div className="output-preview"><img src={result.preview.url} alt="带尺寸标注的导轨截面预览" /></div>}<ol className="generation-steps">{stages.map((label, index) => <li key={label} className={isGenerating && index > 2 ? "waiting" : passed || (!isGenerating && index < 5) ? "ok" : state === "failed" && index === 4 ? "bad" : "waiting"}><span>{passed || (!isGenerating && index < 5) ? "✓" : index + 1}</span>{label}</li>)}</ol>{validation && <div className="result-summary"><strong>{formatProfile(validation.decision.groove_profile)}</strong><span>槽宽 {validation.derived.slot_width.toFixed(2)} mm</span><span>导轨厚度 {validation.derived.guide_thickness.toFixed(2)} mm</span></div>}{passed && <div className="output-files"><h3>可保存文件</h3>{Object.entries(files).map(([key, file]) => <div className="output-file-row" key={key}><span>▧</span><div><strong>{file.label}</strong><small>{file.name}</small></div><ArtifactSaveButton file={file} /></div>)}</div>}</section>;
 }
 
 function History({ history, isLoading, error, initialTaskId, onRefresh }: {
@@ -637,7 +702,7 @@ function TaskDetailContent({ detail }: { detail: TaskDetail }) {
       <div><h3>计算与门禁</h3><dl><dt>槽宽</dt><dd>{formatMillimeter(detail.derived.slot_width)}</dd><dt>导轨厚度</dt><dd>{formatMillimeter(detail.derived.guide_thickness)}</dd><dt>DXF 几何检查</dt><dd>{auditLabel(detail.audit.inspection_passed)}</dd><dt>尺寸定义点</dt><dd>{auditLabel(detail.audit.dimension_points_passed)}</dd></dl></div>
       {detail.preview && <div className="task-preview"><h3>截面预览</h3><a href={detail.preview.url} target="_blank" rel="noreferrer"><img src={detail.preview.url} alt={`${detail.finished_spec} 导轨截面预览`} /></a></div>}
     </div>
-    <div className="task-files"><h3>可用文件</h3>{files.length === 0 ? <p>该任务没有可下载的授权文件。</p> : files.map(([key, file]) => <a key={key} href={file.url} target="_blank" rel="noreferrer"><span>{file.label}</span><small>{file.name}</small><b>下载</b></a>)}</div>
+    <div className="task-files"><h3>可用文件</h3>{files.length === 0 ? <p>该任务没有可保存的授权文件。</p> : files.map(([key, file]) => <div className="task-file-row" key={key}><span>{file.label}</span><small>{file.name}</small><ArtifactSaveButton file={file} /></div>)}</div>
   </section>;
 }
 
