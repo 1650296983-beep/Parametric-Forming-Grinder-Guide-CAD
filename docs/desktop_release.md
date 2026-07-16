@@ -191,6 +191,16 @@ binary-release repository). For a private source repository, publish binaries
 to a separate public release repository or build a secure download service.
 Never embed a GitHub PAT in the client.
 
+For clients in the Chinese mainland, mirror the exact signed installer,
+signature, and `latest.json` to a public HTTPS object-storage origin such as
+Alibaba Cloud OSS or Tencent Cloud COS. Use a dedicated download domain, keep
+versioned installers immutable, and update `latest.json` only after every
+mirrored object is available. The mirror needs no account system or task-data
+service: Tauri still verifies the installer with the public key embedded in the
+client. Do not use an untrusted third-party GitHub proxy as an update endpoint.
+When a mainland mirror is configured, put its endpoint before GitHub for the
+next client release and retain GitHub as the public source of record.
+
 ## Versioning and publishing v1.0.0
 
 Versions must agree in `frontend/package.json`, `src-tauri/tauri.conf.json`,

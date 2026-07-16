@@ -73,6 +73,7 @@ def test_release_workflow_is_tag_gated_and_checks_all_release_blockers() -> None
         "smoke_sidecar.py",
         "TAURI_SIGNING_PRIVATE_KEY",
         "generate_latest_json.py",
+        "Forming-Grinder-CAD_${version}_x64-setup.exe",
         "SHA256SUMS.txt",
     ):
         assert required in workflow

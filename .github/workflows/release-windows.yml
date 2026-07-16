@@ -140,8 +140,13 @@ jobs:
         shell: pwsh
         run: |
           $version = $env:RELEASE_TAG.TrimStart('v')
-          $installer = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
-          if (-not $installer) { throw "NSIS setup.exe was not generated." }
+          $builtInstaller = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          if (-not $builtInstaller) { throw "NSIS setup.exe was not generated." }
+          $releaseName = "Forming-Grinder-CAD_${version}_x64-setup.exe"
+          $releasePath = Join-Path $builtInstaller.DirectoryName $releaseName
+          Move-Item $builtInstaller.FullName $releasePath
+          Move-Item "$($builtInstaller.FullName).sig" "$releasePath.sig"
+          $installer = Get-Item $releasePath
           python scripts/generate_latest_json.py --version $version --repository $env:GITHUB_REPOSITORY --installer $installer.FullName --output latest.json
           $files = @($installer.FullName, "$($installer.FullName).sig", "latest.json")
           $files | ForEach-Object { Get-FileHash $_ -Algorithm SHA256 } |
