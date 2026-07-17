@@ -6,7 +6,7 @@ from math import sqrt
 from .block_geometry import BlockGuideSection
 from .geometry import TileSection
 from .side_view_config import SideViewLayoutConfig, SideViewTemplateConfig
-from .global_rules import WHEEL_CUT_IN_RATIO
+from .global_rules import WHEEL_CUT_IN_RATIO, wheel_notch_opening_limit
 
 
 GLOBAL_WHEEL_CUT_IN_RATIO = WHEEL_CUT_IN_RATIO
@@ -63,7 +63,7 @@ def build_side_view_geometry(
         layout,
         wheel_cut_allowance,
     )
-    opening_limit = max(tile_section.process_length - 0.2, 0.1)
+    opening_limit = wheel_notch_opening_limit(tile_section.process_length)
     lower_cavity_notch_opening, effective_lower_cut_in = _limited_r80_opening(
         template.wheel_radius,
         lower_requested_cut_in,
@@ -107,7 +107,7 @@ def _build_block_side_view_geometry(
     guide = section.guide_spec
     mode = layout.block_side_mode
     process_thickness = section.process_thickness
-    opening_limit = max(section.process_length - 0.2, 0.1)
+    opening_limit = wheel_notch_opening_limit(section.process_length)
     lower_requested_cut_in = (
         process_thickness * GLOBAL_WHEEL_CUT_IN_RATIO
     )

@@ -5,7 +5,7 @@ import ezdxf
 import pytest
 
 from src.block_geometry import build_block_guide_section
-from src.global_rules import HIGH_REQUIREMENT_THICKNESS_CLEARANCE
+from src.global_rules import HIGH_REQUIREMENT_THICKNESS_CLEARANCE, wheel_notch_opening_limit
 from src.dxf_writer import write_dxf
 from src.side_view import build_side_view_geometry
 from src.machine_config import load_machine_config
@@ -35,7 +35,7 @@ def test_double_head_up_up_block_spec_uses_selected_slot_reference(tmp_path):
     assert profile.guide_spec.guide_slot_width == pytest.approx(9.01)
     assert profile.guide_spec.guide_thickness == pytest.approx(2.09)
     assert side.derived.side_projected_slot_height == pytest.approx(18.0)
-    expected_opening = spec.length - 0.2
+    expected_opening = wheel_notch_opening_limit(spec.length)
     expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
     assert side.derived.side_clearance_height == pytest.approx(
         profile.guide_spec.outer_height - 18.0 - expected_cut_in
@@ -138,7 +138,7 @@ def test_double_head_up_up_side_r80_closes_for_variable_thickness(tmp_path):
     write_dxf(profile, release_path, output_mode="release", machine_id="double_head_up_up")
     doc = ezdxf.readfile(release_path)
 
-    expected_opening = spec.length - 0.2
+    expected_opening = wheel_notch_opening_limit(spec.length)
     expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
     assert side.derived.side_clearance_height == pytest.approx(
         profile.guide_spec.outer_height - 18.0 - expected_cut_in

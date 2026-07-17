@@ -4,7 +4,7 @@ import ezdxf
 import pytest
 
 from src.block_geometry import build_block_guide_section
-from src.global_rules import HIGH_REQUIREMENT_THICKNESS_CLEARANCE
+from src.global_rules import HIGH_REQUIREMENT_THICKNESS_CLEARANCE, wheel_notch_opening_limit
 from src.dxf_writer import write_dxf
 from src.machine_config import load_machine_config
 from src.side_view import build_side_view_geometry
@@ -45,7 +45,7 @@ def test_triple_single_up_up_block_release_updates_native_dimensions(tmp_path):
     assert profile.guide_spec.guide_slot_width == pytest.approx(9.15)
     assert profile.guide_spec.guide_thickness == pytest.approx(2.59)
     assert side.derived.side_projected_slot_height == pytest.approx(21.41)
-    expected_opening = spec.length - 0.2
+    expected_opening = wheel_notch_opening_limit(spec.length)
     expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
     expected_clearance = (
         profile.guide_spec.outer_height

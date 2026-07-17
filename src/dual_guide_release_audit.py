@@ -11,6 +11,7 @@ from .geometry import TileSection
 from .global_rules import (
     DIMENSION_POINT_BINDING_TOLERANCE,
     WHEEL_CUT_IN_RATIO,
+    wheel_notch_opening_limit,
 )
 from .machine_config import MachineConfig
 from .side_view_writer import SIDE_CAVITY_LAYER, SIDE_DERIVED_RELEASE_LAYER
@@ -228,6 +229,36 @@ def build_release_line_type_audit(dxf_path: str | Path) -> dict[str, Any]:
         for entity in modelspace.query("LINE")
         if entity.dxf.layer == SIDE_DERIVED_RELEASE_LAYER
     ]
+    parametric_entities = [
+        entity
+        for entity in modelspace
+        if entity.dxf.layer == "PARAM_SLOT"
+        and entity.dxftype() in {"LINE", "ARC"}
+    ]
+    section_center_entities = [
+        entity
+        for entity in modelspace
+        if entity.dxf.layer == "SECTION_CENTER"
+        and entity.dxftype() in {"LINE", "ARC"}
+    ]
+    invalid_parametric_entities = [
+        {
+            "handle": entity.dxf.handle,
+            "effective_color": _effective_color(doc, entity),
+        }
+        for entity in parametric_entities
+        if _effective_color(doc, entity) != 7
+    ]
+    invalid_section_center_entities = [
+        {
+            "handle": entity.dxf.handle,
+            "effective_linetype": _effective_linetype(doc, entity),
+            "effective_color": _effective_color(doc, entity),
+        }
+        for entity in section_center_entities
+        if _effective_linetype(doc, entity).upper() != "CENTER"
+        or _effective_color(doc, entity) != 1
+    ]
     invalid_cavity_lines = [
         {
             "handle": entity.dxf.handle,
@@ -271,6 +302,10 @@ def build_release_line_type_audit(dxf_path: str | Path) -> dict[str, Any]:
         and not invalid_release_lines
         and not legacy_formal_lines
         and not dashed_formal_lines
+        and bool(parametric_entities)
+        and not invalid_parametric_entities
+        and bool(section_center_entities)
+        and not invalid_section_center_entities
     )
     return {
         "release_layer": SIDE_CAVITY_LAYER,
@@ -282,6 +317,10 @@ def build_release_line_type_audit(dxf_path: str | Path) -> dict[str, Any]:
         "invalid_release_lines": invalid_release_lines,
         "legacy_SIDE_DERIVED_lines": legacy_formal_lines,
         "dashed_formal_lines": dashed_formal_lines,
+        "parametric_entity_count": len(parametric_entities),
+        "invalid_parametric_entities": invalid_parametric_entities,
+        "section_center_entity_count": len(section_center_entities),
+        "invalid_section_center_entities": invalid_section_center_entities,
         "release_allowed": release_allowed,
     }
 
@@ -341,7 +380,11 @@ def _dimension_role(
             else profile.block_spec.thickness_mid,
             machine.wheel_radius,
         ),
-        (profile.process_length if isinstance(profile, TileSection) else profile.block_spec.length) - 0.2,
+        wheel_notch_opening_limit(
+            profile.process_length
+            if isinstance(profile, TileSection)
+            else profile.block_spec.length
+        ),
     )
     if _close(measurement, opening):
         return "lower_cavity_notch_opening"
@@ -406,12 +449,11 @@ def _required_role_audit(
                     else profile.block_spec.thickness_mid,
                     machine.wheel_radius,
                 ),
-                (
+                wheel_notch_opening_limit(
                     profile.process_length
                     if isinstance(profile, TileSection)
                     else profile.block_spec.length
-                )
-                - 0.2,
+                ),
             ),
             1,
         ),
@@ -719,7 +761,7 @@ def _lower_wheel_crown_depth(
     radius = machine.wheel_radius
     opening = min(
         _natural_opening(thickness, radius),
-        product_length - 0.2,
+        wheel_notch_opening_limit(product_length),
     )
     effective_depth = radius - sqrt(
         max(0.0, radius * radius - (opening / 2.0) ** 2)

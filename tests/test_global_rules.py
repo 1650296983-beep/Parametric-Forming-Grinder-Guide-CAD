@@ -9,6 +9,8 @@ from src.global_rules import (
     BLOCK_THICKNESS_CLEARANCE,
     HIGH_REQUIREMENT_THICKNESS_CLEARANCE,
     ProcessOptions,
+    WHEEL_NOTCH_OPENING_RATIO,
+    wheel_notch_opening_limit,
 )
 from src.guide_design_input import build_single_guide_profile_from_input
 from src.machine_config import load_machine_config
@@ -22,6 +24,14 @@ BASE_INPUT = {
     "product_shape_before": "rectangular_block",
     "relief": "4-0.6",
 }
+
+
+def test_wheel_notch_opening_limit_is_sixty_percent_of_product_length() -> None:
+    assert WHEEL_NOTCH_OPENING_RATIO == pytest.approx(0.6)
+    assert wheel_notch_opening_limit(1.0) == pytest.approx(0.6)
+    assert wheel_notch_opening_limit(9.1) == pytest.approx(5.46)
+    with pytest.raises(ValueError, match="大于 0"):
+        wheel_notch_opening_limit(0.0)
 
 
 def test_explicit_process_options_control_clearances_globally() -> None:

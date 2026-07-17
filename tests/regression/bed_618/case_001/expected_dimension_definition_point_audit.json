@@ -4,7 +4,7 @@
   "dimension_count": 19,
   "dimensions": [
     {
-      "dimension_handle": "203905C",
+      "dimension_handle": "203905E",
       "dimension_role": "fixed_section_height_27",
       "measurement": 27.0,
       "display_text": "27.00",
@@ -34,7 +34,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203907B",
+      "dimension_handle": "203907D",
       "dimension_role": "other_release_dimension",
       "measurement": 2.0,
       "display_text": "2.00",
@@ -64,7 +64,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203909A",
+      "dimension_handle": "203909C",
       "dimension_role": "fixed_section_width_40",
       "measurement": 40.0,
       "display_text": "40.00",
@@ -94,7 +94,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20390B5",
+      "dimension_handle": "20390B7",
       "dimension_role": "other_release_dimension",
       "measurement": 20.9,
       "display_text": "20.90",
@@ -124,7 +124,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20390D0",
+      "dimension_handle": "20390D2",
       "dimension_role": "guide_thickness",
       "measurement": 1.83,
       "display_text": "1.83",
@@ -154,7 +154,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20390EF",
+      "dimension_handle": "20390F1",
       "dimension_role": "slot_width",
       "measurement": 6.21,
       "display_text": "6.21±0.01",
@@ -184,7 +184,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203910E",
+      "dimension_handle": "2039110",
       "dimension_role": "relief",
       "measurement": 0.5,
       "display_text": "4-R0.50",
@@ -214,7 +214,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039126",
+      "dimension_handle": "2039128",
       "dimension_role": "relief",
       "measurement": 0.5,
       "display_text": "2-R0.50",
@@ -244,7 +244,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203913B",
+      "dimension_handle": "203913D",
       "dimension_role": "R_form",
       "measurement": 17.45,
       "display_text": "R17.45",
@@ -274,7 +274,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039150",
+      "dimension_handle": "2039152",
       "dimension_role": "R_form",
       "measurement": 17.45,
       "display_text": "R17.45",
@@ -304,7 +304,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039173",
+      "dimension_handle": "2039175",
       "dimension_role": "other_release_dimension",
       "measurement": 130.0,
       "display_text": "130.00",
@@ -334,28 +334,28 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2039182",
+      "dimension_handle": "2039184",
       "dimension_role": "wheel_radius",
       "measurement": 80.0,
       "display_text": "R80.00",
       "defpoint2": [
         3560.483328,
-        136.784227,
+        137.015577,
         0.0
       ],
       "defpoint3": [
         3560.483328,
-        56.784227,
+        57.015577,
         0.0
       ],
       "expected_geometry_point_1": [
         3560.483328,
-        136.784227,
+        137.015577,
         0.0
       ],
       "expected_geometry_point_2": [
         3560.483328,
-        56.784227,
+        57.015577,
         0.0
       ],
       "point_error": 0.0,
@@ -364,10 +364,10 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203918B",
+      "dimension_handle": "203918D",
       "dimension_role": "other_release_dimension",
-      "measurement": 4.636606,
-      "display_text": "4.64",
+      "measurement": 4.405255,
+      "display_text": "4.41",
       "defpoint2": [
         3690.483328,
         61.420832,
@@ -375,7 +375,7 @@
       ],
       "defpoint3": [
         3690.483328,
-        56.784227,
+        57.015577,
         0.0
       ],
       "expected_geometry_point_1": [
@@ -385,7 +385,7 @@
       ],
       "expected_geometry_point_2": [
         3690.483328,
-        56.784227,
+        57.015577,
         0.0
       ],
       "point_error": 0.0,
@@ -394,7 +394,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391AA",
+      "dimension_handle": "20391AC",
       "dimension_role": "other_release_dimension",
       "measurement": 170.0,
       "display_text": "170.00",
@@ -424,7 +424,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391B9",
+      "dimension_handle": "20391BB",
       "dimension_role": "fixed_guide_length_590",
       "measurement": 300.0,
       "display_text": "300.00",
@@ -454,7 +454,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391C6",
+      "dimension_handle": "20391C8",
       "dimension_role": "other_release_dimension",
       "measurement": 1.0,
       "display_text": "1.00",
@@ -484,7 +484,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391D5",
+      "dimension_handle": "20391D7",
       "dimension_role": "other_release_dimension",
       "measurement": 15.0,
       "display_text": "15.00",
@@ -514,7 +514,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391E4",
+      "dimension_handle": "20391E6",
       "dimension_role": "other_release_dimension",
       "measurement": 15.0,
       "display_text": "R15.00",
@@ -544,7 +544,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "20391FE",
+      "dimension_handle": "2039200",
       "dimension_role": "other_release_dimension",
       "measurement": 20.9,
       "display_text": "20.90",

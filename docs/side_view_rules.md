@@ -41,7 +41,7 @@ preform_block_thickness_mid = preform_thickness + (upper_tol + lower_tol) / 2
 lower_requested_cut_in_depth = preform_thickness_mid * 0.6
 upper_requested_cut_in_depth = preform_thickness_mid * 0.6
 natural_opening = 2 * sqrt(80^2 - (80 - requested_cut_in_depth)^2)
-opening_limit = product_length - 0.2
+opening_limit = product_length * 0.6
 lower_cavity_notch_opening = min(natural_opening, opening_limit)
 upper_cavity_notch_opening = min(upper_natural_opening, opening_limit)
 effective_lower_cut_in_depth = 80 - sqrt(80^2 - (lower_cavity_notch_opening / 2)^2)
@@ -63,9 +63,9 @@ center_y = slot_top_y - effective_upper_cut_in_depth + 80
 
 上砂轮圆弧必须与导轨上表面和型腔槽顶投影线真实相交，槽顶投影线断口端点必须落在 R80 弧上。上下两处 R80 半径标注的圆心定义点和箭头目标点必须跟随重算后的圆弧。
 
-“缺口开口”必须分别对下、上砂轮计算。每一侧统一按 `preform_thickness_mid * 0.6` 求 R80 自然开口；若开口超过 `product_length - 0.2`，则移动对应 R80 圆心并重算有效吃入量。因而 `lower_cavity_notch_opening` 与 `upper_cavity_notch_opening` 均必须严格小于产品长度，且不大于 `product_length - 0.2`。该约束适用于所有机台、所有含对应砂轮的位置，不能只覆盖下砂轮，机台配置也不得覆盖该比例。
+“缺口开口”必须分别对下、上砂轮计算。每一侧统一按 `preform_thickness_mid * 0.6` 求 R80 自然开口；若开口超过 `product_length * 0.6`，则移动对应 R80 圆心并重算有效吃入量。因而 `lower_cavity_notch_opening` 与 `upper_cavity_notch_opening` 均不得大于产品长度的 `60%`。该约束适用于所有机台、所有含对应砂轮的位置，不能只覆盖下砂轮，机台配置也不得覆盖该比例。
 
-release 校验必须从 DXF 几何实体直接测量上下 R80 的最终开口，并要求每个实测值不大于 `product_length - 0.2`、与报告值误差小于 `0.01 mm`。
+release 校验必须从 DXF 几何实体直接测量上下 R80 的最终开口，并要求每个实测值不大于 `product_length * 0.6`、与报告值误差小于 `0.01 mm`。
 
 砂轮半径为任务级参数，默认 `R80`。修改半径时必须按机台砂轮位置角色更新圆弧、连接轮廓、投影断口、吃入尺寸和半径标注；禁止以“半径等于 80”作为砂轮身份判断条件。
 
@@ -105,12 +105,12 @@ side_clearance_height = guide_outer_height - slot_base_height - guide_thickness 
 ```text
 requested_cut_in_depth = preform_block_thickness_mid * 0.6
 natural_opening = 2 * sqrt(80^2 - (80 - requested_cut_in_depth)^2)
-opening_limit = product_length - 0.2
+opening_limit = product_length * 0.6
 actual_opening = min(natural_opening, opening_limit)
 effective_cut_in_depth = 80 - sqrt(80^2 - (actual_opening / 2)^2)
 ```
 
-当自然开口未超限时，`effective_cut_in_depth` 必须等于 `preform_block_thickness_mid * 0.6`；超限时不得修改目标吃入公式，而应移动 R80 圆心，使最终开口不大于 `product_length - 0.2`。`block_side_projected_slot_height` 仍由机台模板配置控制，双头机上上默认为 `18.0`。
+当自然开口未超限时，`effective_cut_in_depth` 必须等于 `preform_block_thickness_mid * 0.6`；超限时不得修改目标吃入公式，而应移动 R80 圆心，使最终开口不大于 `product_length * 0.6`。`block_side_projected_slot_height` 仍由机台模板配置控制，双头机上上默认为 `18.0`。
 
 双头机（上下）方块磨前侧视图只保留型腔上下两条虚线。下边界在下 R80 处断开，上边界在上 R80 处断开；不得保留模板中的平行偏移副本形成重影。下、上 R80 的冠点分别进入型腔 `effective_cut_in_depth`，两条边界随当前导轨厚度同步重建。
 
@@ -162,7 +162,7 @@ upper_wheel_key_height = outer_height - slot_base_height - guide_thickness
                          + effective_upper_cut_in_depth
 ```
 
-所有机台、所有磨前形状的上下砂轮目标吃入均按 `preform_thickness_mid * 0.6` 计算。若自然开口超出 `product_length - 0.2`，通过移动圆心得到有效吃入深度。下、上 R80 圆心必须分别从上述两项关键高度派生；release 同时校验槽底基准、R80 圆心、关键高度和对应 DIMENSION 定义点。
+所有机台、所有磨前形状的上下砂轮目标吃入均按 `preform_thickness_mid * 0.6` 计算。若自然开口超出 `product_length * 0.6`，通过移动圆心得到有效吃入深度。下、上 R80 圆心必须分别从上述两项关键高度派生；release 同时校验槽底基准、R80 圆心、关键高度和对应 DIMENSION 定义点。
 
 `preview.png` 是供生成结果页快速复核的截面预览，应能看到：
 

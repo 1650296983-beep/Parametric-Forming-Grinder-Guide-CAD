@@ -5,6 +5,7 @@ import pytest
 
 from src.dxf_writer import write_dxf
 from src.geometry import build_tile_section
+from src.global_rules import wheel_notch_opening_limit
 from src.inspection import inspect_release_dxf
 from src.machine_config import load_machine_config
 from src.side_view import build_side_view_geometry
@@ -27,7 +28,7 @@ def test_double_head_up_down_applies_lower_wheel_notch_safety_to_geometry(tmp_pa
 
     doc = ezdxf.readfile(release_path)
     side = build_side_view_geometry(profile, layout=machine.side_layout)
-    expected_opening = spec.length - 0.2
+    expected_opening = wheel_notch_opening_limit(spec.length)
     assert side.derived.lower_cavity_notch_opening == pytest.approx(expected_opening)
     assert _lower_notch_opening_from_lines(doc, machine, side) == pytest.approx(expected_opening)
 
@@ -40,8 +41,8 @@ def test_double_head_up_down_applies_lower_wheel_notch_safety_to_geometry(tmp_pa
     lower_check = next(check for check in inspection["checks"] if check["name"] == "lower_wheel_notch_safety")
     assert inspection["release_allowed"] is True
     assert lower_check["ok"] is True
-    assert lower_check["details"]["opening_measured_from_geometry"] == pytest.approx(9.4)
-    assert lower_check["details"]["opening_report_value"] == pytest.approx(9.4)
+    assert lower_check["details"]["opening_measured_from_geometry"] == pytest.approx(5.76)
+    assert lower_check["details"]["opening_report_value"] == pytest.approx(5.76)
 
 
 def test_double_head_up_down_report_outputs_lower_wheel_shift_payload(tmp_path):
@@ -74,10 +75,10 @@ def test_double_head_up_down_report_outputs_lower_wheel_shift_payload(tmp_path):
     notch = report["side_view"]["wheel_notch"]
     assert report["release_allowed"] is True
     assert notch["product_length"] == pytest.approx(9.6)
-    assert notch["opening_limit"] == pytest.approx(9.4)
-    assert notch["lower_cavity_notch_opening"] == pytest.approx(9.4)
-    assert notch["effective_cut_in_depth"] > 0.13
-    assert notch["wheel_center_shift"] < -0.8
+    assert notch["opening_limit"] == pytest.approx(5.76)
+    assert notch["lower_cavity_notch_opening"] == pytest.approx(5.76)
+    assert notch["effective_cut_in_depth"] > 0.05
+    assert notch["wheel_center_shift"] < -0.9
     assert notch["adjusted_wheel_center_y"] == pytest.approx(notch["lower_wheel_center_y"])
 
 

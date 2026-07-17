@@ -35,8 +35,8 @@
       200.0,
       145.0
     ],
-    "section_template_path": "templates/double_head_up_down/section_template.dxf",
-    "side_template_path": "templates/double_head_up_down/side_template.dxf"
+    "section_template_path": "/Users/wrd/Desktop/codex workspace/CAD/templates/double_head_up_down/section_template.dxf",
+    "side_template_path": "/Users/wrd/Desktop/codex workspace/CAD/templates/double_head_up_down/side_template.dxf"
   },
   "input_rule": null,
   "product_spec": {
@@ -130,28 +130,28 @@
     },
     "guide_outer_height": 27.0,
     "guide_thickness": 1.78,
-    "wheel_cut_allowance": 0.13818183887872237,
+    "wheel_cut_allowance": 0.05185680705272944,
     "side_clearance_height": {
       "formula": "guide_outer_height - slot_base_height - guide_thickness + wheel_cut_allowance",
       "guide_outer_height": 27.0,
       "slot_base_height": 12.0,
       "guide_thickness": 1.78,
-      "wheel_cut_allowance": 0.13818183887872237,
-      "result": 13.358181838878723
+      "wheel_cut_allowance": 0.05185680705272944,
+      "result": 13.27185680705273
     },
     "wheel_notch": {
       "natural_cut_in_formula": "finished_thickness * 0.6",
       "process_thickness": 1.6,
       "natural_cut_in_depth": 0.96,
       "natural_opening": 24.712620257673922,
-      "opening_limit_formula": "product_length - 0.2",
-      "opening_limit": 9.4,
-      "lower_cavity_notch_opening": 9.4,
-      "upper_cavity_notch_opening": 9.4,
-      "upper_opening_limit": 9.4,
-      "upper_effective_cut_in_depth": 0.13818183887872237,
-      "effective_cut_in_depth": 0.13818183887872237,
-      "effective_notch_top_height_from_guide_bottom": 12.138181838878722,
+      "opening_limit_formula": "product_length * 0.6",
+      "opening_limit": 5.76,
+      "lower_cavity_notch_opening": 5.76,
+      "upper_cavity_notch_opening": 5.76,
+      "upper_opening_limit": 5.76,
+      "upper_effective_cut_in_depth": 0.05185680705272944,
+      "effective_cut_in_depth": 0.05185680705272944,
+      "effective_notch_top_height_from_guide_bottom": 12.05185680705273,
       "wheel_radius": 80.0,
       "product_length": 9.6,
       "lower_cavity_notch_opening_less_than_product_length": true,
@@ -159,10 +159,10 @@
       "upper_cavity_notch_opening_less_than_product_length": true,
       "upper_cavity_notch_opening_within_limit": true,
       "natural_wheel_center_y": -31.190315421628192,
-      "adjusted_wheel_center_y": -32.01213358274947,
-      "wheel_center_shift": -0.8218181611212785,
-      "lower_wheel_center_y": -32.01213358274947,
-      "note": "上下砂轮的R80缺口均按成型磨前厚度中值的0.6倍计算自然开口；若不小于产品长度，则调整对应R80圆心，使开口不超过 product_length - 0.2，并同步更新连接线。"
+      "adjusted_wheel_center_y": -32.09845861457546,
+      "wheel_center_shift": -0.9081431929472714,
+      "lower_wheel_center_y": -32.09845861457546,
+      "note": "上下砂轮的目标吃入深度均按成型磨前厚度中值的0.6倍计算；最终缺口开口不得超过 product_length * 0.6，超限时移动对应砂轮圆心并同步更新连接线。"
     }
   },
   "fixed_template_dimensions": {
@@ -213,8 +213,8 @@
           ],
           "guide_sections": 1,
           "template_paths": {
-            "section_template": "templates/double_head_up_down/section_template.dxf",
-            "side_template": "templates/double_head_up_down/side_template.dxf"
+            "section_template": "/Users/wrd/Desktop/codex workspace/CAD/templates/double_head_up_down/section_template.dxf",
+            "side_template": "/Users/wrd/Desktop/codex workspace/CAD/templates/double_head_up_down/side_template.dxf"
           },
           "templates_exist": {
             "section_template": true,
@@ -249,6 +249,19 @@
             "SIDE_TEMPLATE",
             "TEXT_NOTE"
           ]
+        }
+      },
+      {
+        "name": "section_display_styles",
+        "ok": true,
+        "details": {
+          "PARAM_SLOT_expected_color": 7,
+          "SECTION_CENTER_expected_color": 1,
+          "SECTION_CENTER_expected_linetype": "CENTER",
+          "parametric_entity_count": 13,
+          "center_entity_count": 2,
+          "invalid_parametric_entities": [],
+          "invalid_center_entities": []
         }
       },
       {
@@ -345,6 +358,77 @@
         }
       },
       {
+        "name": "section_contour_closure",
+        "ok": true,
+        "details": {
+          "expected_section_count": 1,
+          "actual_section_count": 1,
+          "endpoint_tolerance": 0.001,
+          "sections": [
+            {
+              "entity_count": 13,
+              "entity_handles": [
+                "2031030",
+                "2031031",
+                "2031032",
+                "2031033",
+                "2031034",
+                "2031035",
+                "2031036",
+                "2031037",
+                "2031038",
+                "2031039",
+                "203103A",
+                "203103B",
+                "203103C"
+              ],
+              "node_count": 14,
+              "mouth_count": 2,
+              "mouth_connections": [
+                {
+                  "point": [
+                    3240.601869,
+                    62.849685
+                  ],
+                  "connected": true,
+                  "matching_fixed_endpoint_count": 1,
+                  "matching_fixed_line_handles": [
+                    "203103D"
+                  ],
+                  "nearest_fixed_endpoint": [
+                    3240.601869,
+                    62.849685
+                  ],
+                  "nearest_fixed_endpoint_distance": 0.0
+                },
+                {
+                  "point": [
+                    3242.101869,
+                    62.849685
+                  ],
+                  "connected": true,
+                  "matching_fixed_endpoint_count": 1,
+                  "matching_fixed_line_handles": [
+                    "203103E"
+                  ],
+                  "nearest_fixed_endpoint": [
+                    3242.101869,
+                    62.849685
+                  ],
+                  "nearest_fixed_endpoint_distance": 0.0
+                }
+              ],
+              "invalid_nodes": [],
+              "maximum_parametric_endpoint_gap": 0.0,
+              "maximum_fixed_join_gap": 0.0,
+              "fixed_line_bridges_mouth": false,
+              "closed": true
+            }
+          ],
+          "release_allowed": true
+        }
+      },
+      {
         "name": "slot_width_dimension",
         "ok": true,
         "details": {
@@ -425,11 +509,11 @@
         "name": "side_clearance_height_dimension",
         "ok": true,
         "details": {
-          "expected": 13.358182,
-          "geometry_measured": 13.358182,
-          "definition_points_measured": 13.358182,
-          "dimension_group_42_measured": 13.358182,
-          "display_text": "13.36"
+          "expected": 13.271857,
+          "geometry_measured": 13.271857,
+          "definition_points_measured": 13.271857,
+          "dimension_group_42_measured": 13.271857,
+          "display_text": "13.27"
         }
       },
       {
@@ -437,9 +521,9 @@
         "ok": true,
         "details": {
           "product_length": 9.6,
-          "opening_limit": 9.4,
-          "opening_measured_from_geometry": 9.4,
-          "opening_report_value": 9.4,
+          "opening_limit": 5.76,
+          "opening_measured_from_geometry": 5.76,
+          "opening_report_value": 5.76,
           "difference": 0.0,
           "opening_within_limit": true,
           "geometry_measurement_matches_report": true
@@ -450,11 +534,11 @@
         "ok": true,
         "details": {
           "product_length": 9.6,
-          "opening_limit": 9.4,
+          "opening_limit": 5.76,
           "openings_measured_from_geometry": [
-            9.4
+            5.76
           ],
-          "opening_report_value": 9.4,
+          "opening_report_value": 5.76,
           "differences": [
             0.0
           ],
@@ -470,7 +554,7 @@
     "dimension_count": 17,
     "dimensions": [
       {
-        "dimension_handle": "203103D",
+        "dimension_handle": "203103F",
         "dimension_role": "fixed_section_height_27",
         "measurement": 27.0,
         "display_text": "27.00",
@@ -500,7 +584,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "203105C",
+        "dimension_handle": "203105E",
         "dimension_role": "other_release_dimension",
         "measurement": 1.5,
         "display_text": "1.50",
@@ -530,7 +614,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "203107B",
+        "dimension_handle": "203107D",
         "dimension_role": "other_release_dimension",
         "measurement": 33.0,
         "display_text": "33.00",
@@ -560,7 +644,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "2031096",
+        "dimension_handle": "2031098",
         "dimension_role": "fixed_slot_base_12",
         "measurement": 12.0,
         "display_text": "12.00",
@@ -590,7 +674,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "20310B1",
+        "dimension_handle": "20310B3",
         "dimension_role": "guide_thickness",
         "measurement": 1.78,
         "display_text": "1.78",
@@ -620,7 +704,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "20310D0",
+        "dimension_handle": "20310D2",
         "dimension_role": "slot_width",
         "measurement": 4.52,
         "display_text": "4.52±0.01",
@@ -650,7 +734,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "20310EC",
+        "dimension_handle": "20310EE",
         "dimension_role": "relief",
         "measurement": 0.5,
         "display_text": "4-R0.50",
@@ -680,7 +764,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "2031104",
+        "dimension_handle": "2031106",
         "dimension_role": "R_form",
         "measurement": 17.13,
         "display_text": "R17.13",
@@ -710,7 +794,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "2031118",
+        "dimension_handle": "203111A",
         "dimension_role": "R_form",
         "measurement": 17.13,
         "display_text": "R17.13",
@@ -740,7 +824,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "2031143",
+        "dimension_handle": "2031145",
         "dimension_role": "fixed_span_90",
         "measurement": 90.0,
         "display_text": "90.00",
@@ -770,7 +854,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "2031150",
+        "dimension_handle": "2031152",
         "dimension_role": "other_release_dimension",
         "measurement": 200.0,
         "display_text": "200.00",
@@ -800,28 +884,28 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "203116B",
+        "dimension_handle": "203116D",
         "dimension_role": "wheel_radius",
         "measurement": 80.0,
         "display_text": "R80.00",
         "defpoint2": [
           3644.43868,
-          -32.012134,
+          -32.098459,
           0.0
         ],
         "defpoint3": [
           3644.43868,
-          47.987866,
+          47.901541,
           0.0
         ],
         "expected_geometry_point_1": [
           3644.43868,
-          -32.012134,
+          -32.098459,
           0.0
         ],
         "expected_geometry_point_2": [
           3644.43868,
-          47.987866,
+          47.901541,
           0.0
         ],
         "point_error": 0.0,
@@ -830,13 +914,13 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "2031174",
+        "dimension_handle": "2031176",
         "dimension_role": "lower_wheel_crown_depth",
-        "measurement": 12.138182,
-        "display_text": "12.14",
+        "measurement": 12.051857,
+        "display_text": "12.05",
         "defpoint2": [
           3644.43868,
-          47.987866,
+          47.901541,
           0.0
         ],
         "defpoint3": [
@@ -846,7 +930,7 @@
         ],
         "expected_geometry_point_1": [
           3644.43868,
-          47.987866,
+          47.901541,
           0.0
         ],
         "expected_geometry_point_2": [
@@ -860,7 +944,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "2031197",
+        "dimension_handle": "2031199",
         "dimension_role": "other_release_dimension",
         "measurement": 145.0,
         "display_text": "145.00",
@@ -890,13 +974,13 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "20311A6",
+        "dimension_handle": "20311A8",
         "dimension_role": "other_release_dimension",
-        "measurement": 13.358182,
-        "display_text": "13.36",
+        "measurement": 13.271857,
+        "display_text": "13.27",
         "defpoint2": [
           3444.43868,
-          49.491503,
+          49.577828,
           0.0
         ],
         "defpoint3": [
@@ -906,7 +990,7 @@
         ],
         "expected_geometry_point_1": [
           3444.43868,
-          49.491503,
+          49.577828,
           0.0
         ],
         "expected_geometry_point_2": [
@@ -920,7 +1004,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "20311C2",
+        "dimension_handle": "20311C4",
         "dimension_role": "fixed_guide_length_590",
         "measurement": 435.0,
         "display_text": "435.00",
@@ -950,28 +1034,28 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "20311D8",
+        "dimension_handle": "20311DA",
         "dimension_role": "wheel_radius",
         "measurement": 80.0,
         "display_text": "R80.00",
         "defpoint2": [
           3444.43868,
-          129.491503,
+          129.577828,
           0.0
         ],
         "defpoint3": [
           3444.43868,
-          49.491503,
+          49.577828,
           0.0
         ],
         "expected_geometry_point_1": [
           3444.43868,
-          129.491503,
+          129.577828,
           0.0
         ],
         "expected_geometry_point_2": [
           3444.43868,
-          49.491503,
+          49.577828,
           0.0
         ],
         "point_error": 0.0,

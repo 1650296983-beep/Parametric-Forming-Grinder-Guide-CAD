@@ -1,9 +1,9 @@
 {
   "machine_id": "double_head_up_down",
-  "template_version": "v1.0.2",
+  "template_version": "v1.0.3",
   "source_template_file": "section_template.dxf; side_template.dxf",
   "sha256": "74115f5e565f088b76ed5b04da13d8dee92089bed12c410dcc72cc5998f1cb57",
-  "change_reason": "用户确认 c317b69 当前规则为最新基准：方块磨前默认厚度间隙 0.12 mm、正式尺寸文字保留两位小数；同步已提交并验证的侧视投影、砂轮开口和尺寸定义点规则。",
-  "approved_by": "生产图纸规则确认",
-  "approved_date": "2026-07-15"
+  "change_reason": "生产缺口规则统一为产品长度乘0.6，并修复截面顶边闭合与腔体白色显示",
+  "approved_by": "用户确认",
+  "approved_date": "2026-07-17"
 }

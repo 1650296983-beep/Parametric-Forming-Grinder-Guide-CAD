@@ -49,25 +49,25 @@ def test_side_view_dimensions_preserve_template_positions_and_update_derived_tex
     doc = ezdxf.readfile(path)
     labels = _side_dimension_labels(doc)
 
-    for expected in ("90", "200", "145", "435", "R80", "12.50", "13.54"):
+    for expected in ("90", "200", "145", "435", "R80", "12.50", "13.31"):
         assert expected in labels
     measurements_by_text = {
         entity.dxf.text: entity.get_measurement()
         for entity in doc.modelspace()
         if entity.dxf.layer == "SIDE_DIMENSION"
         and entity.dxftype() == "DIMENSION"
-        and entity.dxf.text in {"12.50", "13.54"}
+        and entity.dxf.text in {"12.50", "13.31"}
     }
     assert measurements_by_text["12.50"] == pytest.approx(12.50)
-    assert measurements_by_text["13.54"] == pytest.approx(13.536605623)
+    assert measurements_by_text["13.31"] == pytest.approx(13.305254962)
     displayed_texts = [
         text
         for entity in doc.modelspace()
         if entity.dxf.layer == "SIDE_DIMENSION" and entity.dxftype() == "DIMENSION"
         for text in _dimension_block_texts(doc, entity)
     ]
-    assert "13.54" in displayed_texts
-    assert "13.30" not in displayed_texts
+    assert "13.31" in displayed_texts
+    assert "13.54" not in displayed_texts
 
 
 def test_side_debug_layer_only_exists_in_debug_output(tmp_path):

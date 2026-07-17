@@ -8,6 +8,7 @@ import pytest
 from src.dual_guide_engine import DualGuideTemplateEngine
 from src.dual_guide_release_audit import build_dimension_definition_point_audit
 from src.dxf_writer import write_dxf
+from src.global_rules import wheel_notch_opening_limit
 from src.machine_config import load_machine_config
 from src.side_view import build_side_view_geometry
 from src.web_api import DesignInput, _build_profile_for_design
@@ -15,8 +16,14 @@ from src.web_api import DesignInput, _build_profile_for_design
 
 FINISHED_SPEC = "R9.6*8.6*42.6*2.1"
 PRE_GRINDING_SPEC = "42.6*8.6(-0.07/-0.09)*2.1(+0.01/-0.01)"
-EXPECTED_CUT_IN = 2.1 * 0.6
-EXPECTED_OPENING = 2.0 * sqrt(80.0**2 - (80.0 - EXPECTED_CUT_IN) ** 2)
+EXPECTED_TARGET_CUT_IN = 2.1 * 0.6
+EXPECTED_OPENING = min(
+    2.0 * sqrt(80.0**2 - (80.0 - EXPECTED_TARGET_CUT_IN) ** 2),
+    wheel_notch_opening_limit(42.6),
+)
+EXPECTED_EFFECTIVE_CUT_IN = 80.0 - sqrt(
+    80.0**2 - (EXPECTED_OPENING / 2.0) ** 2
+)
 
 
 @pytest.mark.parametrize(
@@ -68,7 +75,9 @@ def test_exact_block_spec_uses_ratio_cut_in_and_expected_side_styles(
         )
     else:
         side = build_side_view_geometry(profile, layout=machine.side_layout)
-        assert side.derived.wheel_cut_in_depth == pytest.approx(EXPECTED_CUT_IN)
+        assert side.derived.wheel_cut_in_depth == pytest.approx(
+            EXPECTED_EFFECTIVE_CUT_IN
+        )
         assert side.derived.lower_cavity_notch_opening == pytest.approx(
             EXPECTED_OPENING
         )
@@ -108,13 +117,13 @@ def test_exact_block_spec_uses_ratio_cut_in_and_expected_side_styles(
         )
         cavity_top = max(float(line.dxf.start.y) for line in cavity_lines)
         assert cavity_top - (float(upper_arc.dxf.center.y) - 80.0) == pytest.approx(
-            EXPECTED_CUT_IN
+            EXPECTED_EFFECTIVE_CUT_IN
         )
         lower_dimension = next(
             dimension
             for dimension in doc.modelspace().query("DIMENSION")
             if float(dimension.get_measurement())
-            == pytest.approx(12.0 + EXPECTED_CUT_IN)
+            == pytest.approx(12.0 + EXPECTED_EFFECTIVE_CUT_IN)
         )
         assert float(lower_dimension.dxf.defpoint2.x) == pytest.approx(
             float(lower_dimension.dxf.defpoint3.x)
@@ -122,7 +131,7 @@ def test_exact_block_spec_uses_ratio_cut_in_and_expected_side_styles(
         assert float(lower_dimension.dxf.defpoint2.y) == pytest.approx(
             machine.side_layout.lower_y
             + machine.section_slot_base_height
-            + EXPECTED_CUT_IN
+            + EXPECTED_EFFECTIVE_CUT_IN
         )
         assert float(lower_dimension.dxf.defpoint3.y) == pytest.approx(
             machine.side_layout.lower_y

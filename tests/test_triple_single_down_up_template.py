@@ -17,7 +17,7 @@ from src.geometry import (
     build_tile_section,
 )
 from src.guide_design_input import build_single_guide_profile_from_input
-from src.global_rules import WHEEL_CUT_IN_RATIO
+from src.global_rules import WHEEL_CUT_IN_RATIO, wheel_notch_opening_limit
 from src.inspection import inspect_release_dxf
 from src.machine_config import load_machine_config
 from src.side_view import build_side_view_geometry
@@ -210,8 +210,16 @@ def test_triple_single_down_up_bread_with_block_preform_uses_rectangular_groove(
 
     side = build_side_view_geometry(profile, layout=machine.side_layout)
     assert side.derived.slot_base_height == pytest.approx(12.0)
-    assert side.derived.wheel_notch_depth == pytest.approx(13.399809161)
-    assert side.derived.side_clearance_height == pytest.approx(12.929809161)
+    expected_opening = wheel_notch_opening_limit(profile.block_spec.length)
+    expected_effective_cut_in = 80.0 - sqrt(
+        80.0**2 - (expected_opening / 2.0) ** 2
+    )
+    assert side.derived.wheel_notch_depth == pytest.approx(
+        12.0 + expected_effective_cut_in
+    )
+    assert side.derived.side_clearance_height == pytest.approx(
+        27.0 - 12.0 - profile.guide_spec.guide_thickness + expected_effective_cut_in
+    )
 
     inspection = inspect_release_dxf(profile, machine, release_path)
     assert inspection["release_allowed"]
@@ -399,10 +407,8 @@ def _assert_required_process_dimensions(doc, profile, machine) -> None:
     for role, value in expected.items():
         assert dimensions[role].get_measurement() == pytest.approx(value)
     assert dimensions[SECTION_CENTER_OPENING].dxf.text == "2.00"
-    assert dimensions[LOWER_WHEEL_NOTCH_OPENING].dxf.text == "12.20"
-    assert dimensions[LOWER_WHEEL_KEY_PROCESS_HEIGHT].dxf.text == "12.23"
-    assert dimensions[UPPER_WHEEL_KEY_PROCESS_HEIGHT].dxf.text == "13.15"
-    assert dimensions[UPPER_WHEEL_LOCAL_CUT_IN_DEPTH].dxf.text == "0.23"
+    for role, value in expected.items():
+        assert dimensions[role].dxf.text == f"{value:.2f}"
 
 
 def _assert_required_process_dimensions_are_visible(doc) -> None:
@@ -570,7 +576,7 @@ def _assert_side_lower_wheel_uses_thickness_cut_and_cavity_opening_limit(
     radius = machine.wheel_radius
     natural_depth = finished_thickness * WHEEL_CUT_IN_RATIO
     natural_opening = 2.0 * sqrt(radius * radius - (radius - natural_depth) ** 2)
-    expected_opening = min(natural_opening, product_length - 0.2)
+    expected_opening = min(natural_opening, wheel_notch_opening_limit(product_length))
     effective_depth = radius - sqrt(radius * radius - (expected_opening / 2.0) ** 2)
     notch_top_height = 12.0 + effective_depth
     arcs = [
@@ -611,7 +617,7 @@ def _assert_upper_wheel_uses_thickness_cut(
     slot_top_y = layout.lower_y + 12.0 + guide_thickness
     requested_cut_in = finished_thickness * WHEEL_CUT_IN_RATIO
     requested_opening = 2.0 * sqrt(radius**2 - (radius - requested_cut_in) ** 2)
-    controlled_opening = min(requested_opening, product_length - 0.2)
+    controlled_opening = min(requested_opening, wheel_notch_opening_limit(product_length))
     expected_cut_in = radius - sqrt(radius**2 - (controlled_opening / 2.0) ** 2)
     upper = next(
         arc

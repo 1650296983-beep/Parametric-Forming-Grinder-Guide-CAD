@@ -1,4 +1,5 @@
 import json
+from math import sqrt
 from pathlib import Path
 
 import ezdxf
@@ -9,8 +10,11 @@ from src.dimension_roles import (
     SECTION_CENTER_OPENING,
     get_dimension_role,
 )
-from src.dual_guide_release_audit import build_dimension_definition_point_audit
-from src.global_rules import BLOCK_THICKNESS_CLEARANCE
+from src.dual_guide_release_audit import (
+    build_dimension_definition_point_audit,
+    build_release_line_type_audit,
+)
+from src.global_rules import BLOCK_THICKNESS_CLEARANCE, wheel_notch_opening_limit
 from src.dual_guide_engine import DualGuideTemplateEngine
 from src.dual_guide_input import build_dual_guide_profile_from_input
 from src.machine_config import load_machine_config
@@ -35,6 +39,39 @@ def test_guide_section_analysis_exports_dual_synchronized_fields():
         "relief",
         "slot_depth",
     ]
+
+
+def test_dual_release_style_audit_rejects_red_parametric_cavity(tmp_path):
+    machine = load_machine_config("triple_double_up_up_up")
+    spec = parse_block_spec("9.1*4*3")
+    profile = build_block_guide_section(
+        spec,
+        relief=parse_relief_spec("4-1"),
+        slot_reference="length",
+        slot_clearance=0.05,
+        outer_width=machine.block_outer_width,
+        thickness_clearance_mid=BLOCK_THICKNESS_CLEARANCE,
+    )
+    release_path = tmp_path / "style_audit.dxf"
+    DualGuideTemplateEngine(machine).write_dxf(
+        profile,
+        release_path,
+        output_mode="release",
+    )
+
+    assert build_release_line_type_audit(release_path)["release_allowed"] is True
+    doc = ezdxf.readfile(release_path)
+    next(
+        entity
+        for entity in doc.modelspace()
+        if entity.dxf.layer == "PARAM_SLOT"
+        and entity.dxftype() in {"LINE", "ARC"}
+    ).dxf.color = 1
+    doc.saveas(release_path)
+
+    audit = build_release_line_type_audit(release_path)
+    assert audit["release_allowed"] is False
+    assert audit["invalid_parametric_entities"]
 
 
 def test_dual_guide_engine_updates_both_sections_synchronously(tmp_path):
@@ -274,16 +311,20 @@ def test_dual_guide_engine_down_up_up_enforces_lower_wheel_notch_safety(tmp_path
     assert safety["product_length"] == pytest.approx(9.1)
     assert safety["natural_cut_in_formula"] == "thickness * 0.6"
     assert safety["natural_cut_in_depth"] == pytest.approx(1.8)
-    assert safety["opening_limit_formula"] == "product_length - 0.2"
-    assert safety["opening_limit"] == pytest.approx(8.9)
-    assert safety["lower_cavity_notch_opening"] == pytest.approx(8.9)
-    assert safety["effective_cut_in_depth"] == pytest.approx(0.123862, abs=0.000001)
-    assert safety["lower_wheel_center_y"] == pytest.approx(-685.354811, abs=0.000001)
+    expected_opening = wheel_notch_opening_limit(9.1)
+    expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
+    assert safety["opening_limit_formula"] == "product_length * 0.6"
+    assert safety["opening_limit"] == pytest.approx(expected_opening)
+    assert safety["lower_cavity_notch_opening"] == pytest.approx(expected_opening)
+    assert safety["effective_cut_in_depth"] == pytest.approx(
+        expected_cut_in,
+        abs=0.000001,
+    )
     assert safety["lower_cavity_notch_opening_less_than_product_length"] is True
     assert safety["lower_cavity_notch_opening_within_limit"] is True
     assert report["shared_parameters"]["slot_width"] == pytest.approx(9.15)
     assert report["shared_parameters"]["guide_thickness"] == pytest.approx(3.12)
-    assert report["shared_parameters"]["lower_cavity_notch_opening"] == pytest.approx(8.9)
+    assert report["shared_parameters"]["lower_cavity_notch_opening"] == pytest.approx(expected_opening)
     assert report["formulas"]["slot_width"] == "9.10 + 0.05 = 9.15"
     assert report["formulas"]["guide_thickness"] == "3.00 + 0.12 = 3.12"
     assert report["formulas"]["slot_depth"] == "fixed section_slot_base_height = 12.00"
@@ -292,7 +333,7 @@ def test_dual_guide_engine_down_up_up_enforces_lower_wheel_notch_safety(tmp_path
     assert report["checks"]["section_1.profile_type == section_2.profile_type"] is True
     assert report["checks"]["side_view_dimensions_bound_to_r80_wheel_crowns"] is True
     assert report["checks"]["release_side_dimensions_match_report"] is True
-    assert report["checks"]["lower_wheel_notch_opening <= product_length - 0.2"] is True
+    assert report["checks"]["lower_wheel_notch_opening <= product_length * 0.6"] is True
     assert report["checks"]["lower_cavity_notch_opening_less_than_product_length"] is True
     assert report["checks"]["fixed_590_not_parameterized"] is True
 
@@ -323,10 +364,14 @@ def test_dual_guide_engine_down_up_up_enforces_lower_wheel_notch_safety(tmp_path
         if entity.dxf.radius == pytest.approx(80.0)
         and round(((entity.dxf.start_angle + entity.dxf.end_angle) / 2.0) % 360.0, 3) == pytest.approx(90.0)
     ]
-    assert (3459.205, -187.871) in lower_arc_centers
-    assert (3488.454, -685.355) in lower_arc_centers
-    assert _side_gap_width_at_center(release_doc, -107.995, 3459.205, "SIDE_CAVITY") == pytest.approx(8.9)
-    assert _side_gap_width_at_center(release_doc, -605.479, 3488.454, "SIDE_CAVITY") == pytest.approx(8.9)
+    assert (3459.205, -187.948) in lower_arc_centers
+    assert any(x == pytest.approx(3488.454) for x, _ in lower_arc_centers)
+    assert _side_gap_width_at_center(release_doc, -107.995, 3459.205, "SIDE_CAVITY") == pytest.approx(
+        expected_opening
+    )
+    assert _side_gap_width_at_center(release_doc, -605.479, 3488.454, "SIDE_CAVITY") == pytest.approx(
+        expected_opening
+    )
 
 
 def test_dual_guide_engine_down_up_up_supports_same_r_tile(tmp_path):

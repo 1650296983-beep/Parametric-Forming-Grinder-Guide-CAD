@@ -68,14 +68,14 @@
     "natural_cut_in_formula": "thickness * 0.6",
     "natural_cut_in_depth": 1.8,
     "natural_opening": 33.749667,
-    "opening_limit_formula": "product_length - 0.2",
-    "opening_limit": 8.9,
-    "cavity_notch_opening": 8.9,
-    "effective_cut_in_depth": 0.123862,
+    "opening_limit_formula": "product_length * 0.6",
+    "opening_limit": 5.46,
+    "cavity_notch_opening": 5.46,
+    "effective_cut_in_depth": 0.046594,
     "cavity_notch_opening_less_than_product_length": true,
     "cavity_notch_opening_within_limit": true,
-    "lower_cavity_notch_opening": 8.9,
-    "lower_wheel_center_y": -685.354811,
+    "lower_cavity_notch_opening": 5.46,
+    "lower_wheel_center_y": -685.432078,
     "lower_cavity_notch_opening_less_than_product_length": true,
     "lower_cavity_notch_opening_within_limit": true
   },
@@ -84,13 +84,13 @@
     "natural_cut_in_formula": "thickness * 0.6",
     "natural_cut_in_depth": 1.8,
     "natural_opening": 33.749667,
-    "opening_limit_formula": "product_length - 0.2",
-    "opening_limit": 8.9,
-    "cavity_notch_opening": 8.9,
-    "effective_cut_in_depth": 0.123862,
+    "opening_limit_formula": "product_length * 0.6",
+    "opening_limit": 5.46,
+    "cavity_notch_opening": 5.46,
+    "effective_cut_in_depth": 0.046594,
     "cavity_notch_opening_less_than_product_length": true,
     "cavity_notch_opening_within_limit": true,
-    "upper_cavity_notch_opening": 8.9,
+    "upper_cavity_notch_opening": 5.46,
     "upper_cavity_notch_opening_less_than_product_length": true,
     "upper_cavity_notch_opening_within_limit": true
   },
@@ -123,10 +123,10 @@
       "bottom_radius": null,
       "top_radius": null
     },
-    "lower_cavity_notch_opening": 8.9,
-    "effective_cut_in_depth": 0.123862,
-    "upper_cavity_notch_opening": 8.9,
-    "upper_effective_cut_in_depth": 0.123862
+    "lower_cavity_notch_opening": 5.46,
+    "effective_cut_in_depth": 0.046594,
+    "upper_cavity_notch_opening": 5.46,
+    "upper_effective_cut_in_depth": 0.046594
   },
   "side_derived_layer_policy": {
     "machine_outline": "SIDE_TEMPLATE contains the white Continuous machine outline.",
@@ -138,22 +138,22 @@
     {
       "wheel_center": [
         3488.454,
-        -685.355
+        -685.432
       ],
       "wheel_radius": 80.0,
       "expected_wheel_crown_point": [
         3488.454,
-        -605.355
+        -605.432
       ],
       "dimension_defpoint": [
         3488.454,
-        -605.355
+        -605.432
       ],
       "datum_defpoint": [
         3488.454,
         -617.479
       ],
-      "measured_value": 12.124,
+      "measured_value": 12.046,
       "is_bound_to_wheel_crown": true
     },
     {
@@ -201,22 +201,22 @@
     {
       "wheel_center": [
         3459.205,
-        -187.871
+        -187.948
       ],
       "wheel_radius": 80.0,
       "expected_wheel_crown_point": [
         3459.205,
-        -107.871
+        -107.948
       ],
       "dimension_defpoint": [
         3459.205,
-        -107.871
+        -107.948
       ],
       "datum_defpoint": [
         3459.205,
         -119.995
       ],
-      "measured_value": 12.123,
+      "measured_value": 12.046,
       "is_bound_to_wheel_crown": true
     },
     {
@@ -293,11 +293,11 @@
       "dimension_handle": "203D465",
       "expected_wheel_crown_point": [
         3459.205,
-        -107.871
+        -107.948
       ],
       "radius_target_point": [
         3459.205,
-        -107.871
+        -107.948
       ],
       "point_error": 0.0,
       "is_bound_to_wheel_crown": true
@@ -306,11 +306,11 @@
       "dimension_handle": "203D489",
       "expected_wheel_crown_point": [
         3488.454,
-        -605.355
+        -605.432
       ],
       "radius_target_point": [
         3488.454,
-        -605.355
+        -605.432
       ],
       "point_error": 0.0,
       "is_bound_to_wheel_crown": true
@@ -818,11 +818,11 @@
       {
         "dimension_handle": "203D3FD",
         "dimension_role": "lower_wheel_crown_depth",
-        "measurement": 12.123437,
-        "display_text": "12.12",
+        "measurement": 12.046169,
+        "display_text": "12.05",
         "defpoint2": [
           3459.205,
-          -107.871138,
+          -107.948406,
           0.0
         ],
         "defpoint3": [
@@ -832,7 +832,7 @@
         ],
         "expected_geometry_point_1": [
           3459.205,
-          -107.871138,
+          -107.948406,
           0.0
         ],
         "expected_geometry_point_2": [
@@ -972,22 +972,22 @@
         "display_text": "R80.00",
         "defpoint2": [
           3459.205,
-          -187.871138,
+          -187.948406,
           0.0
         ],
         "defpoint3": [
           3459.205,
-          -107.871138,
+          -107.948406,
           0.0
         ],
         "expected_geometry_point_1": [
           3459.205,
-          -187.871138,
+          -187.948406,
           0.0
         ],
         "expected_geometry_point_2": [
           3459.205,
-          -107.871138,
+          -107.948406,
           0.0
         ],
         "point_error": 0.0,
@@ -1058,11 +1058,11 @@
       {
         "dimension_handle": "203D486",
         "dimension_role": "lower_wheel_crown_depth",
-        "measurement": 12.123534,
-        "display_text": "12.12",
+        "measurement": 12.046266,
+        "display_text": "12.05",
         "defpoint2": [
           3488.454,
-          -605.355138,
+          -605.432406,
           0.0
         ],
         "defpoint3": [
@@ -1072,7 +1072,7 @@
         ],
         "expected_geometry_point_1": [
           3488.454,
-          -605.355138,
+          -605.432406,
           0.0
         ],
         "expected_geometry_point_2": [
@@ -1092,22 +1092,22 @@
         "display_text": "R80.00",
         "defpoint2": [
           3488.454,
-          -685.355138,
+          -685.432406,
           0.0
         ],
         "defpoint3": [
           3488.454,
-          -605.355138,
+          -605.432406,
           0.0
         ],
         "expected_geometry_point_1": [
           3488.454,
-          -685.355138,
+          -685.432406,
           0.0
         ],
         "expected_geometry_point_2": [
           3488.454,
-          -605.355138,
+          -605.432406,
           0.0
         ],
         "point_error": 0.0,
@@ -1446,27 +1446,27 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "203D99D",
+        "dimension_handle": "203D9A1",
         "dimension_role": "lower_cavity_notch_opening",
-        "measurement": 8.9,
-        "display_text": "8.90",
+        "measurement": 5.46,
+        "display_text": "5.46",
         "defpoint2": [
-          3484.004,
+          3485.724,
           -605.479,
           0.0
         ],
         "defpoint3": [
-          3492.904,
+          3491.184,
           -605.479,
           0.0
         ],
         "expected_geometry_point_1": [
-          3484.004,
+          3485.724,
           -605.479,
           0.0
         ],
         "expected_geometry_point_2": [
-          3492.904,
+          3491.184,
           -605.479,
           0.0
         ],
@@ -1476,7 +1476,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "203D9AB",
+        "dimension_handle": "203D9AF",
         "dimension_role": "fixed_guide_length_590",
         "measurement": 590.0,
         "display_text": "590.00",
@@ -1536,7 +1536,7 @@
         "status": "PASS"
       },
       "lower_wheel_crown_depth": {
-        "expected_measurement": 12.123862,
+        "expected_measurement": 12.046594,
         "minimum_count": 2,
         "actual_count": 2,
         "all_bound_to_geometry": true,
@@ -1550,7 +1550,7 @@
         "status": "PASS"
       },
       "lower_cavity_notch_opening": {
-        "expected_measurement": 8.9,
+        "expected_measurement": 5.46,
         "minimum_count": 1,
         "actual_count": 1,
         "all_bound_to_geometry": true,
@@ -1606,6 +1606,136 @@
     "invalid_release_lines": [],
     "legacy_SIDE_DERIVED_lines": [],
     "dashed_formal_lines": [],
+    "parametric_entity_count": 26,
+    "invalid_parametric_entities": [],
+    "section_center_entity_count": 2,
+    "invalid_section_center_entities": [],
+    "release_allowed": true
+  },
+  "section_contour_closure_audit": {
+    "expected_section_count": 2,
+    "actual_section_count": 2,
+    "endpoint_tolerance": 0.001,
+    "sections": [
+      {
+        "entity_count": 13,
+        "entity_handles": [
+          "203D8CE",
+          "203D8CF",
+          "203D8D0",
+          "203D8D1",
+          "203D8D2",
+          "203D8D3",
+          "203D8D4",
+          "203D8D5",
+          "203D8D6",
+          "203D8D7",
+          "203D8D8",
+          "203D8D9",
+          "203D8DA"
+        ],
+        "node_count": 14,
+        "mouth_count": 2,
+        "mouth_connections": [
+          {
+            "point": [
+              3241.768,
+              -92.995
+            ],
+            "connected": true,
+            "matching_fixed_endpoint_count": 1,
+            "matching_fixed_line_handles": [
+              "203D8DB"
+            ],
+            "nearest_fixed_endpoint": [
+              3241.768,
+              -92.995
+            ],
+            "nearest_fixed_endpoint_distance": 0.0
+          },
+          {
+            "point": [
+              3243.768,
+              -92.995
+            ],
+            "connected": true,
+            "matching_fixed_endpoint_count": 1,
+            "matching_fixed_line_handles": [
+              "203D8DC"
+            ],
+            "nearest_fixed_endpoint": [
+              3243.768,
+              -92.995
+            ],
+            "nearest_fixed_endpoint_distance": 0.0
+          }
+        ],
+        "invalid_nodes": [],
+        "maximum_parametric_endpoint_gap": 0.0,
+        "maximum_fixed_join_gap": 0.0,
+        "fixed_line_bridges_mouth": false,
+        "closed": true
+      },
+      {
+        "entity_count": 13,
+        "entity_handles": [
+          "203D8EC",
+          "203D8ED",
+          "203D8EE",
+          "203D8EF",
+          "203D8F0",
+          "203D8F1",
+          "203D8F2",
+          "203D8F3",
+          "203D8F4",
+          "203D8F5",
+          "203D8F6",
+          "203D8F7",
+          "203D8F8"
+        ],
+        "node_count": 14,
+        "mouth_count": 2,
+        "mouth_connections": [
+          {
+            "point": [
+              3240.337,
+              -173.688
+            ],
+            "connected": true,
+            "matching_fixed_endpoint_count": 1,
+            "matching_fixed_line_handles": [
+              "203D8F9"
+            ],
+            "nearest_fixed_endpoint": [
+              3240.337,
+              -173.688
+            ],
+            "nearest_fixed_endpoint_distance": 0.0
+          },
+          {
+            "point": [
+              3242.337,
+              -173.688
+            ],
+            "connected": true,
+            "matching_fixed_endpoint_count": 1,
+            "matching_fixed_line_handles": [
+              "203D8FA"
+            ],
+            "nearest_fixed_endpoint": [
+              3242.337,
+              -173.688
+            ],
+            "nearest_fixed_endpoint_distance": 0.0
+          }
+        ],
+        "invalid_nodes": [],
+        "maximum_parametric_endpoint_gap": 0.0,
+        "maximum_fixed_join_gap": 0.0,
+        "fixed_line_bridges_mouth": false,
+        "closed": true
+      }
+    ],
     "release_allowed": true
   },
   "guide_section_spacing": {
@@ -1667,15 +1797,16 @@
     "no_legacy_4p29_dimension": true,
     "no_unexplained_1p80_dimension": true,
     "release_side_dimensions_match_report": true,
-    "lower_wheel_notch_opening <= product_length - 0.2": true,
+    "lower_wheel_notch_opening <= product_length * 0.6": true,
     "lower_cavity_notch_opening_less_than_product_length": true,
-    "upper_wheel_notch_opening <= product_length - 0.2": true,
+    "upper_wheel_notch_opening <= product_length * 0.6": true,
     "upper_cavity_notch_opening_less_than_product_length": true,
     "fixed_590_not_parameterized": true,
     "fixed_27_height": true,
     "fixed_40_width": true,
     "input_rule_valid": true,
     "SIDE_DERIVED_release_lines_are_continuous": true,
+    "section_contours_are_closed": true,
     "all_release_dimensions_bound_to_geometry": true,
     "all_required_dimension_roles_pass": true
   },

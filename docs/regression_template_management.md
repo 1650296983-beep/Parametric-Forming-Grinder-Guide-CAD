@@ -59,7 +59,7 @@ python3 scripts/run_regression_tests.py
 含下砂轮机型必须满足：
 
 ```text
-lower_cavity_notch_opening <= product_length - 0.2
+lower_cavity_notch_opening <= product_length * 0.6
 ```
 
 ## 模板版本管理

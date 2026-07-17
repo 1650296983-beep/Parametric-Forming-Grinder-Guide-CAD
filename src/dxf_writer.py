@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from math import atan2, degrees, hypot, sqrt
 from pathlib import Path
+from typing import Any
 
 from .dimension_writer import (
     DIMENSION_LAYER,
@@ -50,6 +51,7 @@ DEFAULT_TEMPLATE_PATHS = (
 DEBUG_CONTROL_LAYER = "DEBUG_CONTROL"
 DEBUG_POINTS_LAYER = "DEBUG_POINTS"
 SECTION_CENTER_LAYER = "SECTION_CENTER"
+PARAM_SLOT_COLOR = 7
 
 
 def write_dxf(
@@ -100,7 +102,7 @@ def write_dxf(
 
     doc = ezdxf.new("R12")
     _ensure_layer(doc, "FIXED_TEMPLATE", color=7)
-    _ensure_layer(doc, "PARAM_SLOT", color=1)
+    _ensure_layer(doc, "PARAM_SLOT", color=PARAM_SLOT_COLOR)
     _ensure_layer(doc, SECTION_CENTER_LAYER, color=1, linetype="CENTER")
     _ensure_layer(doc, DIMENSION_LAYER, color=3)
     _ensure_layer(doc, TEXT_NOTE_LAYER, color=4)
@@ -115,6 +117,7 @@ def write_dxf(
     if isinstance(profile, TileSection):
         _add_fixed_template_entities(modelspace, profile)
         slot_geometry = _add_param_slot_entities(modelspace, profile)
+        _rebuild_section_top_boundary(modelspace, slot_geometry)
         if output_mode == "debug":
             _add_reference_profile_entities(modelspace, profile)
         if output_mode == "debug":
@@ -154,7 +157,7 @@ def _write_template_based_dxf(
     modelspace = doc.modelspace()
 
     _ensure_layer(doc, "FIXED_TEMPLATE", color=7)
-    _ensure_layer(doc, "PARAM_SLOT", color=1)
+    _ensure_layer(doc, "PARAM_SLOT", color=PARAM_SLOT_COLOR)
     _ensure_layer(doc, SECTION_CENTER_LAYER, color=1, linetype="CENTER")
     _ensure_layer(doc, DIMENSION_LAYER, color=3)
     _ensure_layer(doc, TEXT_NOTE_LAYER, color=4)
@@ -172,6 +175,8 @@ def _write_template_based_dxf(
             to_delete.append(entity)
         elif _is_section_center_entity(entity):
             entity.dxf.layer = SECTION_CENTER_LAYER
+            entity.dxf.color = 256
+            entity.dxf.linetype = "BYLAYER"
         else:
             entity.dxf.layer = "FIXED_TEMPLATE"
     for entity in to_delete:
@@ -189,6 +194,7 @@ def _write_template_based_dxf(
             tile_section,
             anchor=anchor,
         )
+    _rebuild_section_top_boundary(modelspace, slot_geometry)
     if output_mode == "debug":
         _add_reference_profile_entities(modelspace, tile_section, anchor=anchor)
     if output_mode == "debug":
@@ -264,7 +270,7 @@ def _write_triple_single_down_up_flat_arc_dxf(
     modelspace = doc.modelspace()
 
     _ensure_layer(doc, "FIXED_TEMPLATE", color=7)
-    _ensure_layer(doc, "PARAM_SLOT", color=1)
+    _ensure_layer(doc, "PARAM_SLOT", color=PARAM_SLOT_COLOR)
     _ensure_layer(doc, SECTION_CENTER_LAYER, color=1, linetype="CENTER")
     _ensure_layer(doc, DIMENSION_LAYER, color=3)
     _ensure_layer(doc, TEXT_NOTE_LAYER, color=4)
@@ -284,6 +290,8 @@ def _write_triple_single_down_up_flat_arc_dxf(
             entity.dxf.layer = DIMENSION_LAYER
         elif _is_section_center_entity(entity):
             entity.dxf.layer = SECTION_CENTER_LAYER
+            entity.dxf.color = 256
+            entity.dxf.linetype = "BYLAYER"
         else:
             entity.dxf.layer = "FIXED_TEMPLATE"
     for entity in to_delete:
@@ -301,6 +309,7 @@ def _write_triple_single_down_up_flat_arc_dxf(
         slot_geometry = _add_param_slot_entities(modelspace, tile_section, anchor=anchor)
     else:
         slot_geometry = _add_down_up_flat_arc_slot_entities(modelspace, tile_section, anchor)
+    _rebuild_section_top_boundary(modelspace, slot_geometry)
     _update_down_up_flat_arc_template_dimensions(doc, modelspace, tile_section, slot_geometry)
     if tile_section.process_type == "block_to_tile" and tile_section.arc_side == "lower":
         _remove_unbound_flat_arc_slot_base_dimension(modelspace, slot_geometry)
@@ -903,7 +912,7 @@ def _write_block_template_based_dxf(
     modelspace = doc.modelspace()
 
     _ensure_layer(doc, "FIXED_TEMPLATE", color=7)
-    _ensure_layer(doc, "PARAM_SLOT", color=1)
+    _ensure_layer(doc, "PARAM_SLOT", color=PARAM_SLOT_COLOR)
     _ensure_layer(doc, SECTION_CENTER_LAYER, color=1, linetype="CENTER")
     _ensure_layer(doc, DIMENSION_LAYER, color=3)
     _ensure_layer(doc, TEXT_NOTE_LAYER, color=4)
@@ -942,12 +951,15 @@ def _write_block_template_based_dxf(
             entity.dxf.layer = DIMENSION_LAYER
         elif _is_section_center_entity(entity):
             entity.dxf.layer = SECTION_CENTER_LAYER
+            entity.dxf.color = 256
+            entity.dxf.linetype = "BYLAYER"
         else:
             entity.dxf.layer = "FIXED_TEMPLATE"
     for entity in to_delete:
         modelspace.delete_entity(entity)
 
     slot_geometry = _add_block_slot_entities(modelspace, block_section, anchor, slot_base_y)
+    _rebuild_section_top_boundary(modelspace, slot_geometry)
     if use_reference_rectangular_rebuild:
         _update_down_up_rectangular_template_dimensions(
             doc,
@@ -1913,6 +1925,43 @@ def _add_top_opening_connector_lines(modelspace, opening_left: Point, opening_ri
     _add_line(modelspace, opening_right.as_tuple(), (opening_right.x, anchor.top), "PARAM_SLOT")
 
 
+def _rebuild_section_top_boundary(
+    modelspace: Any,
+    geometry: SlotDimensionGeometry,
+) -> None:
+    """Join the fixed guide top to the final cavity mouth without stale gaps."""
+    for entity in list(modelspace.query("LINE")):
+        if entity.dxf.layer != "FIXED_TEMPLATE":
+            continue
+        start = entity.dxf.start
+        end = entity.dxf.end
+        if not (
+            _close(start.y, geometry.outer_top)
+            and _close(end.y, geometry.outer_top)
+        ):
+            continue
+        min_x = min(float(start.x), float(end.x))
+        max_x = max(float(start.x), float(end.x))
+        if (
+            min_x >= geometry.outer_left - 0.001
+            and max_x <= geometry.outer_right + 0.001
+        ):
+            modelspace.delete_entity(entity)
+
+    _add_line(
+        modelspace,
+        (geometry.outer_left, geometry.outer_top),
+        (geometry.opening_left_x, geometry.outer_top),
+        "FIXED_TEMPLATE",
+    )
+    _add_line(
+        modelspace,
+        (geometry.opening_right_x, geometry.outer_top),
+        (geometry.outer_right, geometry.outer_top),
+        "FIXED_TEMPLATE",
+    )
+
+
 def _add_reference_profile_entities(modelspace, tile_section: TileSection, anchor: TemplateAnchor | None = None) -> None:
     guide = tile_section.guide_spec
     dx = guide.slot_center_offset if anchor is None else anchor.slot_center_x
@@ -2180,7 +2229,7 @@ def _simplify_release_layers(doc) -> None:
         SIDE_CENTER_LAYER,
     })
     _ensure_layer(doc, "FIXED_TEMPLATE", color=7)
-    _ensure_layer(doc, "PARAM_SLOT", color=1)
+    _ensure_layer(doc, "PARAM_SLOT", color=PARAM_SLOT_COLOR)
     _ensure_layer(doc, SECTION_CENTER_LAYER, color=1, linetype="CENTER")
     _ensure_layer(doc, DIMENSION_LAYER, color=3)
 
