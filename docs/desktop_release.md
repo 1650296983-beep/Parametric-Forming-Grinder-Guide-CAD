@@ -182,6 +182,12 @@ verified against the unchanged installer. The v1.0.2 workflow is the only
 release allowed to repeat that compatibility patch; v1.0.2 itself embeds the
 correct key ID, and v1.0.3 and later use normal Tauri signatures.
 
+Legacy clients also exited through the updater before their normal sidecar
+shutdown event ran. v1.0.2 therefore includes an NSIS pre-install fallback that
+terminates only `forming_grinder_cad_sidecar.exe` before files are copied. The
+v1.0.2 UI first requests graceful engine shutdown, so the installer fallback is
+normally a no-op and exists only to bridge older installed clients.
+
 The release workflow now fails if Tauri cannot patch the bundle type, if the
 signing private key does not match the configured public key, or if `rsign`
 cannot independently verify the actual installer. `scripts/check_versions.py`

@@ -28,6 +28,10 @@ def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> Non
     assert config["plugins"]["updater"]["endpoints"] == [
         "https://github.com/1650296983-beep/Parametric-Forming-Grinder-Guide-CAD/releases/latest/download/latest.json"
     ]
+    hooks = ROOT / "packaging" / "windows" / "updater_hooks.nsh"
+    assert config["bundle"]["windows"]["nsis"]["installerHooks"] == "../packaging/windows/updater_hooks.nsh"
+    assert "NSIS_HOOK_PREINSTALL" in hooks.read_text(encoding="utf-8")
+    assert "forming_grinder_cad_sidecar.exe" in hooks.read_text(encoding="utf-8")
     rust = (ROOT / "src-tauri" / "src" / "lib.rs").read_text(encoding="utf-8")
     assert 'format!("http://127.0.0.1:{port}")' in rust
     assert ".arg(\"0\")" in rust
