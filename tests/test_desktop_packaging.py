@@ -18,7 +18,7 @@ def test_desktop_versions_are_consistent() -> None:
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
-    assert json.loads(completed.stdout)["version"] == "1.0.2"
+    assert json.loads(completed.stdout)["version"] == "1.0.3"
 
 
 def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> None:
@@ -26,8 +26,12 @@ def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> Non
     assert config["bundle"]["createUpdaterArtifacts"] is True
     assert config["plugins"]["updater"]["pubkey"]
     assert config["plugins"]["updater"]["endpoints"] == [
+        "https://forming-grinder-guide-cad-1424134622.cos.ap-shanghai.myqcloud.com/updates/stable/latest.json",
         "https://github.com/1650296983-beep/Parametric-Forming-Grinder-Guide-CAD/releases/latest/download/latest.json"
     ]
+    assert "forming-grinder-guide-cad-1424134622.cos.ap-shanghai.myqcloud.com" in (
+        config["app"]["security"]["csp"]
+    )
     hooks = ROOT / "packaging" / "windows" / "updater_hooks.nsh"
     assert config["bundle"]["windows"]["nsis"]["installerHooks"] == "../packaging/windows/updater_hooks.nsh"
     assert "NSIS_HOOK_PREINSTALL" in hooks.read_text(encoding="utf-8")
@@ -105,6 +109,27 @@ def test_windows_validation_workflow_never_publishes_or_requires_signing_secrets
     assert "push:" not in workflow
 
 
+def test_cos_workflow_only_mirrors_an_approved_stable_release() -> None:
+    workflow = (
+        ROOT / ".github" / "workflows" / "publish-cos-mirror.yml"
+    ).read_text(encoding="utf-8")
+    for required in (
+        "release:",
+        "published",
+        "isDraft",
+        "isPrerelease",
+        "TENCENT_COS_BUCKET",
+        "TENCENT_COS_REGION",
+        "TENCENT_COS_SECRET_ID",
+        "TENCENT_COS_SECRET_KEY",
+        "requirements-cos-publish.txt",
+        "publish_release_to_cos.py",
+        "updates/stable/latest.json",
+    ):
+        assert required in workflow
+    assert "DeleteObject" not in workflow
+
+
 def test_update_ui_covers_expected_user_visible_states() -> None:
     app = (ROOT / "frontend" / "src" / "App.tsx").read_text(encoding="utf-8")
     for message in (
@@ -178,3 +203,31 @@ def test_latest_json_requires_a_signed_installer(tmp_path: Path) -> None:
     assert signed.returncode == 0, signed.stderr
     assert manifest["platforms"]["windows-x86_64"]["signature"] == "trusted-updater-signature"
     assert manifest["platforms"]["windows-x86_64"]["url"].endswith(installer.name)
+
+    cos_output = tmp_path / "latest-cos.json"
+    cos_command = [
+        sys.executable,
+        "scripts/generate_latest_json.py",
+        "--version",
+        "1.0.0",
+        "--download-base-url",
+        "https://example-1250000000.cos.ap-shanghai.myqcloud.com/updates/releases/v1.0.0",
+        "--installer",
+        str(installer),
+        "--output",
+        str(cos_output),
+    ]
+    cos_result = subprocess.run(
+        cos_command,
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=False,
+    )
+    cos_manifest = json.loads(cos_output.read_text(encoding="utf-8"))
+
+    assert cos_result.returncode == 0, cos_result.stderr
+    assert cos_manifest["platforms"]["windows-x86_64"]["url"] == (
+        "https://example-1250000000.cos.ap-shanghai.myqcloud.com/"
+        f"updates/releases/v1.0.0/{installer.name}"
+    )

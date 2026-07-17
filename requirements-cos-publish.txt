@@ -1,0 +1,2 @@
+# Release automation only; this dependency is not bundled into the desktop app.
+cos-python-sdk-v5==1.9.44

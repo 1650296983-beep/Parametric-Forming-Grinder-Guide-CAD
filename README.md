@@ -171,10 +171,12 @@ The production desktop uses Tauri 2 plus a PyInstaller onedir Python sidecar.
 It runs fully offline, binds the API only to a dynamic `127.0.0.1` port, stores
 mutable Windows data under `%LOCALAPPDATA%\FormingGrinderCAD`, detects a locally
 installed AutoCAD for release-gated AC1021 DWG conversion, and supports
-public-key-verified GitHub Release updates. Production does not depend on Vite.
+public-key-verified updates from Tencent COS with GitHub Releases retained as
+the secondary endpoint and source of record. Production does not depend on
+Vite.
 
-Build, signing-key, GitHub Secrets, first-release, rollback, SmartScreen,
-private-repository and troubleshooting instructions are in
+Build, signing-key, GitHub/COS Secrets and Variables, mirror promotion,
+rollback, SmartScreen, private-repository and troubleshooting instructions are in
 [`docs/desktop_release.md`](docs/desktop_release.md).
 
 ## Template Asset Delivery

@@ -1,7 +1,7 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
   "productName": "Forming Grinder CAD",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "identifier": "com.forminggrinder.guidecad",
   "build": {
     "beforeDevCommand": "npm --prefix ../frontend run dev -- --host 127.0.0.1",
@@ -11,7 +11,7 @@
   },
   "app": {
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:* https://github.com https://objects.githubusercontent.com; img-src 'self' asset: http://127.0.0.1:* data:; style-src 'self' 'unsafe-inline'"
+      "csp": "default-src 'self'; connect-src 'self' http://127.0.0.1:* https://forming-grinder-guide-cad-1424134622.cos.ap-shanghai.myqcloud.com https://github.com https://objects.githubusercontent.com; img-src 'self' asset: http://127.0.0.1:* data:; style-src 'self' 'unsafe-inline'"
     },
     "windows": [
       {
@@ -44,6 +44,7 @@
     "updater": {
       "active": true,
       "endpoints": [
+        "https://forming-grinder-guide-cad-1424134622.cos.ap-shanghai.myqcloud.com/updates/stable/latest.json",
         "https://github.com/1650296983-beep/Parametric-Forming-Grinder-Guide-CAD/releases/latest/download/latest.json"
       ],
       "dialog": false,
