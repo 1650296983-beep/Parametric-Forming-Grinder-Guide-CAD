@@ -214,7 +214,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2031DCE",
+      "dimension_handle": "2031DD0",
       "dimension_role": "fixed_span_99",
       "measurement": 99.0,
       "display_text": "99.00",
@@ -244,7 +244,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2031DDB",
+      "dimension_handle": "2031DDD",
       "dimension_role": "fixed_span_180",
       "measurement": 180.0,
       "display_text": "180.00",
@@ -274,28 +274,28 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2031E00",
+      "dimension_handle": "2031E02",
       "dimension_role": "wheel_radius",
       "measurement": 80.0,
       "display_text": "R80.00",
       "defpoint2": [
         3467.210204,
-        -31.917414,
+        -32.063778,
         0.0
       ],
       "defpoint3": [
         3467.210204,
-        48.082586,
+        47.936222,
         0.0
       ],
       "expected_geometry_point_1": [
         3467.210204,
-        -31.917414,
+        -32.063778,
         0.0
       ],
       "expected_geometry_point_2": [
         3467.210204,
-        48.082586,
+        47.936222,
         0.0
       ],
       "point_error": 0.0,
@@ -304,28 +304,28 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2031E1D",
+      "dimension_handle": "2031E1F",
       "dimension_role": "wheel_radius",
       "measurement": 80.0,
       "display_text": "R80.00",
       "defpoint2": [
         3647.210204,
-        129.696783,
+        129.843148,
         0.0
       ],
       "defpoint3": [
         3647.210204,
-        49.696783,
+        49.843148,
         0.0
       ],
       "expected_geometry_point_1": [
         3647.210204,
-        129.696783,
+        129.843148,
         0.0
       ],
       "expected_geometry_point_2": [
         3647.210204,
-        49.696783,
+        49.843148,
         0.0
       ],
       "point_error": 0.0,
@@ -334,7 +334,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2031E32",
+      "dimension_handle": "2031E34",
       "dimension_role": "other_release_dimension",
       "measurement": 100.0,
       "display_text": "100.00",
@@ -364,27 +364,27 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2031E5D",
+      "dimension_handle": "2031E5F",
       "dimension_role": "lower_wheel_notch_opening",
-      "measurement": 12.2,
-      "display_text": "12.20",
+      "measurement": 7.44,
+      "display_text": "7.44",
       "defpoint2": [
-        3461.110204,
+        3463.490204,
         47.849685,
         0.0
       ],
       "defpoint3": [
-        3473.310204,
+        3470.930204,
         47.849685,
         0.0
       ],
       "expected_geometry_point_1": [
-        3461.110204,
+        3463.490204,
         47.849685,
         0.0
       ],
       "expected_geometry_point_2": [
-        3473.310204,
+        3470.930204,
         47.849685,
         0.0
       ],
@@ -394,10 +394,10 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2031E6B",
+      "dimension_handle": "2031E6D",
       "dimension_role": "lower_wheel_key_process_height",
-      "measurement": 12.232902,
-      "display_text": "12.23",
+      "measurement": 12.086537,
+      "display_text": "12.09",
       "defpoint2": [
         3467.210204,
         35.849685,
@@ -405,7 +405,7 @@
       ],
       "defpoint3": [
         3467.210204,
-        48.082586,
+        47.936222,
         0.0
       ],
       "expected_geometry_point_1": [
@@ -415,7 +415,7 @@
       ],
       "expected_geometry_point_2": [
         3467.210204,
-        48.082586,
+        47.936222,
         0.0
       ],
       "point_error": 0.0,
@@ -424,13 +424,13 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2031E79",
+      "dimension_handle": "2031E7B",
       "dimension_role": "upper_wheel_key_process_height",
-      "measurement": 13.152902,
-      "display_text": "13.15",
+      "measurement": 13.006537,
+      "display_text": "13.01",
       "defpoint2": [
         3647.210204,
-        49.696783,
+        49.843148,
         0.0
       ],
       "defpoint3": [
@@ -440,7 +440,7 @@
       ],
       "expected_geometry_point_1": [
         3647.210204,
-        49.696783,
+        49.843148,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -454,13 +454,13 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2031E87",
+      "dimension_handle": "2031E89",
       "dimension_role": "upper_wheel_local_cut_in_depth",
-      "measurement": 0.232902,
-      "display_text": "0.23",
+      "measurement": 0.086537,
+      "display_text": "0.09",
       "defpoint2": [
         3647.210204,
-        49.696783,
+        49.843148,
         0.0
       ],
       "defpoint3": [
@@ -470,7 +470,7 @@
       ],
       "expected_geometry_point_1": [
         3647.210204,
-        49.696783,
+        49.843148,
         0.0
       ],
       "expected_geometry_point_2": [

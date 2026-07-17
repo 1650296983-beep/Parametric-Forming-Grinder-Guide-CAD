@@ -15,7 +15,7 @@
     "slot_width": 4.52,
     "guide_thickness": 1.78,
     "R_form": 17.13,
-    "lower_cavity_notch_opening": 9.4,
+    "lower_cavity_notch_opening": 5.76,
     "fixed_template_dimensions": {
       "section": {
         "outer_width": 33.0,
@@ -112,11 +112,11 @@
         "name": "side_clearance_height_dimension",
         "ok": true,
         "details": {
-          "expected": 13.358182,
-          "geometry_measured": 13.358182,
-          "definition_points_measured": 13.358182,
-          "dimension_group_42_measured": 13.358182,
-          "display_text": "13.36"
+          "expected": 13.271857,
+          "geometry_measured": 13.271857,
+          "definition_points_measured": 13.271857,
+          "dimension_group_42_measured": 13.271857,
+          "display_text": "13.27"
         }
       }
     ],
@@ -405,17 +405,17 @@
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "12.14",
-        "measurement": 12.138182,
+        "text": "12.05",
+        "measurement": 12.051857,
         "definition_points": {
           "defpoint": [
             3693.920121,
-            47.987866,
+            47.901541,
             0.0
           ],
           "defpoint2": [
             3644.43868,
-            47.987866,
+            47.901541,
             0.0
           ],
           "defpoint3": [
@@ -425,24 +425,24 @@
           ],
           "text_midpoint": [
             3699.170121,
-            41.918775,
+            41.875613,
             0.0
           ]
         }
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "13.36",
-        "measurement": 13.358182,
+        "text": "13.27",
+        "measurement": 13.271857,
         "definition_points": {
           "defpoint": [
             3391.985402,
-            49.491503,
+            49.577828,
             0.0
           ],
           "defpoint2": [
             3444.43868,
-            49.491503,
+            49.577828,
             0.0
           ],
           "defpoint3": [
@@ -452,7 +452,7 @@
           ],
           "text_midpoint": [
             3386.735402,
-            56.170594,
+            56.213756,
             0.0
           ]
         }
@@ -572,17 +572,17 @@
         "definition_points": {
           "defpoint": [
             3444.43868,
-            129.491503,
+            129.577828,
             0.0
           ],
           "defpoint4": [
             3444.43868,
-            49.491503,
+            49.577828,
             0.0
           ],
           "text_midpoint": [
             3441.18868,
-            37.091503,
+            37.177828,
             0.0
           ]
         }
@@ -594,17 +594,17 @@
         "definition_points": {
           "defpoint": [
             3644.43868,
-            -32.012134,
+            -32.098459,
             0.0
           ],
           "defpoint4": [
             3644.43868,
-            47.987866,
+            47.901541,
             0.0
           ],
           "text_midpoint": [
             3641.18868,
-            60.387866,
+            60.301541,
             0.0
           ]
         }
@@ -612,9 +612,9 @@
     ],
     "extents": {
       "min_x": -25.0,
-      "min_y": -112.012134,
+      "min_y": -112.098459,
       "max_x": 3789.43868,
-      "max_y": 209.491503
+      "max_y": 209.577828
     },
     "PARAM_SLOT_count": 13,
     "SIDE_DERIVED_count": 7
@@ -910,17 +910,17 @@
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "12.14",
-        "measurement": 12.138182,
+        "text": "12.05",
+        "measurement": 12.051857,
         "definition_points": {
           "defpoint": [
             3693.920121,
-            47.987866,
+            47.901541,
             0.0
           ],
           "defpoint2": [
             3644.43868,
-            47.987866,
+            47.901541,
             0.0
           ],
           "defpoint3": [
@@ -930,24 +930,24 @@
           ],
           "text_midpoint": [
             3699.170121,
-            41.918775,
+            41.875613,
             0.0
           ]
         }
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "13.36",
-        "measurement": 13.358182,
+        "text": "13.27",
+        "measurement": 13.271857,
         "definition_points": {
           "defpoint": [
             3391.985402,
-            49.491503,
+            49.577828,
             0.0
           ],
           "defpoint2": [
             3444.43868,
-            49.491503,
+            49.577828,
             0.0
           ],
           "defpoint3": [
@@ -957,7 +957,7 @@
           ],
           "text_midpoint": [
             3386.735402,
-            56.170594,
+            56.213756,
             0.0
           ]
         }
@@ -1077,17 +1077,17 @@
         "definition_points": {
           "defpoint": [
             3444.43868,
-            129.491503,
+            129.577828,
             0.0
           ],
           "defpoint4": [
             3444.43868,
-            49.491503,
+            49.577828,
             0.0
           ],
           "text_midpoint": [
             3441.18868,
-            37.091503,
+            37.177828,
             0.0
           ]
         }
@@ -1099,17 +1099,17 @@
         "definition_points": {
           "defpoint": [
             3644.43868,
-            -32.012134,
+            -32.098459,
             0.0
           ],
           "defpoint4": [
             3644.43868,
-            47.987866,
+            47.901541,
             0.0
           ],
           "text_midpoint": [
             3641.18868,
-            60.387866,
+            60.301541,
             0.0
           ]
         }
@@ -1117,17 +1117,17 @@
     ],
     "extents": {
       "min_x": -25.0,
-      "min_y": -112.012134,
+      "min_y": -112.098459,
       "max_x": 3789.43868,
-      "max_y": 209.491503
+      "max_y": 209.577828
     },
     "PARAM_SLOT_count": 13,
     "SIDE_DERIVED_count": 7
   },
   "template_geometry_summary": {
     "template_files": [
-      "templates/double_head_up_down/section_template.dxf",
-      "templates/double_head_up_down/side_template.dxf"
+      "/Users/wrd/Desktop/codex workspace/CAD/templates/double_head_up_down/section_template.dxf",
+      "/Users/wrd/Desktop/codex workspace/CAD/templates/double_head_up_down/side_template.dxf"
     ],
     "sha256": "74115f5e565f088b76ed5b04da13d8dee92089bed12c410dcc72cc5998f1cb57",
     "entity_counts": {
@@ -1618,9 +1618,9 @@
     }
   },
   "safety_rules": {
-    "lower_cavity_notch_opening <= product_length - 0.2": true,
+    "lower_cavity_notch_opening <= product_length * 0.6": true,
     "product_length": 9.6,
-    "lower_cavity_notch_opening": 9.4,
-    "limit": 9.4
+    "lower_cavity_notch_opening": 5.76,
+    "limit": 5.76
   }
 }

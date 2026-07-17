@@ -1,4 +1,4 @@
-# Desktop packaging and signed GitHub Releases
+# Desktop packaging and signed GitHub/COS Releases
 
 This document is the release runbook for **Parametric-Forming-Grinder-Guide-CAD**.
 The desktop shell does not change CAD geometry or process rules: React remains
@@ -167,6 +167,26 @@ Configure repository Secrets:
 - `TAURI_SIGNING_PRIVATE_KEY_PASSWORD` — its password;
 - optional `WINDOWS_CERTIFICATE` — base64 PFX for Authenticode;
 - optional `WINDOWS_CERTIFICATE_PASSWORD` — PFX password.
+- `TENCENT_COS_SECRET_ID` — dedicated `cad-release-publisher` sub-user key ID;
+- `TENCENT_COS_SECRET_KEY` — matching sub-user secret key.
+
+Configure repository Variables:
+
+- `TENCENT_COS_BUCKET=forming-grinder-guide-cad-1424134622`;
+- `TENCENT_COS_REGION=ap-shanghai`.
+
+The COS publisher must not use a root-account key. Its CAM policy is limited to
+`cos:PutObject` on:
+
+```text
+qcs::cos:ap-shanghai:uid/1424134622:forming-grinder-guide-cad-1424134622/updates/*
+```
+
+The bucket remains private. Its bucket Policy grants anonymous read operations
+only on `updates/*`; anonymous listing and every write/delete operation remain
+forbidden. The release workflow uses the simple PUT Object API, so the publisher
+does not need bucket-list, multipart-upload, delete, ACL, or bucket-management
+permissions.
 
 Losing the updater private key is not recoverable for installed clients: a new
 key cannot sign an update trusted by them. Restore the backed-up key or ship a
@@ -197,15 +217,17 @@ to make a release pass.
 ## Signed one-click update flow
 
 `bundle.createUpdaterArtifacts=true` makes Tauri sign updater artifacts. The
-Windows client checks the public GitHub `latest.json`, displays version, notes,
-date and progress, verifies the signature with the committed public key,
-installs, and relaunches. Offline/update failures never stop local CAD work and
-never remove the old version. Unsigned or invalidly signed installers are
-rejected by the official updater plugin.
+Windows client checks the Tencent COS `latest.json` first, displays version,
+notes, date and progress, verifies the signature with the committed public key,
+installs, and relaunches. GitHub remains the secondary endpoint and public
+source of record. Offline/update failures never stop local CAD work and never
+remove the old version. Unsigned or invalidly signed installers are rejected by
+the official updater plugin.
 
-The default endpoint is:
+The configured endpoints, in order, are:
 
 ```text
+https://forming-grinder-guide-cad-1424134622.cos.ap-shanghai.myqcloud.com/updates/stable/latest.json
 https://github.com/1650296983-beep/Parametric-Forming-Grinder-Guide-CAD/releases/latest/download/latest.json
 ```
 
@@ -214,15 +236,33 @@ binary-release repository). For a private source repository, publish binaries
 to a separate public release repository or build a secure download service.
 Never embed a GitHub PAT in the client.
 
-For clients in the Chinese mainland, mirror the exact signed installer,
-signature, and `latest.json` to a public HTTPS object-storage origin such as
-Alibaba Cloud OSS or Tencent Cloud COS. Use a dedicated download domain, keep
-versioned installers immutable, and update `latest.json` only after every
-mirrored object is available. The mirror needs no account system or task-data
-service: Tauri still verifies the installer with the public key embedded in the
-client. Do not use an untrusted third-party GitHub proxy as an update endpoint.
-When a mainland mirror is configured, put its endpoint before GitHub for the
-next client release and retain GitHub as the public source of record.
+`.github/workflows/publish-cos-mirror.yml` runs only after a stable GitHub
+Release is published (or for an explicit recovery dispatch targeting an already
+published stable tag). It verifies the GitHub checksums, generates a COS-specific
+manifest, then publishes in this order:
+
+```text
+updates/releases/vX.Y.Z/<signed installer>
+updates/releases/vX.Y.Z/<signed installer>.sig
+updates/releases/vX.Y.Z/latest.json
+updates/stable/latest.json
+```
+
+Each versioned object is downloaded anonymously and compared byte-for-byte
+before stable promotion. Existing versioned content may be reused only when its
+SHA-256 and length match; different content is never overwritten. The publisher
+also refuses to replace the stable manifest with an older version. The stable
+manifest is uploaded last with no-cache headers, so clients never receive a
+manifest that points at an unavailable installer.
+
+The mirror needs no account system or task-data service: Tauri still verifies
+the installer with the public key embedded in the client. Do not use an
+untrusted third-party GitHub proxy as an update endpoint.
+
+Version `v1.0.3` is the endpoint bootstrap release. Clients already running
+`v1.0.2` still know only the GitHub endpoint, so they must obtain `v1.0.3`
+through GitHub or one manual installation. After `v1.0.3` is installed, future
+checks use COS first.
 
 ## Versioning and publishing
 
@@ -240,7 +280,8 @@ never publish a customer update.
 First release steps:
 
 1. Securely back up the updater private key and password.
-2. Add required GitHub Secrets and, optionally, Authenticode Secrets.
+2. Add required GitHub Secrets, COS Secrets/Variables, and optionally
+   Authenticode Secrets.
 3. Confirm the repository or binary release repository is publicly readable.
 4. Run all acceptance commands below on a clean commit.
 5. Manually run `Validate Windows desktop package` for that commit, download
@@ -257,17 +298,22 @@ First release steps:
 9. The Windows workflow checks the exact tag SHA, then creates a **draft**
    Release. Inspect test summary, attestation, `SHA256SUMS.txt`, installer,
    signature, and `latest.json` before publishing the draft.
-10. On a clean Windows test VM, install, create a task, test no-update/offline,
+10. Publishing the approved GitHub Release triggers the COS mirror workflow.
+    Require its summary to show the signed installer, signature, versioned
+    manifest, and stable manifest in that order.
+11. On a clean Windows test VM, install, create a task, test no-update/offline,
    publish a signed test update if available, update, and confirm task hashes.
-11. Publish the draft Release only after human approval.
+12. If COS publication fails, keep the GitHub Release available but diagnose the
+    mirror before treating the release as the normal mainland update path.
 
 ## Rollback
 
-Do not replace files under an existing tag. If a release is faulty, mark it as
-non-latest, publish a new higher patch version containing the reverted code,
-and let clients update normally. If installation itself is broken, keep the
-previous installer available and provide its SHA-256; users can reinstall it
-without deleting LocalAppData.
+Do not replace files under an existing tag or COS version directory. If a
+release is faulty, mark it as non-latest, publish a new higher patch version
+containing the reverted code, and let clients update normally. The COS
+publisher rejects downgrades and same-version content changes. If installation
+itself is broken, keep the previous installer available and provide its
+SHA-256; users can reinstall it without deleting LocalAppData.
 
 ## SmartScreen and code signing
 
@@ -307,7 +353,8 @@ require a clean Windows VM before publishing.
 - **Console window appears:** confirm the installer came from a release build;
   debug builds intentionally retain a console, while NSIS validation/release
   builds compile the Tauri entry point as a Windows GUI application.
-- **Updater offline:** CAD remains available; retry after GitHub is reachable.
+- **Updater offline:** CAD remains available; check the COS stable endpoint,
+  then the GitHub Release endpoint, and retry after connectivity is restored.
 - **Signature error:** do not bypass it. Verify `latest.json`, `.sig`, public key,
   release asset URL, and signing Secret pairing.
 - **SmartScreen warning:** configure Authenticode; updater signing alone does not

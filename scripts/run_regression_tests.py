@@ -25,12 +25,13 @@ from src.dual_guide_release_audit import (
     build_release_line_type_audit,
     write_dimension_definition_point_audit,
 )
-from src.global_rules import BLOCK_THICKNESS_CLEARANCE
+from src.global_rules import BLOCK_THICKNESS_CLEARANCE, wheel_notch_opening_limit
 from src.guide_design_input import build_single_guide_profile_from_input
 from src.dxf_writer import write_dxf
 from src.generate_machine import _build_profile
 from src.geometry import TileSection
 from src.machine_config import MachineConfig, load_machine_config
+from src.section_contour_audit import build_section_contour_closure_audit
 from src.preview import write_block_png_preview, write_png_preview
 from src.spec_parser import BlockSpec, ProductPreFormTolerance, parse_relief_spec
 from src.validation_report import write_validation_report_json
@@ -296,12 +297,18 @@ def generate_dual_guide_case(input_data: dict[str, Any], machine: MachineConfig,
         dimension_audit_path,
     )
     line_type_audit = build_release_line_type_audit(candidate)
+    section_contour_audit = build_section_contour_closure_audit(
+        candidate,
+        expected_sections=machine.guide_sections,
+    )
     release_gate = (
         input_rule["input_rule_valid"]
         and dimension_audit["release_allowed"]
         and line_type_audit["release_allowed"]
+        and section_contour_audit["release_allowed"]
         and release_result["release_side_dimensions_match_report"]
         and engine._lower_wheel_release_allowed(profile)
+        and engine._upper_wheel_release_allowed(profile)
         and release_result["synchronized"]
     )
     if not release_gate:
@@ -318,6 +325,7 @@ def generate_dual_guide_case(input_data: dict[str, Any], machine: MachineConfig,
         input_rule=input_rule,
         dimension_audit=dimension_audit,
         line_type_audit=line_type_audit,
+        section_contour_audit=section_contour_audit,
         release_gate=release_gate,
     )
     write_json(paths["report_json"], report)
@@ -363,7 +371,7 @@ def build_regression_audit(machine: MachineConfig, release_dxf: Path, debug_dxf:
         "debug_dxf_summary": summarize_dxf(debug_dxf),
         "template_geometry_summary": summarize_template_geometry(machine),
         "safety_rules": {
-            "lower_cavity_notch_opening <= product_length - 0.2": safety["ok"],
+            "lower_cavity_notch_opening <= product_length * 0.6": safety["ok"],
             **safety["details"],
         },
     }
@@ -434,7 +442,7 @@ def lower_wheel_safety_payload(report: dict[str, Any]) -> dict[str, Any]:
         if not notch:
             return {"ok": True, "details": {"not_applicable": True}}
         opening = notch["lower_cavity_notch_opening"]
-        limit = notch["product_length"] - 0.2
+        limit = wheel_notch_opening_limit(notch["product_length"])
         return {
             "ok": opening <= limit + TOLERANCE,
             "details": {
@@ -447,11 +455,12 @@ def lower_wheel_safety_payload(report: dict[str, Any]) -> dict[str, Any]:
     if not safety:
         return {"ok": True, "details": {"not_applicable": True}}
     return {
-        "ok": safety["lower_cavity_notch_opening"] <= safety["product_length"] - 0.2 + TOLERANCE,
+        "ok": safety["lower_cavity_notch_opening"]
+        <= wheel_notch_opening_limit(safety["product_length"]) + TOLERANCE,
         "details": {
             "product_length": safety["product_length"],
             "lower_cavity_notch_opening": safety["lower_cavity_notch_opening"],
-            "limit": safety["product_length"] - 0.2,
+            "limit": wheel_notch_opening_limit(safety["product_length"]),
         },
     }
 

@@ -490,22 +490,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3459.205,
-        -16.118862,
+        -16.041594,
         0.0
       ],
       "defpoint3": [
         3459.205,
-        -96.118862,
+        -96.041594,
         0.0
       ],
       "expected_geometry_point_1": [
         3459.205,
-        -16.118862,
+        -16.041594,
         0.0
       ],
       "expected_geometry_point_2": [
         3459.205,
-        -96.118862,
+        -96.041594,
         0.0
       ],
       "point_error": 0.0,
@@ -520,22 +520,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3459.205,
-        -111.752862,
+        -111.675594,
         0.0
       ],
       "defpoint3": [
         3459.205,
-        -191.752862,
+        -191.675594,
         0.0
       ],
       "expected_geometry_point_1": [
         3459.205,
-        -111.752862,
+        -111.675594,
         0.0
       ],
       "expected_geometry_point_2": [
         3459.205,
-        -191.752862,
+        -191.675594,
         0.0
       ],
       "point_error": 0.0,
@@ -550,22 +550,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3639.205,
-        -111.752862,
+        -111.675594,
         0.0
       ],
       "defpoint3": [
         3639.205,
-        -191.752862,
+        -191.675594,
         0.0
       ],
       "expected_geometry_point_1": [
         3639.205,
-        -111.752862,
+        -111.675594,
         0.0
       ],
       "expected_geometry_point_2": [
         3639.205,
-        -191.752862,
+        -191.675594,
         0.0
       ],
       "point_error": 0.0,
@@ -575,12 +575,12 @@
     },
     {
       "dimension_handle": "203C760",
-      "dimension_role": "guide_thickness",
-      "measurement": 3.124287,
-      "display_text": "3.12",
+      "dimension_role": "other_release_dimension",
+      "measurement": 3.047019,
+      "display_text": "3.05",
       "defpoint2": [
         3459.205,
-        -96.118862,
+        -96.041594,
         0.0
       ],
       "defpoint3": [
@@ -590,7 +590,7 @@
       ],
       "expected_geometry_point_1": [
         3459.205,
-        -96.118862,
+        -96.041594,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -599,18 +599,18 @@
         0.0
       ],
       "point_error": 0.0,
-      "binding_mode": "rounded_slot_tangent_envelope",
+      "binding_mode": "rounded_corner_tangent_envelope",
       "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
       "dimension_handle": "203C77C",
-      "dimension_role": "guide_thickness",
-      "measurement": 3.124077,
-      "display_text": "3.12",
+      "dimension_role": "other_release_dimension",
+      "measurement": 3.046809,
+      "display_text": "3.05",
       "defpoint2": [
         3459.205,
-        -191.752862,
+        -191.675594,
         0.0
       ],
       "defpoint3": [
@@ -620,7 +620,7 @@
       ],
       "expected_geometry_point_1": [
         3459.205,
-        -191.752862,
+        -191.675594,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -629,18 +629,18 @@
         0.0
       ],
       "point_error": 0.0,
-      "binding_mode": "rounded_slot_tangent_envelope",
+      "binding_mode": "rounded_corner_tangent_envelope",
       "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
       "dimension_handle": "203C798",
-      "dimension_role": "guide_thickness",
-      "measurement": 3.124077,
-      "display_text": "3.12",
+      "dimension_role": "other_release_dimension",
+      "measurement": 3.046809,
+      "display_text": "3.05",
       "defpoint2": [
         3639.205,
-        -191.752862,
+        -191.675594,
         0.0
       ],
       "defpoint3": [
@@ -650,7 +650,7 @@
       ],
       "expected_geometry_point_1": [
         3639.205,
-        -191.752862,
+        -191.675594,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -659,18 +659,18 @@
         0.0
       ],
       "point_error": 0.0,
-      "binding_mode": "rounded_slot_tangent_envelope",
+      "binding_mode": "rounded_corner_tangent_envelope",
       "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
       "dimension_handle": "203CE44",
       "dimension_role": "other_release_dimension",
-      "measurement": 0.123862,
-      "display_text": "0.12",
+      "measurement": 0.046594,
+      "display_text": "0.05",
       "defpoint2": [
         3459.205,
-        -96.118862,
+        -96.041594,
         0.0
       ],
       "defpoint3": [
@@ -680,7 +680,7 @@
       ],
       "expected_geometry_point_1": [
         3459.205,
-        -96.118862,
+        -96.041594,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -790,22 +790,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3476.938,
-        -400.807862,
+        -400.730594,
         0.0
       ],
       "defpoint3": [
         3476.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "expected_geometry_point_1": [
         3476.938,
-        -400.807862,
+        -400.730594,
         0.0
       ],
       "expected_geometry_point_2": [
         3476.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "point_error": 0.0,
@@ -815,12 +815,12 @@
     },
     {
       "dimension_handle": "203D031",
-      "dimension_role": "guide_thickness",
-      "measurement": 3.124265,
-      "display_text": "3.12",
+      "dimension_role": "other_release_dimension",
+      "measurement": 3.046997,
+      "display_text": "3.05",
       "defpoint2": [
         3476.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "defpoint3": [
@@ -830,7 +830,7 @@
       ],
       "expected_geometry_point_1": [
         3476.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -839,18 +839,18 @@
         0.0
       ],
       "point_error": 0.0,
-      "binding_mode": "rounded_slot_tangent_envelope",
+      "binding_mode": "rounded_corner_tangent_envelope",
       "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
       "dimension_handle": "203D034",
       "dimension_role": "other_release_dimension",
-      "measurement": 0.123862,
-      "display_text": "0.12",
+      "measurement": 0.046594,
+      "display_text": "0.05",
       "defpoint2": [
         3476.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "defpoint3": [
@@ -860,7 +860,7 @@
       ],
       "expected_geometry_point_1": [
         3476.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -970,22 +970,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3656.938,
-        -400.807862,
+        -400.730594,
         0.0
       ],
       "defpoint3": [
         3656.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "expected_geometry_point_1": [
         3656.938,
-        -400.807862,
+        -400.730594,
         0.0
       ],
       "expected_geometry_point_2": [
         3656.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "point_error": 0.0,
@@ -1000,22 +1000,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3836.938,
-        -400.807862,
+        -400.730594,
         0.0
       ],
       "defpoint3": [
         3836.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "expected_geometry_point_1": [
         3836.938,
-        -400.807862,
+        -400.730594,
         0.0
       ],
       "expected_geometry_point_2": [
         3836.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "point_error": 0.0,
@@ -1025,12 +1025,12 @@
     },
     {
       "dimension_handle": "203D115",
-      "dimension_role": "guide_thickness",
-      "measurement": 3.124265,
-      "display_text": "3.12",
+      "dimension_role": "other_release_dimension",
+      "measurement": 3.046997,
+      "display_text": "3.05",
       "defpoint2": [
         3656.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "defpoint3": [
@@ -1040,7 +1040,7 @@
       ],
       "expected_geometry_point_1": [
         3656.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -1049,18 +1049,18 @@
         0.0
       ],
       "point_error": 0.0,
-      "binding_mode": "rounded_slot_tangent_envelope",
+      "binding_mode": "rounded_corner_tangent_envelope",
       "annotation_block_bound": null,
       "bound_to_geometry": true
     },
     {
       "dimension_handle": "203D118",
-      "dimension_role": "guide_thickness",
-      "measurement": 3.124265,
-      "display_text": "3.12",
+      "dimension_role": "other_release_dimension",
+      "measurement": 3.046997,
+      "display_text": "3.05",
       "defpoint2": [
         3836.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "defpoint3": [
@@ -1070,7 +1070,7 @@
       ],
       "expected_geometry_point_1": [
         3836.938,
-        -480.807862,
+        -480.730594,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -1079,7 +1079,7 @@
         0.0
       ],
       "point_error": 0.0,
-      "binding_mode": "rounded_slot_tangent_envelope",
+      "binding_mode": "rounded_corner_tangent_envelope",
       "annotation_block_bound": null,
       "bound_to_geometry": true
     }
@@ -1095,7 +1095,7 @@
     "guide_thickness": {
       "expected_measurement": 3.12,
       "minimum_count": 2,
-      "actual_count": 8,
+      "actual_count": 2,
       "all_bound_to_geometry": true,
       "status": "PASS"
     },

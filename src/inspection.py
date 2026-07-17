@@ -21,6 +21,9 @@ from .dimension_roles import (
 from .geometry import TileSection
 from .machine_config import MachineConfig
 from .relief_arc_audit import build_four_outer_relief_arc_audit
+from .section_contour_audit import (
+    build_modelspace_section_contour_closure_audit,
+)
 from .side_view import GLOBAL_WHEEL_CUT_IN_RATIO, build_side_view_geometry
 from .side_view_config import SideViewTemplateConfig
 from .side_view_validator import (
@@ -83,11 +86,13 @@ def inspect_release_dxf(
         ),
         _check_machine_config(machine),
         _check_release_layers(doc),
+        _check_section_display_styles(doc),
         _check_formula_text_absent(doc),
         _check_old_parametric_geometry_absent(doc, profile),
         _check_block_to_tile_main_arc_sweeps(doc, profile),
         _check_block_to_tile_relief_topology(doc, profile),
         _check_four_relief_arcs_are_outer(doc, profile),
+        _check_section_contour_closure(doc, machine),
         *_dimension_consistency_checks(doc, profile, machine),
     ]
     lower_notch_check = _check_lower_wheel_notch_safety(doc, profile, machine)
@@ -135,6 +140,21 @@ def inspect_release_dxf(
 
 def _check(name: str, ok: bool, details: dict[str, Any]) -> InspectionCheck:
     return InspectionCheck(name=name, ok=bool(ok), details=details)
+
+
+def _check_section_contour_closure(
+    doc: Any,
+    machine: MachineConfig,
+) -> InspectionCheck:
+    audit = build_modelspace_section_contour_closure_audit(
+        doc.modelspace(),
+        expected_sections=machine.guide_sections,
+    )
+    return _check(
+        "section_contour_closure",
+        audit["release_allowed"],
+        audit,
+    )
 
 
 def _check_block_to_tile_main_arc_sweeps(
@@ -210,6 +230,61 @@ def _check_release_layers(doc) -> InspectionCheck:
             "allowed_layers": sorted(RELEASE_ALLOWED_LAYERS),
         },
     )
+
+
+def _check_section_display_styles(doc: Any) -> InspectionCheck:
+    parametric_entities = [
+        entity
+        for entity in doc.modelspace()
+        if entity.dxf.layer == "PARAM_SLOT"
+        and entity.dxftype() in {"LINE", "ARC"}
+    ]
+    center_entities = [
+        entity
+        for entity in doc.modelspace()
+        if entity.dxf.layer == "SECTION_CENTER"
+        and entity.dxftype() in {"LINE", "ARC"}
+    ]
+    invalid_parametric = [
+        _entity_summary(entity)
+        for entity in parametric_entities
+        if _effective_color(doc, entity) != 7
+    ]
+    invalid_centers = [
+        _entity_summary(entity)
+        for entity in center_entities
+        if _effective_color(doc, entity) != 1
+        or _effective_linetype(doc, entity).upper() != "CENTER"
+    ]
+    return _check(
+        "section_display_styles",
+        bool(parametric_entities)
+        and not invalid_parametric
+        and not invalid_centers,
+        {
+            "PARAM_SLOT_expected_color": 7,
+            "SECTION_CENTER_expected_color": 1,
+            "SECTION_CENTER_expected_linetype": "CENTER",
+            "parametric_entity_count": len(parametric_entities),
+            "center_entity_count": len(center_entities),
+            "invalid_parametric_entities": invalid_parametric,
+            "invalid_center_entities": invalid_centers,
+        },
+    )
+
+
+def _effective_color(doc: Any, entity: Any) -> int:
+    color = int(entity.dxf.color)
+    if color == 256:
+        return int(doc.layers.get(entity.dxf.layer).dxf.color)
+    return color
+
+
+def _effective_linetype(doc: Any, entity: Any) -> str:
+    linetype = str(entity.dxf.linetype)
+    if linetype.upper() == "BYLAYER":
+        return str(doc.layers.get(entity.dxf.layer).dxf.linetype)
+    return linetype
 
 
 def _check_formula_text_absent(doc) -> InspectionCheck:
@@ -665,7 +740,7 @@ def _check_upper_wheel_cut_in(
         "upper_wheel_cut_in",
         ok,
         {
-            "formula": "min(natural_upper_R80_opening, product_length - 0.2)",
+            "formula": "min(natural_upper_R80_opening, product_length * 0.6)",
             "process_thickness": profile.process_thickness,
             "cut_in_ratio": GLOBAL_WHEEL_CUT_IN_RATIO,
             "requested_cut_in": profile.process_thickness

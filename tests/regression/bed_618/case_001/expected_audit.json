@@ -14,7 +14,7 @@
     "slot_width": 6.21,
     "guide_thickness": 1.8299999999999998,
     "R_form": 17.45,
-    "lower_cavity_notch_opening": 15.3,
+    "lower_cavity_notch_opening": 9.299999999999999,
     "fixed_template_dimensions": {
       "section": {
         "outer_width": 40.0,
@@ -110,11 +110,11 @@
         "name": "side_clearance_height_dimension",
         "ok": true,
         "details": {
-          "expected": 4.636606,
-          "geometry_measured": 4.636606,
-          "definition_points_measured": 4.636606,
-          "dimension_group_42_measured": 4.636606,
-          "display_text": "4.64"
+          "expected": 4.405255,
+          "geometry_measured": 4.405255,
+          "definition_points_measured": 4.405255,
+          "dimension_group_42_measured": 4.405255,
+          "display_text": "4.41"
         }
       }
     ],
@@ -589,8 +589,8 @@
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "4.64",
-        "measurement": 4.636606,
+        "text": "4.41",
+        "measurement": 4.405255,
         "definition_points": {
           "defpoint": [
             3722.483328,
@@ -604,12 +604,12 @@
           ],
           "defpoint3": [
             3690.483328,
-            56.784227,
+            57.015577,
             0.0
           ],
           "text_midpoint": [
             3727.733328,
-            59.10253,
+            59.218205,
             0.0
           ]
         }
@@ -643,17 +643,17 @@
         "definition_points": {
           "defpoint": [
             3560.483328,
-            136.784227,
+            137.015577,
             0.0
           ],
           "defpoint4": [
             3560.483328,
-            56.784227,
+            57.015577,
             0.0
           ],
           "text_midpoint": [
             3557.233328,
-            44.384227,
+            44.615577,
             0.0
           ]
         }
@@ -663,7 +663,7 @@
       "min_x": -25.0,
       "min_y": -5.0,
       "max_x": 3727.733328,
-      "max_y": 216.784227
+      "max_y": 217.015577
     },
     "PARAM_SLOT_count": 13,
     "SIDE_DERIVED_count": 6
@@ -1145,8 +1145,8 @@
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "4.64",
-        "measurement": 4.636606,
+        "text": "4.41",
+        "measurement": 4.405255,
         "definition_points": {
           "defpoint": [
             3722.483328,
@@ -1160,12 +1160,12 @@
           ],
           "defpoint3": [
             3690.483328,
-            56.784227,
+            57.015577,
             0.0
           ],
           "text_midpoint": [
             3727.733328,
-            59.10253,
+            59.218205,
             0.0
           ]
         }
@@ -1199,17 +1199,17 @@
         "definition_points": {
           "defpoint": [
             3560.483328,
-            136.784227,
+            137.015577,
             0.0
           ],
           "defpoint4": [
             3560.483328,
-            56.784227,
+            57.015577,
             0.0
           ],
           "text_midpoint": [
             3557.233328,
-            44.384227,
+            44.615577,
             0.0
           ]
         }
@@ -1219,15 +1219,15 @@
       "min_x": -25.0,
       "min_y": -5.0,
       "max_x": 3727.733328,
-      "max_y": 216.784227
+      "max_y": 217.015577
     },
     "PARAM_SLOT_count": 13,
     "SIDE_DERIVED_count": 6
   },
   "template_geometry_summary": {
     "template_files": [
-      "templates/bed_618/section_template.dxf",
-      "templates/bed_618/side_template.dxf"
+      "/Users/wrd/Desktop/codex workspace/CAD/templates/bed_618/section_template.dxf",
+      "/Users/wrd/Desktop/codex workspace/CAD/templates/bed_618/side_template.dxf"
     ],
     "sha256": "ddbe575d20519dcadd0034a1ccf66d34607bf03fd65e21753ae78ac8fd74c0e0",
     "entity_counts": {
@@ -1696,9 +1696,9 @@
     }
   },
   "safety_rules": {
-    "lower_cavity_notch_opening <= product_length - 0.2": true,
+    "lower_cavity_notch_opening <= product_length * 0.6": true,
     "product_length": 15.5,
-    "lower_cavity_notch_opening": 15.3,
-    "limit": 15.3
+    "lower_cavity_notch_opening": 9.299999999999999,
+    "limit": 9.299999999999999
   }
 }

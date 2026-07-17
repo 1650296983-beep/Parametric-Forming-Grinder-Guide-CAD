@@ -4,6 +4,7 @@ from dataclasses import dataclass
 
 
 WHEEL_CUT_IN_RATIO = 0.6
+WHEEL_NOTCH_OPENING_RATIO = 0.6
 DEFAULT_WHEEL_RADIUS = 80.0
 CENTER_TRANSITION_RADIUS = 0.5
 DIMENSION_DECIMAL_PLACES = 2
@@ -79,3 +80,11 @@ def default_thickness_clearance(pre_grinding_shape: str, width: float) -> float:
 
 def format_dimension(value: float) -> str:
     return f"{value:.{DIMENSION_DECIMAL_PLACES}f}"
+
+
+def wheel_notch_opening_limit(product_length: float) -> float:
+    """Return the shared maximum wheel-notch opening for every machine."""
+    length = float(product_length)
+    if length <= 0.0:
+        raise ValueError("产品长度必须大于 0。")
+    return length * WHEEL_NOTCH_OPENING_RATIO

@@ -25,6 +25,7 @@ from .dimension_precision import (
 from .dxf_writer import (
     DEBUG_CONTROL_LAYER,
     DEBUG_POINTS_LAYER,
+    PARAM_SLOT_COLOR,
     SECTION_CENTER_LAYER,
     TemplateAnchor,
     _add_block_to_tile_flat_arc_slot_entities,
@@ -39,6 +40,7 @@ from .dxf_writer import (
     _find_block_top_gap_dimension,
     _find_dimension_by_text,
     _is_block_template_param_entity,
+    _rebuild_section_top_boundary,
     _set_dimension_actual_measurement,
     _set_dimension_block_text,
     _simplify_release_layers,
@@ -50,12 +52,17 @@ from .dxf_writer import (
     _update_down_up_flat_arc_r_dimension,
 )
 from .geometry import TileSection
-from .global_rules import DEFAULT_WHEEL_RADIUS, WHEEL_CUT_IN_RATIO
+from .global_rules import (
+    DEFAULT_WHEEL_RADIUS,
+    WHEEL_CUT_IN_RATIO,
+    wheel_notch_opening_limit,
+)
 from .machine_config import MachineConfig
 from .release_entity_audit import (
     build_modelspace_parametric_duplicate_audit,
 )
 from .relief_arc_audit import build_four_outer_relief_arc_audit
+from .section_contour_audit import build_section_contour_closure_audit
 from .dual_guide_release_audit import (
     build_release_line_type_audit,
     write_dimension_definition_point_audit,
@@ -238,6 +245,10 @@ class DualGuideTemplateEngine:
         line_type_audit = build_release_line_type_audit(
             release_candidate_path
         )
+        section_contour_audit = build_section_contour_closure_audit(
+            release_candidate_path,
+            expected_sections=self.machine.guide_sections,
+        )
         input_rule_payload = input_rule or self._legacy_input_rule(
             profile,
             parsed_spec,
@@ -245,6 +256,7 @@ class DualGuideTemplateEngine:
         release_gate = (
             bool(input_rule_payload.get("input_rule_valid", True))
             and line_type_audit["release_allowed"]
+            and section_contour_audit["release_allowed"]
             and dimension_audit["release_allowed"]
             and release_result["release_side_dimensions_match_report"]
             and self._lower_wheel_release_allowed(profile)
@@ -265,6 +277,7 @@ class DualGuideTemplateEngine:
             input_rule=input_rule_payload,
             dimension_audit=dimension_audit,
             line_type_audit=line_type_audit,
+            section_contour_audit=section_contour_audit,
             release_gate=release_gate,
         )
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
@@ -417,7 +430,7 @@ class DualGuideTemplateEngine:
 
     def _prepare_layers(self, doc: Any, output_mode: str) -> None:
         _ensure_layer(doc, "FIXED_TEMPLATE", color=7)
-        _ensure_layer(doc, "PARAM_SLOT", color=1)
+        _ensure_layer(doc, "PARAM_SLOT", color=PARAM_SLOT_COLOR)
         _ensure_layer(doc, SECTION_CENTER_LAYER, color=1, linetype="CENTER")
         _ensure_layer(doc, DIMENSION_LAYER, color=3)
         _ensure_layer(doc, SIDE_TEMPLATE_LAYER, color=7)
@@ -438,8 +451,12 @@ class DualGuideTemplateEngine:
                 entity.dxf.layer = DIMENSION_LAYER
             elif _is_side_centerline(entity):
                 entity.dxf.layer = SIDE_CENTER_LAYER
+                entity.dxf.color = 256
+                entity.dxf.linetype = "BYLAYER"
             elif _is_cross_section_centerline(entity):
                 entity.dxf.layer = SECTION_CENTER_LAYER
+                entity.dxf.color = 256
+                entity.dxf.linetype = "BYLAYER"
             elif _is_side_cavity_line(entity):
                 entity.dxf.layer = SIDE_CAVITY_LAYER
                 entity.dxf.color = 256
@@ -487,6 +504,7 @@ class DualGuideTemplateEngine:
             geometry = _add_param_slot_entities(modelspace, profile, anchor=section.anchor)
         else:
             geometry = _add_block_slot_entities(modelspace, profile, section.anchor, slot_base_y)
+        _rebuild_section_top_boundary(modelspace, geometry)
         if output_mode == "debug":
             _add_debug_entities(modelspace, geometry)
         return {
@@ -918,7 +936,7 @@ class DualGuideTemplateEngine:
         natural_opening = 2.0 * sqrt(
             max(0.0, radius * radius - (radius - natural_cut_in_depth) ** 2)
         )
-        opening_limit = max(product_length - 0.2, 0.1)
+        opening_limit = wheel_notch_opening_limit(product_length)
         cavity_notch_opening = min(natural_opening, opening_limit)
         half_opening = cavity_notch_opening / 2.0
         effective_cut_in_depth = radius - sqrt(max(0.0, radius * radius - half_opening * half_opening))
@@ -931,7 +949,7 @@ class DualGuideTemplateEngine:
             ),
             "natural_cut_in_depth": round(natural_cut_in_depth, 6),
             "natural_opening": round(natural_opening, 6),
-            "opening_limit_formula": "product_length - 0.2",
+            "opening_limit_formula": "product_length * 0.6",
             "opening_limit": round(opening_limit, 6),
             "cavity_notch_opening": round(cavity_notch_opening, 6),
             "effective_cut_in_depth": round(effective_cut_in_depth, 6),
@@ -1533,6 +1551,7 @@ class DualGuideTemplateEngine:
         input_rule: dict[str, Any] | None = None,
         dimension_audit: dict[str, Any] | None = None,
         line_type_audit: dict[str, Any] | None = None,
+        section_contour_audit: dict[str, Any] | None = None,
         release_gate: bool | None = None,
     ) -> dict[str, Any]:
         template = self.build_template()
@@ -1558,6 +1577,10 @@ class DualGuideTemplateEngine:
         }
         line_type_audit = line_type_audit or {
             "release_allowed": False,
+        }
+        section_contour_audit = section_contour_audit or {
+            "release_allowed": False,
+            "sections": [],
         }
         release_gate = bool(release_gate)
         return {
@@ -1652,6 +1675,7 @@ class DualGuideTemplateEngine:
             "release_cleanup": release_cleanup,
             "dimension_definition_point_audit": dimension_audit,
             "release_line_type_audit": line_type_audit,
+            "section_contour_closure_audit": section_contour_audit,
             "guide_section_spacing": {
                 "section_1_center": template.guide_section_1.center,
                 "section_2_center": template.guide_section_2.center,
@@ -1701,13 +1725,13 @@ class DualGuideTemplateEngine:
                 "no_legacy_4p29_dimension": release_cleanup["no_legacy_4p29_dimension"],
                 "no_unexplained_1p80_dimension": release_cleanup["no_unexplained_1p80_dimension"],
                 "release_side_dimensions_match_report": release_result["release_side_dimensions_match_report"],
-                "lower_wheel_notch_opening <= product_length - 0.2": lower_wheel_safety[
+                "lower_wheel_notch_opening <= product_length * 0.6": lower_wheel_safety[
                     "lower_cavity_notch_opening_within_limit"
                 ],
                 "lower_cavity_notch_opening_less_than_product_length": lower_wheel_safety[
                     "lower_cavity_notch_opening_less_than_product_length"
                 ],
-                "upper_wheel_notch_opening <= product_length - 0.2": upper_wheel_safety[
+                "upper_wheel_notch_opening <= product_length * 0.6": upper_wheel_safety[
                     "upper_cavity_notch_opening_within_limit"
                 ],
                 "upper_cavity_notch_opening_less_than_product_length": upper_wheel_safety[
@@ -1720,6 +1744,9 @@ class DualGuideTemplateEngine:
                     input_rule.get("input_rule_valid", True)
                 ),
                 "SIDE_DERIVED_release_lines_are_continuous": line_type_audit[
+                    "release_allowed"
+                ],
+                "section_contours_are_closed": section_contour_audit[
                     "release_allowed"
                 ],
                 "all_release_dimensions_bound_to_geometry": dimension_audit[

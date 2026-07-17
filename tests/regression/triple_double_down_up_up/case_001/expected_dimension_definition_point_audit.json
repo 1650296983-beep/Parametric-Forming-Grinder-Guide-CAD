@@ -396,11 +396,11 @@
     {
       "dimension_handle": "203D3FD",
       "dimension_role": "lower_wheel_crown_depth",
-      "measurement": 12.123437,
-      "display_text": "12.12",
+      "measurement": 12.046169,
+      "display_text": "12.05",
       "defpoint2": [
         3459.205,
-        -107.871138,
+        -107.948406,
         0.0
       ],
       "defpoint3": [
@@ -410,7 +410,7 @@
       ],
       "expected_geometry_point_1": [
         3459.205,
-        -107.871138,
+        -107.948406,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -550,22 +550,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3459.205,
-        -187.871138,
+        -187.948406,
         0.0
       ],
       "defpoint3": [
         3459.205,
-        -107.871138,
+        -107.948406,
         0.0
       ],
       "expected_geometry_point_1": [
         3459.205,
-        -187.871138,
+        -187.948406,
         0.0
       ],
       "expected_geometry_point_2": [
         3459.205,
-        -107.871138,
+        -107.948406,
         0.0
       ],
       "point_error": 0.0,
@@ -636,11 +636,11 @@
     {
       "dimension_handle": "203D486",
       "dimension_role": "lower_wheel_crown_depth",
-      "measurement": 12.123534,
-      "display_text": "12.12",
+      "measurement": 12.046266,
+      "display_text": "12.05",
       "defpoint2": [
         3488.454,
-        -605.355138,
+        -605.432406,
         0.0
       ],
       "defpoint3": [
@@ -650,7 +650,7 @@
       ],
       "expected_geometry_point_1": [
         3488.454,
-        -605.355138,
+        -605.432406,
         0.0
       ],
       "expected_geometry_point_2": [
@@ -670,22 +670,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3488.454,
-        -685.355138,
+        -685.432406,
         0.0
       ],
       "defpoint3": [
         3488.454,
-        -605.355138,
+        -605.432406,
         0.0
       ],
       "expected_geometry_point_1": [
         3488.454,
-        -685.355138,
+        -685.432406,
         0.0
       ],
       "expected_geometry_point_2": [
         3488.454,
-        -605.355138,
+        -605.432406,
         0.0
       ],
       "point_error": 0.0,
@@ -1024,27 +1024,27 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203D99D",
+      "dimension_handle": "203D9A1",
       "dimension_role": "lower_cavity_notch_opening",
-      "measurement": 8.9,
-      "display_text": "8.90",
+      "measurement": 5.46,
+      "display_text": "5.46",
       "defpoint2": [
-        3484.004,
+        3485.724,
         -605.479,
         0.0
       ],
       "defpoint3": [
-        3492.904,
+        3491.184,
         -605.479,
         0.0
       ],
       "expected_geometry_point_1": [
-        3484.004,
+        3485.724,
         -605.479,
         0.0
       ],
       "expected_geometry_point_2": [
-        3492.904,
+        3491.184,
         -605.479,
         0.0
       ],
@@ -1054,7 +1054,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "203D9AB",
+      "dimension_handle": "203D9AF",
       "dimension_role": "fixed_guide_length_590",
       "measurement": 590.0,
       "display_text": "590.00",
@@ -1114,7 +1114,7 @@
       "status": "PASS"
     },
     "lower_wheel_crown_depth": {
-      "expected_measurement": 12.123862,
+      "expected_measurement": 12.046594,
       "minimum_count": 2,
       "actual_count": 2,
       "all_bound_to_geometry": true,
@@ -1128,7 +1128,7 @@
       "status": "PASS"
     },
     "lower_cavity_notch_opening": {
-      "expected_measurement": 8.9,
+      "expected_measurement": 5.46,
       "minimum_count": 1,
       "actual_count": 1,
       "all_bound_to_geometry": true,

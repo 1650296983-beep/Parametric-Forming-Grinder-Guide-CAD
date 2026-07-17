@@ -15,7 +15,7 @@
     "slot_width": 9.15,
     "guide_thickness": 3.12,
     "R_form": null,
-    "lower_cavity_notch_opening": 8.9,
+    "lower_cavity_notch_opening": 5.46,
     "fixed_template_dimensions": {
       "section": {
         "outer_width": 35.0,
@@ -449,8 +449,8 @@
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "8.88",
-        "measurement": 8.876138,
+        "text": "8.95",
+        "measurement": 8.953406,
         "definition_points": {
           "defpoint": [
             3443.185587,
@@ -458,26 +458,26 @@
             0.0
           ],
           "defpoint2": [
-            3445.069552,
+            3444.919891,
             -245.041916,
             0.0
           ],
           "defpoint3": [
             3481.69463,
-            -253.918054,
+            -253.995322,
             0.0
           ],
           "text_midpoint": [
             3448.435587,
-            -249.479985,
+            -249.518619,
             0.0
           ]
         }
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "8.88",
-        "measurement": 8.876138,
+        "text": "8.95",
+        "measurement": 8.953406,
         "definition_points": {
           "defpoint": [
             3740.578336,
@@ -485,18 +485,18 @@
             0.0
           ],
           "defpoint2": [
-            3718.319708,
+            3718.469369,
             -245.041916,
             0.0
           ],
           "defpoint3": [
             3681.69463,
-            -253.918054,
+            -253.995322,
             0.0
           ],
           "text_midpoint": [
             3745.828336,
-            -249.479985,
+            -249.518619,
             0.0
           ]
         }
@@ -535,17 +535,17 @@
         "definition_points": {
           "defpoint": [
             3481.69463,
-            -173.918054,
+            -173.995322,
             0.0
           ],
           "defpoint4": [
             3481.69463,
-            -253.918054,
+            -253.995322,
             0.0
           ],
           "text_midpoint": [
             3478.44463,
-            -266.318054,
+            -266.395322,
             0.0
           ]
         }
@@ -557,17 +557,17 @@
         "definition_points": {
           "defpoint": [
             3681.69463,
-            -173.918054,
+            -173.995322,
             0.0
           ],
           "defpoint4": [
             3681.69463,
-            -253.918054,
+            -253.995322,
             0.0
           ],
           "text_midpoint": [
             3678.44463,
-            -266.318054,
+            -266.395322,
             0.0
           ]
         }
@@ -950,8 +950,8 @@
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "8.88",
-        "measurement": 8.876138,
+        "text": "8.95",
+        "measurement": 8.953406,
         "definition_points": {
           "defpoint": [
             3443.185587,
@@ -959,26 +959,26 @@
             0.0
           ],
           "defpoint2": [
-            3445.069552,
+            3444.919891,
             -245.041916,
             0.0
           ],
           "defpoint3": [
             3481.69463,
-            -253.918054,
+            -253.995322,
             0.0
           ],
           "text_midpoint": [
             3448.435587,
-            -249.479985,
+            -249.518619,
             0.0
           ]
         }
       },
       {
         "layer": "SIDE_DIMENSION",
-        "text": "8.88",
-        "measurement": 8.876138,
+        "text": "8.95",
+        "measurement": 8.953406,
         "definition_points": {
           "defpoint": [
             3740.578336,
@@ -986,18 +986,18 @@
             0.0
           ],
           "defpoint2": [
-            3718.319708,
+            3718.469369,
             -245.041916,
             0.0
           ],
           "defpoint3": [
             3681.69463,
-            -253.918054,
+            -253.995322,
             0.0
           ],
           "text_midpoint": [
             3745.828336,
-            -249.479985,
+            -249.518619,
             0.0
           ]
         }
@@ -1036,17 +1036,17 @@
         "definition_points": {
           "defpoint": [
             3481.69463,
-            -173.918054,
+            -173.995322,
             0.0
           ],
           "defpoint4": [
             3481.69463,
-            -253.918054,
+            -253.995322,
             0.0
           ],
           "text_midpoint": [
             3478.44463,
-            -266.318054,
+            -266.395322,
             0.0
           ]
         }
@@ -1058,17 +1058,17 @@
         "definition_points": {
           "defpoint": [
             3681.69463,
-            -173.918054,
+            -173.995322,
             0.0
           ],
           "defpoint4": [
             3681.69463,
-            -253.918054,
+            -253.995322,
             0.0
           ],
           "text_midpoint": [
             3678.44463,
-            -266.318054,
+            -266.395322,
             0.0
           ]
         }
@@ -1085,8 +1085,8 @@
   },
   "template_geometry_summary": {
     "template_files": [
-      "templates/double_head_up_up/section_template.dxf",
-      "templates/double_head_up_up/side_template.dxf"
+      "/Users/wrd/Desktop/codex workspace/CAD/templates/double_head_up_up/section_template.dxf",
+      "/Users/wrd/Desktop/codex workspace/CAD/templates/double_head_up_up/side_template.dxf"
     ],
     "sha256": "adbefdc1c5068c9449c8d78704166e77ac44da1701111f0465edc8b103d0d422",
     "entity_counts": {
@@ -1579,9 +1579,9 @@
     }
   },
   "safety_rules": {
-    "lower_cavity_notch_opening <= product_length - 0.2": true,
+    "lower_cavity_notch_opening <= product_length * 0.6": true,
     "product_length": 9.1,
-    "lower_cavity_notch_opening": 8.9,
-    "limit": 8.9
+    "lower_cavity_notch_opening": 5.46,
+    "limit": 5.46
   }
 }

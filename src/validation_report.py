@@ -9,6 +9,7 @@ from .geometry import TileSection
 from .dimension_precision import build_dimension_precision_file_audit
 from .inspection import inspect_release_dxf
 from .machine_config import MachineConfig
+from .global_rules import WHEEL_CUT_IN_RATIO
 from .release_entity_audit import build_parametric_duplicate_audit
 from .spec_parser import BlockSpec, FinishedSpec
 from .side_view import build_side_view_geometry
@@ -647,7 +648,7 @@ def _wheel_notch_payload(
     radius = side.template.wheel_radius
     has_lower_wheel = "下" in machine.wheel_positions
     has_upper_wheel = "上" in machine.wheel_positions
-    cut_in_depth = profile.process_thickness * 0.6
+    cut_in_depth = profile.process_thickness * WHEEL_CUT_IN_RATIO
     lower_cavity_opening = side.derived.lower_cavity_notch_opening
     upper_cavity_opening = side.derived.upper_cavity_notch_opening
     effective_cut_in_depth = side.derived.wheel_notch_depth - profile.guide_spec.slot_base_height
@@ -663,7 +664,7 @@ def _wheel_notch_payload(
         "process_thickness": profile.process_thickness,
         "natural_cut_in_depth": cut_in_depth,
         "natural_opening": 2.0 * (radius * radius - (radius - cut_in_depth) ** 2) ** 0.5,
-        "opening_limit_formula": "product_length - 0.2",
+        "opening_limit_formula": "product_length * 0.6",
         "opening_limit": side.derived.wheel_notch_opening_limit,
         "lower_cavity_notch_opening": lower_cavity_opening,
         "upper_cavity_notch_opening": upper_cavity_opening,
@@ -693,7 +694,7 @@ def _wheel_notch_payload(
         "adjusted_wheel_center_y": adjusted_wheel_center_y,
         "wheel_center_shift": adjusted_wheel_center_y - natural_wheel_center_y,
         "lower_wheel_center_y": adjusted_wheel_center_y,
-        "note": "上下砂轮的R80缺口均按成型磨前厚度中值的0.6倍计算自然开口；若不小于产品长度，则调整对应R80圆心，使开口不超过 product_length - 0.2，并同步更新连接线。",
+        "note": "上下砂轮的目标吃入深度均按成型磨前厚度中值的0.6倍计算；最终缺口开口不得超过 product_length * 0.6，超限时移动对应砂轮圆心并同步更新连接线。",
     }
 
 

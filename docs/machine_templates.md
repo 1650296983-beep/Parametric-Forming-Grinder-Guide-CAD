@@ -133,11 +133,11 @@ flat_arc_center_side: upper
 上下砂轮 R80 侧面缺口均按三头机单导轨（下上）的规则处理：
 
 - `natural_cut_in_depth = preform_thickness_mid * 0.6`
-- `opening_limit = product_length - 0.2`
+- `opening_limit = product_length * 0.6`
 - `lower_cavity_notch_opening = min(natural_opening, opening_limit)`
 - `upper_cavity_notch_opening = min(upper_natural_opening, opening_limit)`
 - 若任一自然缺口开口不小于产品长度，必须移动对应 R80 圆心并同步更新连接线和尺寸标注
-- release 校验必须检查上下开口均不大于 `product_length - 0.2`
+- release 校验必须检查上下开口均不大于 `product_length * 0.6`
 
 ## 目录结构
 

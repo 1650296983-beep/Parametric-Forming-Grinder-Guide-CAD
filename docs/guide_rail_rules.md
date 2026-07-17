@@ -225,9 +225,9 @@ guide_thickness = 3.35 + 0.12 = 3.47
 该机型继承三头机单导轨（下上）的上下砂轮安全规则：
 
 - `natural_cut_in_depth = product_thickness * 0.6`
-- `opening_limit = product_length - 0.2`
+- `opening_limit = product_length * 0.6`
 - `lower_cavity_notch_opening = min(natural_opening, opening_limit)`
 - `upper_cavity_notch_opening = min(upper_natural_opening, opening_limit)`
 - 若任一自然缺口开口不小于产品长度，必须移动对应 R80 圆心，使该开口小于产品长度
-- release 校验必须检查上下开口均不大于 `product_length - 0.2`
+- release 校验必须检查上下开口均不大于 `product_length * 0.6`
 - report 必须输出两侧的自然切入深度、开口限制、实际开口和有效切入深度

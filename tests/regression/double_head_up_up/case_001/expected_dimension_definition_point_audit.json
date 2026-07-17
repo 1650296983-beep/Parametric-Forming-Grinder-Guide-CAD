@@ -274,7 +274,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "202ADBF",
+      "dimension_handle": "202ADC1",
       "dimension_role": "fixed_span_90",
       "measurement": 90.0,
       "display_text": "90.00",
@@ -304,7 +304,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "202ADCD",
+      "dimension_handle": "202ADCF",
       "dimension_role": "other_release_dimension",
       "measurement": 200.0,
       "display_text": "200.00",
@@ -334,28 +334,28 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "202ADF2",
+      "dimension_handle": "202ADF4",
       "dimension_role": "wheel_radius",
       "measurement": 80.0,
       "display_text": "R80.00",
       "defpoint2": [
         3481.69463,
-        -173.918054,
+        -173.995322,
         0.0
       ],
       "defpoint3": [
         3481.69463,
-        -253.918054,
+        -253.995322,
         0.0
       ],
       "expected_geometry_point_1": [
         3481.69463,
-        -173.918054,
+        -173.995322,
         0.0
       ],
       "expected_geometry_point_2": [
         3481.69463,
-        -253.918054,
+        -253.995322,
         0.0
       ],
       "point_error": 0.0,
@@ -364,28 +364,28 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "202ADFB",
+      "dimension_handle": "202ADFD",
       "dimension_role": "other_release_dimension",
-      "measurement": 8.876138,
-      "display_text": "8.88",
+      "measurement": 8.953406,
+      "display_text": "8.95",
       "defpoint2": [
-        3445.069552,
+        3444.919891,
         -245.041916,
         0.0
       ],
       "defpoint3": [
         3481.69463,
-        -253.918054,
+        -253.995322,
         0.0
       ],
       "expected_geometry_point_1": [
-        3445.069552,
+        3444.919891,
         -245.041916,
         0.0
       ],
       "expected_geometry_point_2": [
         3481.69463,
-        -253.918054,
+        -253.995322,
         0.0
       ],
       "point_error": 0.0,
@@ -394,28 +394,28 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "202AE18",
+      "dimension_handle": "202AE1A",
       "dimension_role": "wheel_radius",
       "measurement": 80.0,
       "display_text": "R80.00",
       "defpoint2": [
         3681.69463,
-        -173.918054,
+        -173.995322,
         0.0
       ],
       "defpoint3": [
         3681.69463,
-        -253.918054,
+        -253.995322,
         0.0
       ],
       "expected_geometry_point_1": [
         3681.69463,
-        -173.918054,
+        -173.995322,
         0.0
       ],
       "expected_geometry_point_2": [
         3681.69463,
-        -253.918054,
+        -253.995322,
         0.0
       ],
       "point_error": 0.0,
@@ -424,28 +424,28 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "202AE21",
+      "dimension_handle": "202AE23",
       "dimension_role": "other_release_dimension",
-      "measurement": 8.876138,
-      "display_text": "8.88",
+      "measurement": 8.953406,
+      "display_text": "8.95",
       "defpoint2": [
-        3718.319708,
+        3718.469369,
         -245.041916,
         0.0
       ],
       "defpoint3": [
         3681.69463,
-        -253.918054,
+        -253.995322,
         0.0
       ],
       "expected_geometry_point_1": [
-        3718.319708,
+        3718.469369,
         -245.041916,
         0.0
       ],
       "expected_geometry_point_2": [
         3681.69463,
-        -253.918054,
+        -253.995322,
         0.0
       ],
       "point_error": 0.0,
@@ -454,7 +454,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "202AE3E",
+      "dimension_handle": "202AE40",
       "dimension_role": "fixed_guide_length_590",
       "measurement": 435.0,
       "display_text": "435.00",
@@ -484,7 +484,7 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "202AE4B",
+      "dimension_handle": "202AE4D",
       "dimension_role": "other_release_dimension",
       "measurement": 145.0,
       "display_text": "145.00",
