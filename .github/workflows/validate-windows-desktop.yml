@@ -86,7 +86,15 @@ jobs:
       - name: Build non-release NSIS package
         shell: pwsh
         run: |
-          & frontend/node_modules/.bin/tauri.cmd build --bundles nsis --config "$env:RUNNER_TEMP\tauri-validation.json"
+          & frontend/node_modules/.bin/tauri.cmd build --bundles nsis --config "$env:RUNNER_TEMP\tauri-validation.json" 2>&1 |
+            Tee-Object -FilePath "$env:RUNNER_TEMP\tauri-validation-build.log"
+          if ($LASTEXITCODE -ne 0) { throw "Tauri NSIS validation build failed." }
+          $bundleTypeWarning = Select-String -Path "$env:RUNNER_TEMP\tauri-validation-build.log" `
+            -Pattern "Failed to add bundler type to the binary"
+          if ($bundleTypeWarning) {
+            $bundleTypeWarning | ForEach-Object { Write-Error $_.Line }
+            throw "Updater bundle type marker is missing; validation package is not update-safe."
+          }
 
       - name: Verify and summarize validation artifact
         shell: pwsh

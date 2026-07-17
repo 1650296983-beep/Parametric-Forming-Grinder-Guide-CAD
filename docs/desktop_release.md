@@ -172,6 +172,22 @@ Losing the updater private key is not recoverable for installed clients: a new
 key cannot sign an update trusted by them. Restore the backed-up key or ship a
 manually installed replacement client through an independently trusted channel.
 
+### v1.0.2 updater trust bridge
+
+The v1.0.0/v1.0.1 configuration contained the correct Ed25519 public-key bytes
+but one incorrect byte in its Minisign key ID. Those clients therefore reject a
+normal signature before cryptographic verification. The published v1.0.1
+signature metadata was corrected to the embedded legacy ID and independently
+verified against the unchanged installer. The v1.0.2 workflow is the only
+release allowed to repeat that compatibility patch; v1.0.2 itself embeds the
+correct key ID, and v1.0.3 and later use normal Tauri signatures.
+
+The release workflow now fails if Tauri cannot patch the bundle type, if the
+signing private key does not match the configured public key, or if `rsign`
+cannot independently verify the actual installer. `scripts/check_versions.py`
+also rejects a public-key comment/body ID mismatch. Never remove these checks
+to make a release pass.
+
 ## Signed one-click update flow
 
 `bundle.createUpdaterArtifacts=true` makes Tauri sign updater artifacts. The
@@ -202,7 +218,7 @@ client. Do not use an untrusted third-party GitHub proxy as an update endpoint.
 When a mainland mirror is configured, put its endpoint before GitHub for the
 next client release and retain GitHub as the public source of record.
 
-## Versioning and publishing v1.0.0
+## Versioning and publishing
 
 Versions must agree in `frontend/package.json`, `src-tauri/tauri.conf.json`,
 `src-tauri/Cargo.toml`, and `desktop/version.py`:

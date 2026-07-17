@@ -18,7 +18,7 @@ def test_desktop_versions_are_consistent() -> None:
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
-    assert json.loads(completed.stdout)["version"] == "1.0.1"
+    assert json.loads(completed.stdout)["version"] == "1.0.2"
 
 
 def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> None:
@@ -32,6 +32,7 @@ def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> Non
     assert 'format!("http://127.0.0.1:{port}")' in rust
     assert ".arg(\"0\")" in rust
     assert "engine.stop()" in rust
+    assert "fn prepare_for_update" in rust
 
 
 def test_windows_release_hides_console_and_downloads_use_save_dialog() -> None:
@@ -72,6 +73,10 @@ def test_release_workflow_is_tag_gated_and_checks_all_release_blockers() -> None
         "npm audit",
         "smoke_sidecar.py",
         "TAURI_SIGNING_PRIVATE_KEY",
+        "Failed to add bundler type to the binary",
+        "does not match the public key",
+        "rsign verify",
+        "patch_updater_signature_key_id.py",
         "generate_latest_json.py",
         "Forming-Grinder-CAD_${version}_x64-setup.exe",
         "SHA256SUMS.txt",
@@ -87,6 +92,7 @@ def test_windows_validation_workflow_never_publishes_or_requires_signing_secrets
     assert "pull_request:" in workflow
     assert "actions/upload-artifact@v4" in workflow
     assert "createUpdaterArtifacts = $false" in workflow
+    assert "Failed to add bundler type to the binary" in workflow
     assert "release_created=false" in workflow
     assert "softprops/action-gh-release" not in workflow
     assert "TAURI_SIGNING_PRIVATE_KEY" not in workflow
@@ -98,12 +104,42 @@ def test_update_ui_covers_expected_user_visible_states() -> None:
     for message in (
         "当前已是最新版本",
         "无法访问更新服务；离线 CAD 功能不受影响",
-        "更新下载、签名验证或安装失败；当前版本已保留",
+        "更新包签名验证失败，已拒绝安装；当前版本已保留",
         "更新安装完成，正在重新启动应用",
-        "downloadAndInstall",
+        'invoke("prepare_for_update")',
+        "availableUpdate.download(",
+        "availableUpdate.install()",
         "relaunch",
     ):
         assert message in app
+
+
+def test_updater_bridge_signature_changes_only_key_id() -> None:
+    import base64
+
+    from scripts.patch_updater_signature_key_id import patch_signature
+
+    source_id = "F3263CB3188BF75C"
+    target_id = "F3263C63188BF75C"
+    primary = b"ED" + int(source_id, 16).to_bytes(8, "little") + bytes(range(64))
+    decoded = "\n".join(
+        [
+            "untrusted comment: test",
+            base64.b64encode(primary).decode("ascii"),
+            "trusted comment: test",
+            base64.b64encode(bytes(range(64))).decode("ascii"),
+        ]
+    ) + "\n"
+    outer = base64.b64encode(decoded.encode("utf-8")).decode("ascii")
+
+    patched_outer = patch_signature(outer, source_id, target_id)
+    patched_lines = base64.b64decode(patched_outer).decode("utf-8").splitlines()
+    patched_primary = base64.b64decode(patched_lines[1])
+
+    assert patched_primary[:2] == b"ED"
+    assert patched_primary[2:10] == int(target_id, 16).to_bytes(8, "little")
+    assert patched_primary[10:] == primary[10:]
+    assert patched_lines[2:] == decoded.splitlines()[2:]
 
 
 def test_latest_json_requires_a_signed_installer(tmp_path: Path) -> None:

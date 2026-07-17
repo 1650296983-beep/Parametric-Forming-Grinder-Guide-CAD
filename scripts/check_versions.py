@@ -4,6 +4,8 @@
 from __future__ import annotations
 
 import argparse
+import base64
+import binascii
 import json
 from pathlib import Path
 import re
@@ -12,6 +14,26 @@ import tomllib
 
 ROOT = Path(__file__).resolve().parents[1]
 SEMVER = re.compile(r"^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)(?:-[0-9A-Za-z.-]+)?$")
+
+
+def validate_updater_public_key() -> str:
+    config = json.loads((ROOT / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
+    encoded = str(config["plugins"]["updater"]["pubkey"])
+    try:
+        lines = base64.b64decode(encoded, validate=True).decode("utf-8").splitlines()
+        body = base64.b64decode(lines[1], validate=True)
+    except (binascii.Error, UnicodeDecodeError, IndexError) as error:
+        raise ValueError("Tauri updater public key is malformed") from error
+    comment_match = re.search(r"public key: ([0-9A-Fa-f]{16})$", lines[0])
+    if comment_match is None or len(body) != 42 or body[:2] != b"Ed":
+        raise ValueError("Tauri updater public key is not a valid Minisign public key")
+    comment_key_id = comment_match.group(1).upper()
+    body_key_id = f"{int.from_bytes(body[2:10], 'little'):016X}"
+    if comment_key_id != body_key_id:
+        raise ValueError(
+            f"Tauri updater public-key ID mismatch: comment={comment_key_id}, body={body_key_id}"
+        )
+    return body_key_id
 
 
 def versions() -> dict[str, str]:
@@ -38,6 +60,7 @@ def main() -> int:
     parser.add_argument("--tag", help="Expected release tag, for example v1.0.0")
     args = parser.parse_args()
     found = versions()
+    updater_key_id = validate_updater_public_key()
     unique = set(found.values())
     if len(unique) != 1:
         raise SystemExit("版本不一致：" + json.dumps(found, ensure_ascii=False))
@@ -46,7 +69,13 @@ def main() -> int:
         raise SystemExit(f"版本不是有效 SemVer：{version}")
     if args.tag and args.tag != f"v{version}":
         raise SystemExit(f"Release tag {args.tag} 与应用版本 v{version} 不一致。")
-    print(json.dumps({"version": version, "sources": found}, ensure_ascii=False, indent=2))
+    print(
+        json.dumps(
+            {"version": version, "sources": found, "updater_key_id": updater_key_id},
+            ensure_ascii=False,
+            indent=2,
+        )
+    )
     return 0
 
 

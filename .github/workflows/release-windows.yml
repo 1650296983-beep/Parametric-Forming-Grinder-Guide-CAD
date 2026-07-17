@@ -134,7 +134,50 @@ jobs:
         run: |
           $arguments = @("build", "--bundles", "nsis")
           if (Test-Path "$env:RUNNER_TEMP\tauri-signing.json") { $arguments += @("--config", "$env:RUNNER_TEMP\tauri-signing.json") }
-          & frontend/node_modules/.bin/tauri.cmd @arguments
+          & frontend/node_modules/.bin/tauri.cmd @arguments 2>&1 | Tee-Object -FilePath "$env:RUNNER_TEMP\tauri-build.log"
+          if ($LASTEXITCODE -ne 0) { throw "Tauri NSIS build failed." }
+          $fatalWarnings = Select-String -Path "$env:RUNNER_TEMP\tauri-build.log" -Pattern @(
+            "Failed to add bundler type to the binary",
+            "does not match the public key"
+          )
+          if ($fatalWarnings) {
+            $fatalWarnings | ForEach-Object { Write-Error $_.Line }
+            throw "Updater integrity warning detected; refusing to publish."
+          }
+
+      - name: Independently verify updater signature
+        shell: pwsh
+        run: |
+          cargo install rsign2 --version 0.6.6 --locked
+          $installer = Get-ChildItem src-tauri/target/release/bundle/nsis/*-setup.exe | Select-Object -First 1
+          if (-not $installer) { throw "NSIS setup.exe was not generated." }
+          $signature = "$($installer.FullName).sig"
+          $config = Get-Content src-tauri/tauri.conf.json -Raw | ConvertFrom-Json
+          [IO.File]::WriteAllBytes(
+            "$env:RUNNER_TEMP\updater.pub",
+            [Convert]::FromBase64String($config.plugins.updater.pubkey)
+          )
+          [IO.File]::WriteAllBytes(
+            "$env:RUNNER_TEMP\updater.minisig",
+            [Convert]::FromBase64String((Get-Content $signature -Raw).Trim())
+          )
+          rsign verify -p "$env:RUNNER_TEMP\updater.pub" -x "$env:RUNNER_TEMP\updater.minisig" $installer.FullName
+          if ($LASTEXITCODE -ne 0) { throw "Generated updater signature does not match the configured public key." }
+
+          # v1.0.2 is the single bridge from clients that shipped with one wrong key-ID byte.
+          if ($env:RELEASE_TAG -eq "v1.0.2") {
+            python scripts/patch_updater_signature_key_id.py $signature `
+              --source-key-id F3263CB3188BF75C `
+              --target-key-id F3263C63188BF75C
+            $legacyPublicKey = "untrusted comment: minisign public key: F3263C63188BF75C`nRWRc94sYYzwm8yFaLAPKoBul6LCNkkqVt/hl2NgRyYkMtIuEGgSQC5Rt`n"
+            [IO.File]::WriteAllText("$env:RUNNER_TEMP\legacy-updater.pub", $legacyPublicKey)
+            [IO.File]::WriteAllBytes(
+              "$env:RUNNER_TEMP\legacy-updater.minisig",
+              [Convert]::FromBase64String((Get-Content $signature -Raw).Trim())
+            )
+            rsign verify -p "$env:RUNNER_TEMP\legacy-updater.pub" -x "$env:RUNNER_TEMP\legacy-updater.minisig" $installer.FullName
+            if ($LASTEXITCODE -ne 0) { throw "v1.0.2 bridge signature is not trusted by legacy clients." }
+          }
 
       - name: Generate latest.json, build summary, and SHA-256 checksums
         shell: pwsh
