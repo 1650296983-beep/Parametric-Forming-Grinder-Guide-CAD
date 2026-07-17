@@ -192,9 +192,13 @@ jobs:
           $installer = Get-Item $releasePath
           python scripts/generate_latest_json.py --version $version --repository $env:GITHUB_REPOSITORY --installer $installer.FullName --output latest.json
           $files = @($installer.FullName, "$($installer.FullName).sig", "latest.json")
-          $files | ForEach-Object { Get-FileHash $_ -Algorithm SHA256 } |
-            ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" } |
-            Set-Content -Encoding ascii SHA256SUMS.txt
+          $checksumLines = $files | ForEach-Object { Get-FileHash $_ -Algorithm SHA256 } |
+            ForEach-Object { "$($_.Hash.ToLower())  $([IO.Path]::GetFileName($_.Path))" }
+          [IO.File]::WriteAllText(
+            (Join-Path $PWD "SHA256SUMS.txt"),
+            ($checksumLines -join "`n") + "`n",
+            [Text.Encoding]::ASCII
+          )
           @(
             "commit_sha=$env:GITHUB_SHA",
             "release_tag=$env:RELEASE_TAG",

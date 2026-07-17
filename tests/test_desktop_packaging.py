@@ -84,6 +84,8 @@ def test_release_workflow_is_tag_gated_and_checks_all_release_blockers() -> None
         "generate_latest_json.py",
         "Forming-Grinder-CAD_${version}_x64-setup.exe",
         "SHA256SUMS.txt",
+        '[IO.File]::WriteAllText(',
+        '$checksumLines -join "`n"',
     ):
         assert required in workflow
 
