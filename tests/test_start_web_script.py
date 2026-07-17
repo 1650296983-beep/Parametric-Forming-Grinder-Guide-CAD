@@ -1,12 +1,19 @@
 from __future__ import annotations
 
+import os
 from pathlib import Path
 import subprocess
+
+import pytest
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[1]
 
 
+@pytest.mark.skipif(
+    os.name == "nt",
+    reason="start_web.sh is a POSIX development entrypoint; Linux CI validates it.",
+)
 def test_start_web_script_has_valid_bash_syntax() -> None:
     script = PROJECT_ROOT / "scripts" / "start_web.sh"
 
@@ -18,3 +25,10 @@ def test_start_web_script_has_valid_bash_syntax() -> None:
     )
 
     assert result.returncode == 0, result.stderr
+
+
+def test_start_web_script_does_not_require_login_secrets() -> None:
+    script = (PROJECT_ROOT / "scripts" / "start_web.sh").read_text(encoding="utf-8")
+
+    assert "CAD_ADMIN_PASSWORD" not in script
+    assert "CAD_SESSION_SECRET" not in script

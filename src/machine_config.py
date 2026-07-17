@@ -4,11 +4,12 @@ from dataclasses import dataclass
 from pathlib import Path
 import ast
 
+from desktop.runtime_paths import resource_root
 from .global_rules import DEFAULT_WHEEL_RADIUS
 from .side_view_config import SideViewLayoutConfig
 
 
-TEMPLATE_ROOT = Path("templates")
+TEMPLATE_ROOT = resource_root() / "templates"
 
 
 @dataclass(frozen=True)

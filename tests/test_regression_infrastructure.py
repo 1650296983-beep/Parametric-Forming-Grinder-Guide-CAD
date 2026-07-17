@@ -125,6 +125,38 @@ def test_historical_regression_cases_run_without_removed_machine_property(tmp_pa
         assert result["generation_ok"], result["generation_errors"]
 
 
+def test_dual_regression_key_values_use_explicit_baseline_artifact(tmp_path):
+    regression = _load_regression_script()
+    case_dir = (
+        REPO_ROOT
+        / "tests"
+        / "regression"
+        / "triple_double_down_up_up"
+        / "case_001"
+    )
+    report = json.loads(
+        (case_dir / "expected_report.json").read_text(encoding="utf-8")
+    )
+    report["release_dxf"] = str(
+        tmp_path / "missing-developer-specific-path" / "actual_release.dxf"
+    )
+
+    key_values = regression.extract_key_values(
+        report,
+        release_dxf=case_dir / "expected_release.dxf",
+    )
+
+    assert key_values["release_layers"] == [
+        "DIMENSION",
+        "FIXED_TEMPLATE",
+        "PARAM_SLOT",
+        "SECTION_CENTER",
+        "SIDE_CAVITY",
+        "SIDE_CENTER",
+        "SIDE_TEMPLATE",
+    ]
+
+
 def test_clean_checkout_runs_independent_regression_entrypoint():
     script = (REPO_ROOT / "scripts" / "verify_clean_checkout.sh").read_text(encoding="utf-8")
 
