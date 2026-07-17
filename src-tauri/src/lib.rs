@@ -68,11 +68,25 @@ fn engine_status(state: tauri::State<'_, Mutex<EngineState>>) -> EngineStatus {
 }
 
 #[tauri::command]
-fn restart_engine(app: AppHandle, state: tauri::State<'_, Mutex<EngineState>>) -> Result<EngineStatus, String> {
-    let mut engine = state.lock().map_err(|_| "本地引擎状态不可用。".to_string())?;
+fn restart_engine(
+    app: AppHandle,
+    state: tauri::State<'_, Mutex<EngineState>>,
+) -> Result<EngineStatus, String> {
+    let mut engine = state
+        .lock()
+        .map_err(|_| "本地引擎状态不可用。".to_string())?;
     engine.stop();
     *engine = start_engine(&app)?;
     Ok(engine.public_status())
+}
+
+#[tauri::command]
+fn prepare_for_update(state: tauri::State<'_, Mutex<EngineState>>) -> Result<(), String> {
+    let mut engine = state
+        .lock()
+        .map_err(|_| "本地引擎状态不可用。".to_string())?;
+    engine.stop();
+    Ok(())
 }
 
 fn sidecar_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -101,8 +115,14 @@ fn sidecar_path(app: &AppHandle) -> Result<PathBuf, String> {
 
 fn start_engine(app: &AppHandle) -> Result<EngineState, String> {
     let executable = sidecar_path(app)?;
-    let nonce = SystemTime::now().duration_since(UNIX_EPOCH).unwrap_or_default().as_nanos();
-    let status_file = std::env::temp_dir().join(format!("forming-grinder-cad-{}-{nonce}.json", std::process::id()));
+    let nonce = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .unwrap_or_default()
+        .as_nanos();
+    let status_file = std::env::temp_dir().join(format!(
+        "forming-grinder-cad-{}-{nonce}.json",
+        std::process::id()
+    ));
     let _ = fs::remove_file(&status_file);
     let mut command = Command::new(&executable);
     command
@@ -119,7 +139,9 @@ fn start_engine(app: &AppHandle) -> Result<EngineState, String> {
         use std::os::windows::process::CommandExt;
         command.creation_flags(0x08000000);
     }
-    let mut child = command.spawn().map_err(|_| "Python CAD sidecar 无法启动。".to_string())?;
+    let mut child = command
+        .spawn()
+        .map_err(|_| "Python CAD sidecar 无法启动。".to_string())?;
     let deadline = Instant::now() + Duration::from_secs(60);
     while !status_file.is_file() && Instant::now() < deadline {
         if child.try_wait().ok().flatten().is_some() {
@@ -127,10 +149,11 @@ fn start_engine(app: &AppHandle) -> Result<EngineState, String> {
         }
         std::thread::sleep(Duration::from_millis(100));
     }
-    let status = fs::read_to_string(&status_file).map_err(|_| "sidecar 未返回端口状态文件。".to_string())?;
+    let status =
+        fs::read_to_string(&status_file).map_err(|_| "sidecar 未返回端口状态文件。".to_string())?;
     let _ = fs::remove_file(&status_file);
-    let payload: serde_json::Value = serde_json::from_str(&status)
-        .map_err(|_| "sidecar 未返回有效的启动协议。".to_string())?;
+    let payload: serde_json::Value =
+        serde_json::from_str(&status).map_err(|_| "sidecar 未返回有效的启动协议。".to_string())?;
     let port = payload
         .get("port")
         .and_then(|value| value.as_u64())
@@ -141,7 +164,11 @@ fn start_engine(app: &AppHandle) -> Result<EngineState, String> {
         let _ = child.wait();
         return Err(error);
     }
-    Ok(EngineState { child: Some(child), port: Some(port), error: None })
+    Ok(EngineState {
+        child: Some(child),
+        port: Some(port),
+        error: None,
+    })
 }
 
 fn wait_for_health(port: u16, timeout: Duration) -> Result<(), String> {
@@ -156,8 +183,9 @@ fn wait_for_health(port: u16, timeout: Duration) -> Result<(), String> {
 }
 
 fn health_check(port: u16) -> bool {
-    http_request(port, "GET", "/api/health")
-        .is_some_and(|response| response.starts_with("HTTP/1.1 200") && response.contains("\"status\":\"ok\""))
+    http_request(port, "GET", "/api/health").is_some_and(|response| {
+        response.starts_with("HTTP/1.1 200") && response.contains("\"status\":\"ok\"")
+    })
 }
 
 fn http_request(port: u16, method: &str, path: &str) -> Option<String> {
@@ -190,7 +218,11 @@ pub fn run() {
         .plugin(tauri_plugin_process::init())
         .plugin(tauri_plugin_updater::Builder::new().build())
         .manage(Mutex::new(EngineState::default()))
-        .invoke_handler(tauri::generate_handler![engine_status, restart_engine])
+        .invoke_handler(tauri::generate_handler![
+            engine_status,
+            restart_engine,
+            prepare_for_update
+        ])
         .setup(|app| {
             let engine = start_engine(app.handle());
             let state = app.state::<Mutex<EngineState>>();
@@ -211,7 +243,10 @@ pub fn run() {
                 engine.stop();
             }
         }
-        RunEvent::WindowEvent { event: WindowEvent::Destroyed, .. } => {
+        RunEvent::WindowEvent {
+            event: WindowEvent::Destroyed,
+            ..
+        } => {
             if handle.webview_windows().is_empty() {
                 if let Ok(mut engine) = handle.state::<Mutex<EngineState>>().lock() {
                     engine.stop();

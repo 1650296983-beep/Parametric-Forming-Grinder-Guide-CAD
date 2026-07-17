@@ -750,7 +750,7 @@ function Rules() {
 function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolean) => void }) {
   const [settings, setSettings] = useState<DesktopSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [version, setVersion] = useState("1.0.1");
+  const [version, setVersion] = useState("1.0.2");
   const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
   const [updateMessage, setUpdateMessage] = useState("尚未检查更新。");
   const [checking, setChecking] = useState(false);
@@ -807,19 +807,38 @@ function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolea
     setDownloadProgress(0);
     let downloaded = 0;
     let total = 0;
+    let stage: "download" | "install" = "download";
+    let engineStopped = false;
     try {
-      await availableUpdate.downloadAndInstall((event) => {
+      setUpdateMessage(`正在下载并验证版本 ${availableUpdate.version}…`);
+      await availableUpdate.download((event) => {
         if (event.event === "Started") total = event.data.contentLength ?? 0;
         if (event.event === "Progress") {
           downloaded += event.data.chunkLength;
           if (total > 0) setDownloadProgress(Math.min(100, Math.round((downloaded / total) * 100)));
         }
         if (event.event === "Finished") setDownloadProgress(100);
-      });
+      }, { timeout: 10 * 60 * 1000 });
+      setUpdateMessage("下载和签名验证已通过，正在关闭本地引擎并安装…");
+      stage = "install";
+      await invoke("prepare_for_update");
+      engineStopped = true;
+      onEngineState(false);
+      await availableUpdate.install();
       setUpdateMessage("更新安装完成，正在重新启动应用…");
       await relaunch();
-    } catch {
-      setUpdateMessage("更新下载、签名验证或安装失败；当前版本已保留。");
+    } catch (error) {
+      if (engineStopped) {
+        try {
+          await invoke("restart_engine");
+          resetApiBaseUrl();
+          await api.health();
+          onEngineState(true);
+        } catch {
+          onEngineState(false);
+        }
+      }
+      setUpdateMessage(updateFailureMessage(stage, error));
       setInstalling(false);
     }
   };
@@ -864,6 +883,20 @@ function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolea
       </div>
     </section>
   </section>;
+}
+
+function updateFailureMessage(stage: "download" | "install", error: unknown): string {
+  const detail = error instanceof Error ? error.message : String(error ?? "");
+  if (/signature|public key|verify|verification/i.test(detail)) {
+    return "更新包签名验证失败，已拒绝安装；当前版本已保留。";
+  }
+  if (/timed?\s*out|timeout/i.test(detail)) {
+    return "更新下载超时，请检查网络后重试；离线 CAD 功能不受影响。";
+  }
+  if (stage === "download") {
+    return "更新包下载失败，可能无法稳定访问 GitHub；当前版本已保留。";
+  }
+  return "更新安装失败，本地 CAD 引擎已尝试恢复；当前版本已保留。";
 }
 
 function pageTitle(page: Page) { return ({ workspace: "导轨生成工作台", history: "历史任务", templates: "机台模板", rules: "规则与说明", settings: "设置与更新" })[page]; }

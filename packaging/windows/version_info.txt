@@ -4,11 +4,11 @@ VSVersionInfo(
     StringFileInfo([StringTable('040904B0', [
       StringStruct('CompanyName', 'Forming Grinder CAD Maintainers'),
       StringStruct('FileDescription', 'Forming Grinder CAD Python Sidecar'),
-      StringStruct('FileVersion', '1.0.1'),
+      StringStruct('FileVersion', '1.0.2'),
       StringStruct('InternalName', 'forming_grinder_cad_sidecar'),
       StringStruct('OriginalFilename', 'forming_grinder_cad_sidecar.exe'),
       StringStruct('ProductName', 'Forming Grinder CAD'),
-      StringStruct('ProductVersion', '1.0.1')
+      StringStruct('ProductVersion', '1.0.2')
     ])]),
     VarFileInfo([VarStruct('Translation', [1033, 1200])])
   ]
