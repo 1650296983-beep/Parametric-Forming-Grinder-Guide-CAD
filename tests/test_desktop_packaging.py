@@ -109,13 +109,12 @@ def test_windows_validation_workflow_never_publishes_or_requires_signing_secrets
     assert "push:" not in workflow
 
 
-def test_cos_workflow_only_mirrors_an_approved_stable_release() -> None:
+def test_cos_workflow_is_recovery_only_and_local_publisher_is_primary() -> None:
     workflow = (
         ROOT / ".github" / "workflows" / "publish-cos-mirror.yml"
     ).read_text(encoding="utf-8")
     for required in (
-        "release:",
-        "published",
+        "workflow_dispatch:",
         "isDraft",
         "isPrerelease",
         "TENCENT_COS_BUCKET",
@@ -127,7 +126,21 @@ def test_cos_workflow_only_mirrors_an_approved_stable_release() -> None:
         "updates/stable/latest.json",
     ):
         assert required in workflow
+    assert "release:" not in workflow
     assert "DeleteObject" not in workflow
+
+    local_wrapper = ROOT / "scripts" / "publish_cos_release_local.sh"
+    local_publisher = ROOT / "scripts" / "publish_github_release_to_cos.py"
+    keychain_setup = ROOT / "scripts" / "configure_cos_publisher_keychain.sh"
+    assert local_wrapper.stat().st_mode & 0o111
+    assert keychain_setup.stat().st_mode & 0o111
+    for required in (
+        "prepare_release_assets",
+        "SHA256SUMS.txt",
+        "publish_release",
+        "load_publisher_credentials",
+    ):
+        assert required in local_publisher.read_text(encoding="utf-8")
 
 
 def test_update_ui_covers_expected_user_visible_states() -> None:

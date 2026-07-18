@@ -330,7 +330,7 @@ def publish_release(
     print(f"Promoted COS stable manifest to {plan.tag}.")
 
 
-def _create_cos_client(region: str, secret_id: str, secret_key: str) -> Any:
+def create_cos_client(region: str, secret_id: str, secret_key: str) -> Any:
     try:
         from qcloud_cos import CosConfig, CosS3Client
     except ImportError as error:
@@ -368,7 +368,7 @@ def main() -> int:
             installer=args.installer,
             manifest=args.manifest,
         )
-        client = _create_cos_client(args.region, secret_id, secret_key)
+        client = create_cos_client(args.region, secret_id, secret_key)
         publish_release(client, plan)
     except (RuntimeError, ValueError) as error:
         raise SystemExit(str(error)) from error

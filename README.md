@@ -179,6 +179,19 @@ Build, signing-key, GitHub/COS Secrets and Variables, mirror promotion,
 rollback, SmartScreen, private-repository and troubleshooting instructions are in
 [`docs/desktop_release.md`](docs/desktop_release.md).
 
+After the one-time macOS Keychain setup, publish an approved stable GitHub
+Release to the Tencent COS mainland mirror with:
+
+```bash
+./scripts/publish_cos_release_local.sh v1.0.4 --dry-run
+./scripts/publish_cos_release_local.sh v1.0.4
+```
+
+The local publisher verifies the signed GitHub assets and checksums, uploads
+versioned objects, reads them back from the public COS endpoint, and promotes
+the stable manifest last. The GitHub-hosted COS workflow is manual recovery
+only because cross-border uploads from hosted runners are not reliable.
+
 ## Template Asset Delivery
 
 All source DXF templates required by the generator are versioned under

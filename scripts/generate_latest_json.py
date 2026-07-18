@@ -45,6 +45,41 @@ def build_download_url(
     )
 
 
+def build_manifest(
+    *,
+    version: str,
+    installer_name: str,
+    signature: str,
+    notes: str,
+    repository: str | None,
+    download_base_url: str | None,
+    pub_date: str | None = None,
+) -> dict[str, object]:
+    if not signature.strip():
+        raise ValueError("Updater signature is empty.")
+    download_url = build_download_url(
+        version=version,
+        installer_name=installer_name,
+        repository=repository,
+        download_base_url=download_base_url,
+    )
+    published_at = pub_date or datetime.now(tz=timezone.utc).isoformat().replace(
+        "+00:00",
+        "Z",
+    )
+    return {
+        "version": version,
+        "notes": notes,
+        "pub_date": published_at,
+        "platforms": {
+            "windows-x86_64": {
+                "signature": signature.strip(),
+                "url": download_url,
+            },
+        },
+    }
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--version", required=True)
@@ -53,6 +88,7 @@ def main() -> int:
     location.add_argument("--download-base-url")
     parser.add_argument("--installer", type=Path, required=True)
     parser.add_argument("--notes", default="See the GitHub Release notes for details.")
+    parser.add_argument("--pub-date")
     parser.add_argument("--output", type=Path, required=True)
     args = parser.parse_args()
     signature_path = Path(f"{args.installer}.sig")
@@ -62,23 +98,21 @@ def main() -> int:
     if not signature:
         raise SystemExit("Updater signature is empty.")
     try:
-        url = build_download_url(
+        payload = build_manifest(
             version=args.version,
             installer_name=args.installer.name,
+            signature=signature,
+            notes=args.notes,
             repository=args.repository,
             download_base_url=args.download_base_url,
+            pub_date=args.pub_date,
         )
     except ValueError as error:
         raise SystemExit(str(error)) from error
-    payload = {
-        "version": args.version,
-        "notes": args.notes,
-        "pub_date": datetime.now(tz=timezone.utc).isoformat().replace("+00:00", "Z"),
-        "platforms": {
-            "windows-x86_64": {"signature": signature, "url": url},
-        },
-    }
-    args.output.write_text(json.dumps(payload, ensure_ascii=False, indent=2), encoding="utf-8")
+    args.output.write_text(
+        json.dumps(payload, ensure_ascii=False, indent=2),
+        encoding="utf-8",
+    )
     return 0
 
 

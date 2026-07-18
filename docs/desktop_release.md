@@ -236,10 +236,11 @@ binary-release repository). For a private source repository, publish binaries
 to a separate public release repository or build a secure download service.
 Never embed a GitHub PAT in the client.
 
-`.github/workflows/publish-cos-mirror.yml` runs only after a stable GitHub
-Release is published (or for an explicit recovery dispatch targeting an already
-published stable tag). It verifies the GitHub checksums, generates a COS-specific
-manifest, then publishes in this order:
+The primary COS publication path runs from a trusted local Mac after a stable
+GitHub Release is published. GitHub-hosted runners are not used automatically
+because their cross-border upload to Shanghai COS can stall. The local publisher
+verifies the GitHub checksums, generates a deterministic COS-specific manifest,
+then publishes in this order:
 
 ```text
 updates/releases/vX.Y.Z/<signed installer>
@@ -263,6 +264,46 @@ Version `v1.0.3` is the endpoint bootstrap release. Clients already running
 `v1.0.2` still know only the GitHub endpoint, so they must obtain `v1.0.3`
 through GitHub or one manual installation. After `v1.0.3` is installed, future
 checks use COS first.
+
+### One-command local COS publication
+
+Store the dedicated `cad-release-publisher` credentials once in the macOS
+Keychain. Enter both values at the local hidden prompts; never paste them into
+source code or a Codex conversation:
+
+```bash
+./scripts/configure_cos_publisher_keychain.sh
+```
+
+Before publishing, run a no-write rehearsal:
+
+```bash
+./scripts/publish_cos_release_local.sh v1.0.4 --dry-run
+```
+
+Publish the approved stable release with one command:
+
+```bash
+./scripts/publish_cos_release_local.sh v1.0.4
+```
+
+Omit the tag only when intentionally publishing the latest non-draft,
+non-prerelease GitHub Release. The wrapper installs the pinned COS SDK into the
+existing `.venv` when needed. The Python publisher obtains credentials from
+`TENCENT_COS_SECRET_ID` and `TENCENT_COS_SECRET_KEY` first, then falls back to
+the macOS Keychain. It never prints either value.
+
+The command downloads the installer, updater signature, GitHub `latest.json`,
+and `SHA256SUMS.txt`; validates all checksums and signature metadata; creates a
+COS manifest whose publication timestamp comes from the GitHub Release; uploads
+immutable versioned objects; downloads them anonymously for SHA-256 and length
+comparison; and promotes `updates/stable/latest.json` last. Existing identical
+objects are reused. Different content under the same version, stable
+downgrades, unsigned installers, drafts, and prereleases are rejected.
+
+`.github/workflows/publish-cos-mirror.yml` remains available only as an explicit
+manual recovery dispatch. It does not run automatically when a Release is
+published.
 
 ## Versioning and publishing
 
@@ -298,9 +339,10 @@ First release steps:
 9. The Windows workflow checks the exact tag SHA, then creates a **draft**
    Release. Inspect test summary, attestation, `SHA256SUMS.txt`, installer,
    signature, and `latest.json` before publishing the draft.
-10. Publishing the approved GitHub Release triggers the COS mirror workflow.
-    Require its summary to show the signed installer, signature, versioned
-    manifest, and stable manifest in that order.
+10. Publish the approved GitHub Release, run
+    `./scripts/publish_cos_release_local.sh vX.Y.Z --dry-run`, then run the same
+    command without `--dry-run`. Require its summary to show the signed
+    installer, signature, versioned manifest, and stable manifest in that order.
 11. On a clean Windows test VM, install, create a task, test no-update/offline,
    publish a signed test update if available, update, and confirm task hashes.
 12. If COS publication fails, keep the GitHub Release available but diagnose the
