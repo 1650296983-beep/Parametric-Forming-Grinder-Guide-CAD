@@ -24,6 +24,13 @@ def test_desktop_versions_are_consistent() -> None:
 def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> None:
     config = json.loads((ROOT / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
     assert config["bundle"]["createUpdaterArtifacts"] is True
+    assert config["bundle"]["icon"] == [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico",
+    ]
     assert config["plugins"]["updater"]["pubkey"]
     assert config["plugins"]["updater"]["endpoints"] == [
         "https://forming-grinder-guide-cad-1424134622.cos.ap-shanghai.myqcloud.com/updates/stable/latest.json",

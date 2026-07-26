@@ -92,6 +92,11 @@ release. The script applies an ad-hoc signature to the complete bundle after
 the Python sidecar is copied. It is not Developer-ID notarized; macOS may
 require an explicit local Open action on another Mac.
 
+Windows and macOS bundle icons must both be generated from
+`frontend/public/favicon.svg`. Tauri must explicitly bundle
+`src-tauri/icons/icon.ico` for Windows and `src-tauri/icons/icon.icns` for
+macOS; a macOS bundle without `CFBundleIconFile` is invalid for release.
+
 ## Local user data
 
 Windows mutable data is stored outside the installer:
