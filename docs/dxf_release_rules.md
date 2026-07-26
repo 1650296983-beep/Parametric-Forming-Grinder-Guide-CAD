@@ -4,8 +4,22 @@ release DXF 是给厂家加工的正式图纸。任何校验失败时都不得�
 
 Web 任务通过全部 release DXF 校验后，可额外生成 AutoCAD 2007/LT 2007
 `*.dwg`。DWG 必须由 AutoCAD Core Console 从已晋级的 release DXF 转换，且
-文件头必须为 `AC1021`；禁止只修改扩展名或绕过 DXF 几何、图层和尺寸审计。
+文件头必须为 `AC1021`；转换完成后必须由 AutoCAD Core Console 重新打开
+DWG，审计模型空间实体数。转换用 DXF 与重开 DWG 的模型空间实体数必须
+相等且大于零；禁止只修改扩展名、仅检查文件大小或仅检查文件头。
 DWG 转换失败不改变 DXF 的校验结论，但必须在 `report.json.dwg_export` 中记录。
+空白、实体丢失、无法重开或无法完成审计的 DWG 必须删除，且不得出现在前端
+可保存文件列表中。
+
+Core Console 的输入 DXF 必须与用户端 AutoCAD 版本兼容。AutoCAD 2014 只允许
+读取到 AutoCAD 2013 DXF（`AC1027`）；当 release DXF 为 AutoCAD 2018 DXF
+（`AC1032`）时，转换器必须先重建 `AC1027` 中间文件，再执行 `SAVEAS 2007`。
+不得把 `AC1032` 直接交给 AutoCAD 2014，否则 AutoCAD 会丢弃输入图形，并可能
+把默认空白数据库保存成看似合法的 `AC1021` DWG。
+
+兼容重建时不得简单修改 `$ACADVER`。所有普通模型空间图元必须复制到对应旧版
+DXF 文档；可见 `ACAD_PROXY_ENTITY` 必须展开成旧版可读取的原生图元。无法解析
+或无法完整展开的可见代理图元必须使转换失败，禁止输出可能缺图的 DWG。
 
 显式双规格任务的正式文件名固定为 `成品规格（磨前规格）机台类型.dxf`，
 且不包含规格公差。公差仍必须保留在输入、DXF 尺寸和校验报告中。为兼容
@@ -23,7 +37,29 @@ macOS 和 Windows 文件系统，规格内的 `*` 输出为 `×`。例如：
 5. 写入 `report.json`；
 6. 全部检查通过后，将候选文件晋级为正式文件名；
 7. 任一检查失败时删除候选文件，不生成正式 release。
-8. release DXF 通过后，转换并验证同名 AutoCAD 2007 DWG（转换器可用时）。
+8. release DXF 通过后，记录 AutoCAD 读取到的模型空间实体数；
+9. 按已安装 AutoCAD 版本生成兼容转换用 DXF；
+10. 转换同名 AutoCAD 2007 DWG，检查 `AC1021` 文件头；
+11. 使用 AutoCAD 重新打开 DWG，复核模型空间实体数与转换用 DXF 一致后才允许交付。
+
+DWG 审计通过时，`report.json.dwg_export` 至少包含：
+
+- `generated: true`
+- `dwg_version: "AC1021"`
+- `source_modelspace_entity_count`
+- `dwg_modelspace_entity_count`
+- `modelspace_entity_count_matches: true`
+- `release_dxf_version`
+- `conversion_dxf_version`
+- `release_modelspace_entity_count`
+- `legacy_dxf_compatibility_mode`
+- `expanded_proxy_graphic_entity_count`
+- `autocad_version`
+- `core_console_path`
+
+其中 `source_modelspace_entity_count` 表示 AutoCAD 实际读取的转换用 DXF 实体数。
+代理图元展开时，该值可能大于 `release_modelspace_entity_count`；最终 DWG 必须
+与前者一致。
 
 ## release 允许图层
 

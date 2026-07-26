@@ -9,6 +9,17 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _git_file_mode(path: Path) -> str:
+    completed = subprocess.run(
+        ["git", "ls-files", "--stage", "--", path.relative_to(ROOT).as_posix()],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return completed.stdout.split(maxsplit=1)[0]
+
+
 def test_desktop_versions_are_consistent() -> None:
     completed = subprocess.run(
         [sys.executable, "scripts/check_versions.py"],
@@ -18,12 +29,19 @@ def test_desktop_versions_are_consistent() -> None:
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
-    assert json.loads(completed.stdout)["version"] == "1.0.3"
+    assert json.loads(completed.stdout)["version"] == "1.0.4"
 
 
 def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> None:
     config = json.loads((ROOT / "src-tauri" / "tauri.conf.json").read_text(encoding="utf-8"))
     assert config["bundle"]["createUpdaterArtifacts"] is True
+    assert config["bundle"]["icon"] == [
+        "icons/32x32.png",
+        "icons/128x128.png",
+        "icons/128x128@2x.png",
+        "icons/icon.icns",
+        "icons/icon.ico",
+    ]
     assert config["plugins"]["updater"]["pubkey"]
     assert config["plugins"]["updater"]["endpoints"] == [
         "https://forming-grinder-guide-cad-1424134622.cos.ap-shanghai.myqcloud.com/updates/stable/latest.json",
@@ -109,13 +127,12 @@ def test_windows_validation_workflow_never_publishes_or_requires_signing_secrets
     assert "push:" not in workflow
 
 
-def test_cos_workflow_only_mirrors_an_approved_stable_release() -> None:
+def test_cos_workflow_is_recovery_only_and_local_publisher_is_primary() -> None:
     workflow = (
         ROOT / ".github" / "workflows" / "publish-cos-mirror.yml"
     ).read_text(encoding="utf-8")
     for required in (
-        "release:",
-        "published",
+        "workflow_dispatch:",
         "isDraft",
         "isPrerelease",
         "TENCENT_COS_BUCKET",
@@ -127,7 +144,21 @@ def test_cos_workflow_only_mirrors_an_approved_stable_release() -> None:
         "updates/stable/latest.json",
     ):
         assert required in workflow
+    assert "release:" not in workflow
     assert "DeleteObject" not in workflow
+
+    local_wrapper = ROOT / "scripts" / "publish_cos_release_local.sh"
+    local_publisher = ROOT / "scripts" / "publish_github_release_to_cos.py"
+    keychain_setup = ROOT / "scripts" / "configure_cos_publisher_keychain.sh"
+    assert _git_file_mode(local_wrapper) == "100755"
+    assert _git_file_mode(keychain_setup) == "100755"
+    for required in (
+        "prepare_release_assets",
+        "SHA256SUMS.txt",
+        "publish_release",
+        "load_publisher_credentials",
+    ):
+        assert required in local_publisher.read_text(encoding="utf-8")
 
 
 def test_update_ui_covers_expected_user_visible_states() -> None:

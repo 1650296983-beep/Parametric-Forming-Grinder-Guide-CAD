@@ -3,10 +3,12 @@ from __future__ import annotations
 import hashlib
 import json
 from pathlib import Path
+import subprocess
 from urllib.parse import unquote
 
 import pytest
 
+from scripts import publish_github_release_to_cos as local_publisher
 from scripts.publish_release_to_cos import (
     RemoteObject,
     STABLE_MANIFEST_KEY,
@@ -172,3 +174,111 @@ def test_release_publisher_refuses_a_stable_downgrade(tmp_path: Path) -> None:
         publish_release(client, plan, inspect=_inspector(remote))
 
     assert client.uploaded_keys == []
+
+
+def test_local_publisher_prepares_a_deterministic_cos_manifest(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    published_at = "2026-07-17T12:47:48Z"
+
+    monkeypatch.setattr(
+        local_publisher,
+        "_release_metadata",
+        lambda repository, requested_tag: {
+            "tagName": TAG,
+            "publishedAt": published_at,
+            "url": "https://github.com/example/release",
+        },
+    )
+
+    def fake_run(
+        command: list[str],
+        *,
+        capture_output: bool = False,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output
+        download_dir = Path(command[command.index("--dir") + 1])
+        installer = download_dir / "Forming-Grinder-CAD_1.0.3_x64-setup.exe"
+        installer.write_bytes(b"signed-installer")
+        signature = Path(f"{installer}.sig")
+        signature.write_text("trusted-signature", encoding="utf-8")
+        github_manifest = download_dir / "latest.json"
+        github_manifest.write_text(
+            json.dumps(
+                {
+                    "version": "1.0.3",
+                    "platforms": {
+                        "windows-x86_64": {
+                            "signature": "trusted-signature",
+                            "url": (
+                                "https://github.com/example/releases/download/"
+                                f"{TAG}/{installer.name}"
+                            ),
+                        }
+                    },
+                }
+            ),
+            encoding="utf-8",
+        )
+        checksum_lines = [
+            f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.name}"
+            for path in (installer, signature, github_manifest)
+        ]
+        (download_dir / "SHA256SUMS.txt").write_text(
+            "\n".join(checksum_lines) + "\n",
+            encoding="utf-8",
+        )
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(local_publisher, "_run", fake_run)
+
+    assets = local_publisher.prepare_release_assets(
+        repository=local_publisher.DEFAULT_REPOSITORY,
+        bucket=BUCKET,
+        region=REGION,
+        requested_tag=TAG,
+        work_dir=tmp_path,
+    )
+    manifest = json.loads(assets.manifest.read_text(encoding="utf-8"))
+
+    assert assets.tag == TAG
+    assert manifest["pub_date"] == published_at
+    assert manifest["version"] == "1.0.3"
+    assert manifest["platforms"]["windows-x86_64"]["signature"] == (
+        "trusted-signature"
+    )
+    assert manifest["platforms"]["windows-x86_64"]["url"] == (
+        f"{ORIGIN}/updates/releases/{TAG}/{assets.installer.name}"
+    )
+
+
+def test_local_publisher_rejects_a_checksum_mismatch(tmp_path: Path) -> None:
+    asset = tmp_path / "asset.bin"
+    asset.write_bytes(b"actual")
+    (tmp_path / "SHA256SUMS.txt").write_text(
+        f"{'0' * 64}  {asset.name}\n",
+        encoding="utf-8",
+    )
+
+    with pytest.raises(RuntimeError, match="Checksum mismatch"):
+        local_publisher._verify_downloaded_assets(tmp_path)
+
+
+def test_local_publisher_prefers_environment_credentials(
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    monkeypatch.setattr(
+        local_publisher,
+        "_keychain_secret",
+        lambda service: pytest.fail(f"unexpected Keychain lookup: {service}"),
+    )
+
+    credentials = local_publisher.load_publisher_credentials(
+        {
+            "TENCENT_COS_SECRET_ID": "secret-id",
+            "TENCENT_COS_SECRET_KEY": "secret-key",
+        }
+    )
+
+    assert credentials == ("secret-id", "secret-key")

@@ -1,9 +1,6 @@
 name: Publish approved release to Tencent COS
 
 on:
-  release:
-    types:
-      - published
   workflow_dispatch:
     inputs:
       release_tag:
@@ -12,7 +9,7 @@ on:
         type: string
 
 concurrency:
-  group: publish-cos-${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.event.release.tag_name }}
+  group: publish-cos-${{ inputs.release_tag }}
   cancel-in-progress: false
 
 jobs:
@@ -22,7 +19,7 @@ jobs:
     permissions:
       contents: read
     env:
-      RELEASE_TAG: ${{ github.event_name == 'workflow_dispatch' && inputs.release_tag || github.event.release.tag_name }}
+      RELEASE_TAG: ${{ inputs.release_tag }}
       COS_BUCKET: ${{ vars.TENCENT_COS_BUCKET }}
       COS_REGION: ${{ vars.TENCENT_COS_REGION }}
       GH_TOKEN: ${{ github.token }}
