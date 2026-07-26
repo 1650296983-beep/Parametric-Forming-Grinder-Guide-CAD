@@ -133,14 +133,14 @@ def test_cos_workflow_is_recovery_only_and_local_publisher_is_primary() -> None:
     ).read_text(encoding="utf-8")
     for required in (
         "workflow_dispatch:",
-        "isDraft",
-        "isPrerelease",
         "TENCENT_COS_BUCKET",
         "TENCENT_COS_REGION",
         "TENCENT_COS_SECRET_ID",
         "TENCENT_COS_SECRET_KEY",
         "requirements-cos-publish.txt",
-        "publish_release_to_cos.py",
+        "publish_github_release_to_cos.py",
+        '--tag "$RELEASE_TAG"',
+        '--repository "$GITHUB_REPOSITORY"',
         "updates/stable/latest.json",
     ):
         assert required in workflow
