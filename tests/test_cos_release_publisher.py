@@ -196,8 +196,9 @@ def test_local_publisher_prepares_a_deterministic_cos_manifest(
         command: list[str],
         *,
         capture_output: bool = False,
+        timeout_seconds: int | None = None,
     ) -> subprocess.CompletedProcess[str]:
-        del capture_output
+        del capture_output, timeout_seconds
         download_dir = Path(command[command.index("--dir") + 1])
         installer = download_dir / "Forming-Grinder-CAD_1.0.3_x64-setup.exe"
         installer.write_bytes(b"signed-installer")
@@ -251,6 +252,43 @@ def test_local_publisher_prepares_a_deterministic_cos_manifest(
     assert manifest["platforms"]["windows-x86_64"]["url"] == (
         f"{ORIGIN}/updates/releases/{TAG}/{assets.installer.name}"
     )
+
+
+def test_release_asset_download_retries_in_fresh_directories(
+    tmp_path: Path,
+    monkeypatch: pytest.MonkeyPatch,
+) -> None:
+    calls: list[tuple[Path, int | None]] = []
+
+    def fake_run(
+        command: list[str],
+        *,
+        capture_output: bool = False,
+        timeout_seconds: int | None = None,
+    ) -> subprocess.CompletedProcess[str]:
+        del capture_output
+        download_dir = Path(command[command.index("--dir") + 1])
+        calls.append((download_dir, timeout_seconds))
+        if len(calls) < 3:
+            raise RuntimeError("unexpected EOF")
+        return subprocess.CompletedProcess(command, 0, "", "")
+
+    monkeypatch.setattr(local_publisher, "_run", fake_run)
+
+    download_dir = local_publisher._download_release_assets(
+        repository=local_publisher.DEFAULT_REPOSITORY,
+        tag=TAG,
+        work_dir=tmp_path,
+        attempts=3,
+        timeout_seconds=45,
+    )
+
+    assert download_dir == tmp_path / "github-release-attempt-3"
+    assert calls == [
+        (tmp_path / "github-release-attempt-1", 45),
+        (tmp_path / "github-release-attempt-2", 45),
+        (tmp_path / "github-release-attempt-3", 45),
+    ]
 
 
 def test_local_publisher_rejects_a_checksum_mismatch(tmp_path: Path) -> None:
