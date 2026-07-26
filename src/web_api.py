@@ -41,7 +41,7 @@ from .dwg_converter import (
     AUTOCAD_2007_FORMAT_LABEL,
     DwgConversionError,
     autocad_detection_payload,
-    convert_release_dxf_to_autocad_2007_dwg,
+    convert_release_dxf_to_autocad_2007_dwg_with_audit,
     dwg_conversion_available,
 )
 from .geometry import TileSection
@@ -775,6 +775,7 @@ def _task_retention_days() -> int:
 
 def _add_autocad_2007_dwg_export(report: dict[str, Any]) -> None:
     """Add a verified AC1021 DWG without changing the DXF release gate."""
+    report.setdefault("paths", {}).pop("release_dwg", None)
     export = {
         "format": AUTOCAD_2007_FORMAT_LABEL,
         "dwg_version": AUTOCAD_2007_DWG_VERSION,
@@ -791,12 +792,29 @@ def _add_autocad_2007_dwg_export(report: dict[str, Any]) -> None:
         export["error"] = "report.json 未包含 release_dxf 路径。"
         return
     try:
-        dwg_path = convert_release_dxf_to_autocad_2007_dwg(
+        conversion = convert_release_dxf_to_autocad_2007_dwg_with_audit(
             Path(str(raw_release_path)),
             release_allowed=bool(report.get("release_allowed")),
         )
     except DwgConversionError as error:
         export["error"] = str(error)
         return
-    report.setdefault("paths", {})["release_dwg"] = str(dwg_path)
+    report.setdefault("paths", {})["release_dwg"] = str(conversion.path)
+    export["source_modelspace_entity_count"] = conversion.source_modelspace_entity_count
+    export["dwg_modelspace_entity_count"] = conversion.dwg_modelspace_entity_count
+    export["modelspace_entity_count_matches"] = (
+        conversion.source_modelspace_entity_count
+        == conversion.dwg_modelspace_entity_count
+    )
+    export["release_dxf_version"] = conversion.release_dxf_version
+    export["conversion_dxf_version"] = conversion.conversion_dxf_version
+    export["release_modelspace_entity_count"] = (
+        conversion.release_modelspace_entity_count
+    )
+    export["legacy_dxf_compatibility_mode"] = conversion.compatibility_mode
+    export["expanded_proxy_graphic_entity_count"] = (
+        conversion.expanded_proxy_graphic_entity_count
+    )
+    export["autocad_version"] = conversion.autocad_version
+    export["core_console_path"] = conversion.core_console_path
     export["generated"] = True

@@ -10,6 +10,7 @@ import pytest
 
 import src.web_api as web_api
 from src.auth import AuthenticatedUser, LOCAL_ADMIN, require_user
+from src.dwg_converter import DwgConversionError, DwgConversionResult
 from src.web_api import (
     BulkDeleteRequest,
     DesignInput,
@@ -330,6 +331,77 @@ def test_task_file_payload_only_exposes_generated_task_files(tmp_path: Path) -> 
 
     assert payload["preview_png"]["url"].endswith("/artifacts/preview/guide.png")
     assert payload["report_json"]["name"] == "guide_report.json"
+
+
+def test_dwg_export_report_includes_reopen_entity_audit(tmp_path: Path, monkeypatch) -> None:
+    release_dxf = tmp_path / "guide.dxf"
+    release_dwg = tmp_path / "guide.dwg"
+    release_dxf.write_text("DXF", encoding="utf-8")
+    release_dwg.write_bytes(b"AC1021verified")
+    report = {
+        "release_allowed": True,
+        "paths": {"release_dxf": str(release_dxf)},
+    }
+    monkeypatch.setattr(web_api, "dwg_conversion_available", lambda: True)
+    monkeypatch.setattr(
+        web_api,
+        "convert_release_dxf_to_autocad_2007_dwg_with_audit",
+        lambda *_args, **_kwargs: DwgConversionResult(
+            path=release_dwg,
+            source_modelspace_entity_count=124,
+            dwg_modelspace_entity_count=124,
+            release_dxf_version="AC1032",
+            conversion_dxf_version="AC1027",
+            release_modelspace_entity_count=119,
+            compatibility_mode=True,
+            expanded_proxy_graphic_entity_count=35,
+            autocad_version="2014",
+            core_console_path=r"C:\Program Files\Autodesk\AutoCAD 2014\AcCoreConsole.exe",
+        ),
+    )
+
+    web_api._add_autocad_2007_dwg_export(report)
+
+    assert report["paths"]["release_dwg"] == str(release_dwg)
+    assert report["dwg_export"]["generated"] is True
+    assert report["dwg_export"]["source_modelspace_entity_count"] == 124
+    assert report["dwg_export"]["dwg_modelspace_entity_count"] == 124
+    assert report["dwg_export"]["modelspace_entity_count_matches"] is True
+    assert report["dwg_export"]["release_dxf_version"] == "AC1032"
+    assert report["dwg_export"]["conversion_dxf_version"] == "AC1027"
+    assert report["dwg_export"]["release_modelspace_entity_count"] == 119
+    assert report["dwg_export"]["legacy_dxf_compatibility_mode"] is True
+    assert report["dwg_export"]["expanded_proxy_graphic_entity_count"] == 35
+    assert report["dwg_export"]["autocad_version"] == "2014"
+    assert report["dwg_export"]["core_console_path"].endswith("AcCoreConsole.exe")
+
+
+def test_failed_dwg_audit_removes_stale_download_path(tmp_path: Path, monkeypatch) -> None:
+    release_dxf = tmp_path / "guide.dxf"
+    release_dxf.write_text("DXF", encoding="utf-8")
+    report = {
+        "release_allowed": True,
+        "paths": {
+            "release_dxf": str(release_dxf),
+            "release_dwg": str(tmp_path / "stale.dwg"),
+        },
+    }
+    monkeypatch.setattr(web_api, "dwg_conversion_available", lambda: True)
+
+    def reject_blank(*_args: object, **_kwargs: object) -> DwgConversionResult:
+        raise DwgConversionError("DWG 模型空间没有实体，已判定为空白图纸并拒绝输出。")
+
+    monkeypatch.setattr(
+        web_api,
+        "convert_release_dxf_to_autocad_2007_dwg_with_audit",
+        reject_blank,
+    )
+
+    web_api._add_autocad_2007_dwg_export(report)
+
+    assert "release_dwg" not in report["paths"]
+    assert report["dwg_export"]["generated"] is False
+    assert "空白图纸" in report["dwg_export"]["error"]
 
 
 def test_local_administrator_file_payload_exposes_audit_artifacts(tmp_path: Path) -> None:
