@@ -9,6 +9,17 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 
 
+def _git_file_mode(path: Path) -> str:
+    completed = subprocess.run(
+        ["git", "ls-files", "--stage", "--", path.relative_to(ROOT).as_posix()],
+        cwd=ROOT,
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    return completed.stdout.split(maxsplit=1)[0]
+
+
 def test_desktop_versions_are_consistent() -> None:
     completed = subprocess.run(
         [sys.executable, "scripts/check_versions.py"],
@@ -139,8 +150,8 @@ def test_cos_workflow_is_recovery_only_and_local_publisher_is_primary() -> None:
     local_wrapper = ROOT / "scripts" / "publish_cos_release_local.sh"
     local_publisher = ROOT / "scripts" / "publish_github_release_to_cos.py"
     keychain_setup = ROOT / "scripts" / "configure_cos_publisher_keychain.sh"
-    assert local_wrapper.stat().st_mode & 0o111
-    assert keychain_setup.stat().st_mode & 0o111
+    assert _git_file_mode(local_wrapper) == "100755"
+    assert _git_file_mode(keychain_setup) == "100755"
     for required in (
         "prepare_release_assets",
         "SHA256SUMS.txt",
