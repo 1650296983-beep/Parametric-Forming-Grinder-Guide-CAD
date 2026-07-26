@@ -133,6 +133,8 @@ def test_cos_workflow_is_recovery_only_and_local_publisher_is_primary() -> None:
     ).read_text(encoding="utf-8")
     for required in (
         "workflow_dispatch:",
+        "Checkout current audited publisher",
+        "ref: main",
         "TENCENT_COS_BUCKET",
         "TENCENT_COS_REGION",
         "TENCENT_COS_SECRET_ID",

@@ -56,6 +56,7 @@ def _run(
     command: list[str],
     *,
     capture_output: bool = False,
+    timeout_seconds: int | None = None,
 ) -> subprocess.CompletedProcess[str]:
     try:
         return subprocess.run(
@@ -63,6 +64,7 @@ def _run(
             check=True,
             capture_output=capture_output,
             text=True,
+            timeout=timeout_seconds,
         )
     except FileNotFoundError as error:
         raise RuntimeError(f"Required command is unavailable: {command[0]}") from error
@@ -72,6 +74,11 @@ def _run(
         if detail:
             message = f"{message}\n{detail}"
         raise RuntimeError(message) from error
+    except subprocess.TimeoutExpired as error:
+        raise RuntimeError(
+            f"Command timed out after {timeout_seconds} seconds: "
+            f"{' '.join(command)}"
+        ) from error
 
 
 def _run_json(command: list[str]) -> dict[str, Any]:
@@ -180,6 +187,48 @@ def _validate_github_manifest(
         raise RuntimeError("GitHub latest.json points to a different installer.")
 
 
+def _download_release_assets(
+    *,
+    repository: str,
+    tag: str,
+    work_dir: Path,
+    attempts: int = 3,
+    timeout_seconds: int = 120,
+) -> Path:
+    errors: list[str] = []
+    for attempt in range(1, attempts + 1):
+        download_dir = work_dir / f"github-release-attempt-{attempt}"
+        download_dir.mkdir(parents=True, exist_ok=False)
+        try:
+            _run(
+                [
+                    "gh",
+                    "release",
+                    "download",
+                    tag,
+                    "--repo",
+                    repository,
+                    "--dir",
+                    str(download_dir),
+                    "--pattern",
+                    "Forming-Grinder-CAD_*_x64-setup.exe*",
+                    "--pattern",
+                    "latest.json",
+                    "--pattern",
+                    "SHA256SUMS.txt",
+                ],
+                timeout_seconds=timeout_seconds,
+            )
+        except RuntimeError as error:
+            errors.append(f"attempt {attempt}: {error}")
+            continue
+        return download_dir
+    raise RuntimeError(
+        "GitHub Release asset download failed after "
+        f"{attempts} attempts:\n" + "\n".join(errors)
+    )
+
+
 def prepare_release_assets(
     *,
     repository: str,
@@ -191,25 +240,10 @@ def prepare_release_assets(
     metadata = _release_metadata(repository, requested_tag)
     tag = str(metadata["tagName"])
     version = tag.removeprefix("v")
-    download_dir = work_dir / "github-release"
-    download_dir.mkdir(parents=True, exist_ok=False)
-    _run(
-        [
-            "gh",
-            "release",
-            "download",
-            tag,
-            "--repo",
-            repository,
-            "--dir",
-            str(download_dir),
-            "--pattern",
-            "Forming-Grinder-CAD_*_x64-setup.exe*",
-            "--pattern",
-            "latest.json",
-            "--pattern",
-            "SHA256SUMS.txt",
-        ]
+    download_dir = _download_release_assets(
+        repository=repository,
+        tag=tag,
+        work_dir=work_dir,
     )
     _verify_downloaded_assets(download_dir)
     installers = [
