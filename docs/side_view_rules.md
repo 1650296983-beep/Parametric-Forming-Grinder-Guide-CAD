@@ -112,6 +112,9 @@ effective_cut_in_depth = 80 - sqrt(80^2 - (actual_opening / 2)^2)
 
 当自然开口未超限时，`effective_cut_in_depth` 必须等于 `preform_block_thickness_mid * 0.6`；超限时不得修改目标吃入公式，而应移动 R80 圆心，使最终开口不大于 `product_length * 0.6`。`block_side_projected_slot_height` 仍由机台模板配置控制，双头机上上默认为 `18.0`。
 
+双头机（上上）的 `18.0` 是型腔投影下沿高度，投影上沿必须再加真实
+`guide_thickness`；砂轮有效吃入量只用于移动 R80 圆心，不得作为型腔厚度。
+
 双头机（上下）方块磨前侧视图只保留型腔上下两条虚线。下边界在下 R80 处断开，上边界在上 R80 处断开；不得保留模板中的平行偏移副本形成重影。下、上 R80 的冠点分别进入型腔 `effective_cut_in_depth`，两条边界随当前导轨厚度同步重建。
 
 618 在磨前方块输入下的型腔上下两条绿色虚线均必须在 R80 缺口范围内断开，任何 `SIDE_DERIVED` 线段不得穿过砂轮弧；其他磨前形状仍按上述 `3/4` 条规则生成并截断实际相交的投影线。
@@ -124,6 +127,11 @@ R80 相关尺寸的定义点规则：半径标注为“圆心 → 真实弧顶�
 side_projected_slot_height = guide_outer_height - block_fixed_top_gap - guide_thickness
 block_fixed_top_gap = 3.0
 ```
+
+型腔投影下沿为 `side_projected_slot_height`，上沿为
+`side_projected_slot_height + guide_thickness`。两条投影线的间距必须等于
+截面真实 `guide_thickness`，不得以受开口限制后的砂轮吃入量代替。对应的
+上砂轮净空为 `block_fixed_top_gap + effective_upper_cut_in_depth`。
 
 默认：
 

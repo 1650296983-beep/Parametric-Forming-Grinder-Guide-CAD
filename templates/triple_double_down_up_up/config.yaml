@@ -26,3 +26,4 @@ layout:
   template_max_y: -10.0
   block_side_mode: "fixed_projected_height"
   block_side_projected_slot_height: 18.0
+  block_projected_top_mode: "guide_thickness"

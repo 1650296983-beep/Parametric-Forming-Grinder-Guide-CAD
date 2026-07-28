@@ -74,6 +74,9 @@ export interface GeneratedFile {
   label: string;
   name: string;
   url: string;
+  task_id?: string;
+  relative_path?: string;
+  can_open?: boolean;
 }
 
 export interface UserSession {

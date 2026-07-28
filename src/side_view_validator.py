@@ -60,12 +60,20 @@ def assert_side_view_consistency(
     )
     projected = measure_side_projected_slot_consistency(doc, geometry)
     clearance = measure_side_clearance_consistency(doc, geometry)
+    projection_thickness_ok = side_projection_thickness_matches_guide(
+        tile_section,
+        geometry,
+    )
     cavity_projection_ok = cavity_projection_matches_pre_grinding_shape(
         doc,
         tile_section,
         geometry,
     )
-    if not cavity_projection_ok or not clearance.ok:
+    if (
+        not projection_thickness_ok
+        or not cavity_projection_ok
+        or not clearance.ok
+    ):
         raise ValueError(
             "Side view derived dimension validation failed: "
             f"projected(expected={projected.expected:.6f}, "
@@ -73,6 +81,9 @@ def assert_side_view_consistency(
             f"dimension_points={_fmt_optional(projected.measured_dimension_points)}, "
             f"group_42={_fmt_optional(projected.measured_dimension_group_42)}, "
             f"text_label={projected.text_label!r}); "
+            "projection_thickness="
+            f"{geometry.derived.guide_thickness:.6f}/"
+            f"{tile_section.guide_spec.guide_thickness:.6f}; "
             f"clearance(expected={clearance.expected:.6f}, "
             f"geometry={_fmt_optional(clearance.measured_geometry)}, "
             f"dimension_points={_fmt_optional(clearance.measured_dimension_points)}, "
@@ -80,6 +91,21 @@ def assert_side_view_consistency(
             f"text_label={clearance.text_label!r})."
             f" cavity_projection_matches_pre_grinding_shape={cavity_projection_ok}."
         )
+
+
+def side_projection_thickness_matches_guide(
+    section: TileSection | BlockGuideSection,
+    geometry: SideViewGeometry,
+) -> bool:
+    """Validate side thickness against the independently built section."""
+
+    return (
+        abs(
+            geometry.derived.guide_thickness
+            - section.guide_spec.guide_thickness
+        )
+        <= 0.001
+    )
 
 
 def cavity_projection_matches_pre_grinding_shape(

@@ -88,6 +88,10 @@ class BulkDeleteRequest(BaseModel):
     task_ids: list[str] = Field(min_length=1, max_length=500)
 
 
+class OpenTaskFileRequest(BaseModel):
+    relative_path: str = Field(min_length=1, max_length=2048)
+
+
 class DesktopSettingsUpdate(BaseModel):
     autocad_core_console: str | None = Field(default=None, max_length=4096)
 
@@ -382,16 +386,58 @@ def read_task_file(
     user: AuthenticatedUser = Depends(require_user),
 ) -> FileResponse:
     """Serve only files generated inside one Web task directory."""
+    requested = _resolve_task_file(task_id, relative_path)
+    return FileResponse(
+        requested,
+        filename=requested.name,
+        content_disposition_type="inline" if requested.suffix.lower() == ".png" else "attachment",
+    )
+
+
+@app.post("/api/tasks/{task_id}/open")
+def open_task_file(
+    task_id: str,
+    request: OpenTaskFileRequest,
+    user: AuthenticatedUser = Depends(require_user),
+) -> dict[str, str]:
+    """Open an authorized task artifact with the system default application."""
+
+    requested = _resolve_task_file(task_id, request.relative_path)
+    if requested.suffix.lower() not in {".dxf", ".dwg", ".png", ".json"}:
+        raise HTTPException(status_code=415, detail="该文件类型不允许直接打开。")
+    try:
+        _launch_local_file(requested)
+    except OSError as error:
+        raise HTTPException(
+            status_code=503,
+            detail=f"无法调用本机默认程序打开文件：{error}",
+        ) from error
+    return {"status": "opened", "name": requested.name}
+
+
+def _resolve_task_file(task_id: str, relative_path: str) -> Path:
     if not task_id.isalnum() or len(task_id) != 12:
         raise HTTPException(status_code=404, detail="任务不存在。")
     task_dir = (WEB_OUTPUT_ROOT / task_id).resolve()
     requested = (task_dir / relative_path).resolve()
     if not requested.is_relative_to(task_dir) or not requested.is_file():
         raise HTTPException(status_code=404, detail="生成文件不存在。")
-    return FileResponse(
-        requested,
-        filename=requested.name,
-        content_disposition_type="inline" if requested.suffix.lower() == ".png" else "attachment",
+    return requested
+
+
+def _launch_local_file(path: Path) -> None:
+    if sys.platform == "darwin":
+        command = ["open", str(path)]
+    elif os.name == "nt":
+        os.startfile(path)  # type: ignore[attr-defined]
+        return
+    else:
+        command = ["xdg-open", str(path)]
+    subprocess.Popen(
+        command,
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+        start_new_session=True,
     )
 
 
@@ -705,9 +751,9 @@ def _task_file_payload(
     task_dir: Path,
     report: dict[str, Any],
     user: AuthenticatedUser | None = None,
-) -> dict[str, dict[str, str]]:
+) -> dict[str, dict[str, Any]]:
     """Expose only generated artifacts contained by the selected task."""
-    files: dict[str, dict[str, str]] = {}
+    files: dict[str, dict[str, Any]] = {}
     path_keys = {
         "release_dwg": "AutoCAD 2007 DWG",
         "debug_dxf": "debug DXF",
@@ -725,6 +771,9 @@ def _task_file_payload(
                 "label": label,
                 "name": candidate.name,
                 "url": f"/api/tasks/{task_id}/files/{relative_path}",
+                "task_id": task_id,
+                "relative_path": relative_path,
+                "can_open": True,
             }
     for candidate in task_dir.glob("**/*dimension_definition_point_audit.json"):
         relative_path = candidate.relative_to(task_dir).as_posix()
@@ -732,6 +781,9 @@ def _task_file_payload(
             "label": "尺寸定义点审计",
             "name": candidate.name,
             "url": f"/api/tasks/{task_id}/files/{relative_path}",
+            "task_id": task_id,
+            "relative_path": relative_path,
+            "can_open": True,
         }
     report_path = next(iter(task_dir.glob("**/*_report.json")), None)
     if report_path is not None:
@@ -740,6 +792,9 @@ def _task_file_payload(
             "label": "校验报告",
             "name": report_path.name,
             "url": f"/api/tasks/{task_id}/files/{relative_path}",
+            "task_id": task_id,
+            "relative_path": relative_path,
+            "can_open": True,
         }
     return files
 

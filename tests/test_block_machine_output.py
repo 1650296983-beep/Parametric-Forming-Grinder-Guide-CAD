@@ -37,8 +37,14 @@ def test_double_head_up_up_block_spec_uses_selected_slot_reference(tmp_path):
     assert side.derived.side_projected_slot_height == pytest.approx(18.0)
     expected_opening = wheel_notch_opening_limit(spec.length)
     expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
+    assert side.derived.guide_thickness == pytest.approx(
+        profile.guide_spec.guide_thickness
+    )
     assert side.derived.side_clearance_height == pytest.approx(
-        profile.guide_spec.outer_height - 18.0 - expected_cut_in
+        profile.guide_spec.outer_height
+        - 18.0
+        - profile.guide_spec.guide_thickness
+        + expected_cut_in
     )
     assert measurements["9.01±0.01"][0] == pytest.approx(9.01)
     assert measurements["2.09"][0] == pytest.approx(2.09)
@@ -141,19 +147,26 @@ def test_double_head_up_up_side_r80_closes_for_variable_thickness(tmp_path):
     expected_opening = wheel_notch_opening_limit(spec.length)
     expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
     assert side.derived.side_clearance_height == pytest.approx(
-        profile.guide_spec.outer_height - 18.0 - expected_cut_in
+        profile.guide_spec.outer_height
+        - 18.0
+        - profile.guide_spec.guide_thickness
+        + expected_cut_in
     )
     _assert_r80_top_gaps_match_arcs(doc, machine.side_layout.upper_y)
-    working_y = machine.side_layout.upper_y - side.derived.side_clearance_height
-    working_lines = [
+    cavity_top_y = (
+        machine.side_layout.lower_y
+        + side.derived.side_projected_slot_height
+        + profile.guide_spec.guide_thickness
+    )
+    cavity_top_lines = [
         entity
         for entity in doc.modelspace()
         if entity.dxf.layer == "SIDE_DERIVED"
         and entity.dxftype() == "LINE"
-        and entity.dxf.start.y == pytest.approx(working_y, abs=0.001)
-        and entity.dxf.end.y == pytest.approx(working_y, abs=0.001)
+        and entity.dxf.start.y == pytest.approx(cavity_top_y, abs=0.001)
+        and entity.dxf.end.y == pytest.approx(cavity_top_y, abs=0.001)
     ]
-    assert len(working_lines) == 3
+    assert len(cavity_top_lines) == 3
 
 
 def _dimension_measurements_by_text(doc) -> dict[str, list[float]]:

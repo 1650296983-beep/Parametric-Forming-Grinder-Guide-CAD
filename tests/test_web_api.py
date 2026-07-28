@@ -330,7 +330,53 @@ def test_task_file_payload_only_exposes_generated_task_files(tmp_path: Path) -> 
     )
 
     assert payload["preview_png"]["url"].endswith("/artifacts/preview/guide.png")
+    assert payload["preview_png"]["relative_path"] == "artifacts/preview/guide.png"
+    assert payload["preview_png"]["can_open"] is True
     assert payload["report_json"]["name"] == "guide_report.json"
+
+
+def test_open_task_file_uses_authorized_local_artifact(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+    task_dir = tmp_path / "abc123def456" / "artifacts" / "dxf"
+    task_dir.mkdir(parents=True)
+    release = task_dir / "guide.dxf"
+    release.write_bytes(b"release")
+    opened: list[Path] = []
+    monkeypatch.setattr(web_api, "_launch_local_file", opened.append)
+
+    status, _, body = _call_asgi(
+        "POST",
+        "/api/tasks/abc123def456/open",
+        body=json.dumps(
+            {"relative_path": "artifacts/dxf/guide.dxf"}
+        ).encode(),
+        headers={"content-type": "application/json"},
+    )
+
+    assert status == 200
+    assert json.loads(body)["status"] == "opened"
+    assert opened == [release.resolve()]
+
+
+def test_open_task_file_rejects_path_outside_task(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+    outside = tmp_path / "outside.dxf"
+    outside.write_bytes(b"outside")
+
+    status, _, _ = _call_asgi(
+        "POST",
+        "/api/tasks/abc123def456/open",
+        body=json.dumps({"relative_path": "../outside.dxf"}).encode(),
+        headers={"content-type": "application/json"},
+    )
+
+    assert status == 404
 
 
 def test_dwg_export_report_includes_reopen_entity_audit(tmp_path: Path, monkeypatch) -> None:
