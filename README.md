@@ -183,8 +183,8 @@ After the one-time macOS Keychain setup, publish an approved stable GitHub
 Release to the Tencent COS mainland mirror with:
 
 ```bash
-./scripts/publish_cos_release_local.sh v1.0.4 --dry-run
-./scripts/publish_cos_release_local.sh v1.0.4
+./scripts/publish_cos_release_local.sh v1.1.0 --dry-run
+./scripts/publish_cos_release_local.sh v1.1.0
 ```
 
 The local publisher verifies the signed GitHub assets and checksums, uploads
