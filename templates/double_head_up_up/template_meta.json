@@ -1,9 +1,9 @@
 {
   "machine_id": "double_head_up_up",
-  "template_version": "v1.0.3",
+  "template_version": "v1.1.1",
   "source_template_file": "section_template.dxf; side_template.dxf",
   "sha256": "adbefdc1c5068c9449c8d78704166e77ac44da1701111f0465edc8b103d0d422",
-  "change_reason": "生产缺口规则统一为产品长度乘0.6，并修复截面顶边闭合与腔体白色显示",
-  "approved_by": "用户确认",
-  "approved_date": "2026-07-17"
+  "change_reason": "Correct side cavity projection to use true guide thickness instead of limited wheel cut-in depth.",
+  "approved_by": "1650296983-beep",
+  "approved_date": "2026-07-28"
 }

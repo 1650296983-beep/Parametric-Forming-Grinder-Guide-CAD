@@ -340,22 +340,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3468.204666,
-        -18.567981,
+        -16.04117,
         0.0
       ],
       "defpoint3": [
         3468.204666,
-        -98.567981,
+        -96.04117,
         0.0
       ],
       "expected_geometry_point_1": [
         3468.204666,
-        -18.567981,
+        -16.04117,
         0.0
       ],
       "expected_geometry_point_2": [
         3468.204666,
-        -98.567981,
+        -96.04117,
         0.0
       ],
       "point_error": 0.0,
@@ -370,22 +370,22 @@
       "display_text": "R80.00",
       "defpoint2": [
         3648.204666,
-        -18.567981,
+        -16.04117,
         0.0
       ],
       "defpoint3": [
         3648.204666,
-        -98.567981,
+        -96.04117,
         0.0
       ],
       "expected_geometry_point_1": [
         3648.204666,
-        -18.567981,
+        -16.04117,
         0.0
       ],
       "expected_geometry_point_2": [
         3648.204666,
-        -98.567981,
+        -96.04117,
         0.0
       ],
       "point_error": 0.0,
@@ -396,8 +396,8 @@
     {
       "dimension_handle": "20383F4",
       "dimension_role": "other_release_dimension",
-      "measurement": 5.573406,
-      "display_text": "5.57",
+      "measurement": 3.046594,
+      "display_text": "3.05",
       "defpoint2": [
         3468.204666,
         -92.994575,
@@ -405,7 +405,7 @@
       ],
       "defpoint3": [
         3468.204666,
-        -98.567981,
+        -96.04117,
         0.0
       ],
       "expected_geometry_point_1": [
@@ -415,7 +415,7 @@
       ],
       "expected_geometry_point_2": [
         3468.204666,
-        -98.567981,
+        -96.04117,
         0.0
       ],
       "point_error": 0.0,
@@ -424,28 +424,28 @@
       "bound_to_geometry": true
     },
     {
-      "dimension_handle": "2038415",
+      "dimension_handle": "2038417",
       "dimension_role": "other_release_dimension",
-      "measurement": 5.573406,
-      "display_text": "5.57",
+      "measurement": 3.046594,
+      "display_text": "3.05",
       "defpoint2": [
-        3677.54205,
+        3670.071841,
         -92.994575,
         0.0
       ],
       "defpoint3": [
         3648.204666,
-        -98.567981,
+        -96.04117,
         0.0
       ],
       "expected_geometry_point_1": [
-        3677.54205,
+        3670.071841,
         -92.994575,
         0.0
       ],
       "expected_geometry_point_2": [
         3648.204666,
-        -98.567981,
+        -96.04117,
         0.0
       ],
       "point_error": 0.0,

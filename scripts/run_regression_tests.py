@@ -132,7 +132,10 @@ def main() -> int:
     args.root.mkdir(parents=True, exist_ok=True)
     summary_path = args.root / "regression_summary.json"
     write_json(summary_path, summary)
-    print(json.dumps(summary, ensure_ascii=False, indent=2))
+    # Windows GitHub runners default to a legacy console code page that cannot
+    # encode Chinese machine names. Keep the persisted JSON human-readable,
+    # but escape non-ASCII characters in console output for cross-platform CI.
+    print(json.dumps(summary, ensure_ascii=True, indent=2))
     return 0 if summary["failed"] == 0 else 1
 
 
