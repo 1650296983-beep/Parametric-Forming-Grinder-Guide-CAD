@@ -49,7 +49,7 @@ from .groove_profile import determine_groove_profile, normalize_shape
 from .global_rules import DEFAULT_WHEEL_RADIUS
 from .guide_design_input import build_single_guide_profile_from_input, machine_template_rules
 from .machine_config import MachineConfig, load_machine_config
-from .output_naming import build_machine_output_stem
+from .output_naming import build_profile_output_stem
 from .preview import write_block_png_preview, write_png_preview
 from .spec_parser import parse_company_bread_spec, parse_company_tile_spec
 from .web_task_repository import StoredWebTask, WebTaskRepository
@@ -555,9 +555,9 @@ def _generate_dual_guide_design(
         raise HTTPException(status_code=422, detail=str(error)) from error
 
     task_id, task_dir, _ = _initialize_task(design, user)
-    artifact_stem = build_machine_output_stem(
+    artifact_stem = build_profile_output_stem(
         design.finished_spec,
-        design.pre_grinding_spec,
+        profile,
         machine.machine_name,
     )
     try:

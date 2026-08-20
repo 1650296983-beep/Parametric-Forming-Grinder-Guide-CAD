@@ -203,7 +203,7 @@ def build_single_guide_profile_from_input(
     first_vector = side_vector_in_template(first_wheel_side, machine)
     arc_center_side = groove.arc_center_side
     arc_center_vector = (
-        tuple(-value for value in first_vector)
+        side_vector_in_template(arc_center_side, machine)
         if arc_center_side is not None
         else None
     )
@@ -249,6 +249,8 @@ def build_single_guide_profile_from_input(
                 ),
                 center_opening=machine.section_center_opening,
                 arc_side=groove.arc_side,
+                arc_center_side=groove.arc_center_side,
+                forming_radius=groove.arc_radius,
             )
             profile_type = "flat_arc_big_r_block_preform"
             r_source = "max(finished_product_R_outer, finished_product_R_inner)"

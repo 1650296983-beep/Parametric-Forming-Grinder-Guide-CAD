@@ -109,6 +109,75 @@ def test_double_r_block_preform_follows_first_wheel_on_every_single_guide_machin
     _assert_block_to_tile_relief_topology(release, profile)
 
 
+def test_large_inner_radius_figure_two_example_writes_valid_single_arc_release(
+    tmp_path: Path,
+) -> None:
+    machine = load_machine_config("triple_single_down_up")
+    _, _, profile, decision = build_single_guide_profile_from_input(
+        {
+            "machine_type": machine.machine_id,
+            "guide_rail_type": machine.guide_type,
+            "wheel_sequence": list(machine.wheel_positions),
+            "first_wheel_side": "lower",
+            "template_coordinate_system": machine.template_coordinate_system,
+            "finished_spec": "R9.25*R32.95*6.8*33*2.5",
+            "pre_grinding_spec": "33*6.8(-0.02/-0.04)*2.7(+0.01/-0.01)",
+            "product_shape_after": "tile_shape",
+            "product_shape_before": "rectangular_block",
+        },
+        machine,
+    )
+
+    release = tmp_path / "large_inner_radius.dxf"
+    write_dxf(profile, release, output_mode="release", machine_id=machine.machine_id)
+    dimension_audit = build_dimension_definition_point_audit(
+        release,
+        profile,
+        machine,
+    )
+    inspection = inspect_release_dxf(profile, machine, release)
+
+    assert decision.R_form_source == "max(finished_product_R_outer, finished_product_R_inner)"
+    assert decision.arc_center_side == "lower"
+    assert profile.arc_center_side == "lower"
+    assert profile.forming_spec.R_form == pytest.approx(32.95)
+    assert profile.guide_spec.guide_slot_width == pytest.approx(6.81)
+    assert profile.guide_spec.guide_thickness == pytest.approx(2.82)
+    assert dimension_audit["release_allowed"] is True
+    assert inspection["release_allowed"] is True
+    thickness_dimension = next(
+        item
+        for item in dimension_audit["dimensions"]
+        if item["dimension_role"] == "guide_thickness"
+    )
+    doc = ezdxf.readfile(release)
+    main_arc = next(
+        arc
+        for arc in doc.modelspace().query("ARC")
+        if arc.dxf.layer == "PARAM_SLOT"
+        and float(arc.dxf.radius) == pytest.approx(32.95, abs=0.001)
+    )
+    arc_base = sqrt(32.95**2 - (6.81 / 2.0) ** 2)
+    arc_apex_y = float(main_arc.dxf.center.y) + 32.95
+    chord_endpoint_y = float(main_arc.dxf.center.y) + arc_base
+    dimension_ys = (
+        thickness_dimension["defpoint2"][1],
+        thickness_dimension["defpoint3"][1],
+    )
+    assert min(dimension_ys) == pytest.approx(arc_apex_y, abs=0.001)
+    assert max(dimension_ys) - min(dimension_ys) == pytest.approx(2.82, abs=0.001)
+    assert max(dimension_ys) - chord_endpoint_y == pytest.approx(
+        2.82 + (32.95 - arc_base),
+        abs=0.001,
+    )
+    assert thickness_dimension["binding_mode"] == (
+        "narrowest_arc_apex_to_plane_envelope"
+    )
+    assert thickness_dimension["point_error"] == pytest.approx(0.0)
+    _assert_main_r_arcs_are_short_production_segments(release, 32.95)
+    _assert_block_to_tile_relief_topology(release, profile)
+
+
 @pytest.mark.parametrize(("machine_id", "expected_arc_side"), DUAL_GUIDE_MACHINES)
 def test_double_r_block_preform_follows_first_wheel_on_every_dual_guide_machine(
     tmp_path: Path,
@@ -223,8 +292,13 @@ def _assert_block_to_tile_relief_topology(release: Path, profile) -> None:
             assert all(float(arc.dxf.center.y) < top_y - 0.001 for arc in main_group)
         else:
             expected_center_y = top_y + 0.5
-            main_center_y = base_y + sqrt(
+            arc_base = sqrt(
                 profile.forming_spec.R_form**2 - (profile.guide_spec.guide_slot_width / 2.0) ** 2
+            )
+            main_center_y = (
+                base_y - arc_base
+                if profile.arc_center_side == "lower"
+                else base_y + arc_base
             )
             main_group = [
                 arc
@@ -233,7 +307,10 @@ def _assert_block_to_tile_relief_topology(release: Path, profile) -> None:
                 and float(arc.dxf.center.y) == pytest.approx(main_center_y, abs=0.001)
             ]
             assert len(main_group) == 1
-            assert all(float(arc.dxf.center.y) > base_y + 0.001 for arc in main_group)
+            if profile.arc_center_side == "lower":
+                assert all(float(arc.dxf.center.y) < base_y - 0.001 for arc in main_group)
+            else:
+                assert all(float(arc.dxf.center.y) > base_y + 0.001 for arc in main_group)
 
         actual_center_arcs = sorted(center_arcs, key=lambda arc: float(arc.dxf.center.x))
         for expected_x, arc in zip(expected_center_xs, actual_center_arcs):

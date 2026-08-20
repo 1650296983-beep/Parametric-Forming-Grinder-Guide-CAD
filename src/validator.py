@@ -84,8 +84,7 @@ def validate_profile(profile: SectionProfile, tolerance: float = DEFAULT_TOLERAN
             )
         plane_name = (
             "top_plane"
-            if profile.params.forming_radius_mode
-            == "single_R_lower_arc_upper_plane"
+            if "single_R_lower_arc" in profile.params.forming_radius_mode
             else "bottom_plane"
         )
         plane = next(

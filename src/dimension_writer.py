@@ -48,6 +48,8 @@ class SlotDimensionGeometry:
     center_transition_radius: float = CENTER_TRANSITION_RADIUS
     center_transition_left_center: tuple[float, float] | None = None
     center_transition_right_center: tuple[float, float] | None = None
+    thickness_reference_y: float | None = None
+    thickness_reference_x: float | None = None
 
     @property
     def slot_width(self) -> float:
@@ -55,7 +57,15 @@ class SlotDimensionGeometry:
 
     @property
     def guide_thickness(self) -> float:
-        return self.top_y - self.base_y
+        return self.top_y - self.guide_thickness_base_y
+
+    @property
+    def guide_thickness_base_y(self) -> float:
+        return self.base_y if self.thickness_reference_y is None else self.thickness_reference_y
+
+    @property
+    def guide_thickness_reference_x(self) -> float:
+        return self.right_x if self.thickness_reference_x is None else self.thickness_reference_x
 
     @property
     def center_opening(self) -> float:
@@ -215,14 +225,16 @@ def add_guide_thickness_dimension(
     include_native: bool = True,
 ) -> None:
     x = geometry.right_x + 27.45
+    thickness_base_y = geometry.guide_thickness_base_y
+    thickness_reference_x = geometry.guide_thickness_reference_x
     add_linear_dimension_with_text(
         modelspace,
-        (geometry.right_x, geometry.base_y),
-        (geometry.right_x, geometry.top_y),
-        (x - 1.0, geometry.base_y),
+        (thickness_reference_x, thickness_base_y),
+        (thickness_reference_x, geometry.top_y),
+        (x - 1.0, thickness_base_y),
         (x - 1.0, geometry.top_y),
         f"{geometry.guide_thickness:.2f}",
-        (x + 0.4, (geometry.base_y + geometry.top_y) / 2.0 - 0.35),
+        (x + 0.4, (thickness_base_y + geometry.top_y) / 2.0 - 0.35),
         angle=90.0,
         text_rotation=90.0,
         include_fallback=include_fallback,
@@ -586,7 +598,11 @@ def _update_section_dimension(entity, tile_section: TileSection, geometry: SlotD
             tile_section.guide_spec.slot_width_dimension_text,
         )
     elif _is_guide_thickness_dimension(entity, measurement, geometry):
-        _set_linear_definition(entity, (geometry.right_x, geometry.top_y), (geometry.right_x, geometry.base_y))
+        _set_linear_definition(
+            entity,
+            (geometry.guide_thickness_reference_x, geometry.top_y),
+            (geometry.guide_thickness_reference_x, geometry.guide_thickness_base_y),
+        )
         _set_dimension_text(entity, f"{geometry.guide_thickness:.2f}")
     elif text.startswith("4-") or text.startswith("2-") or measurement < 1.0:
         old_center = entity.dxf.defpoint if entity.dxf.hasattr("defpoint") else None

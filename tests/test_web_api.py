@@ -143,7 +143,7 @@ def test_web_api_generates_release_gated_dual_guide_artifacts(tmp_path: Path, mo
     assert result["report"]["checks"]["synchronized_parameters"] is True
     assert result["report"]["dimension_definition_point_audit"]["release_allowed"] is True
     assert result["files"]["release_dxf"]["name"] == (
-        "R30×R28×17.4×23.5×3.95（23.5×17.4×3.95）三头机双导轨（下上上）.dxf"
+        "R30×R28×17.4×23.5×3.95（R30.00×17.43×4.07）三头机双导轨（下上上）.dxf"
     )
     assert Path(result["report"]["paths"]["release_dxf"]).is_file()
     assert Path(result["report"]["paths"]["preview_png"]).is_file()

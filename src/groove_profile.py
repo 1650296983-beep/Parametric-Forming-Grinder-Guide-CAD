@@ -5,6 +5,7 @@ from typing import Any, Literal, Mapping, Sequence
 
 
 Confidence = Literal["high", "medium", "low"]
+LARGE_INNER_RADIUS_DIFFERENCE_THRESHOLD = 10.0
 
 
 SHAPE_ALIASES = {
@@ -121,15 +122,39 @@ def determine_groove_profile(
         if orientation is None:
             return _manual_review(common_sources, warnings)
         flat_side, arc_side, arc_center_side = orientation
+        arc_radius, arc_radius_source = select_block_to_tile_arc_radius(finished_radii)
+        large_inner_radius = uses_lower_arc_center_rule(finished_radii)
+        if large_inner_radius:
+            # This is an orientation rule only.  The production R selection
+            # remains max(outer R, inner R), exactly as for every block-to-tile
+            # cavity.
+            arc_center_side = "lower"
+        orientation_sources = {
+            "arc_radius": arc_radius_source,
+            "arc_center_orientation": (
+                "center_below_arc_when_inner_radius_minus_outer_radius_gt_10.00_mm"
+                if large_inner_radius
+                else "center_opposite_arc_surface"
+            ),
+            "guide_thickness_reference": (
+                "narrowest_gap_between_arc_apex_and_opposing_plane"
+                if large_inner_radius
+                else "standard_cavity_base_datum"
+            ),
+        }
+        if large_inner_radius:
+            orientation_sources["large_inner_radius_arc_flip_threshold"] = (
+                f"{LARGE_INNER_RADIUS_DIFFERENCE_THRESHOLD:.2f} mm"
+            )
         return GrooveProfileDecision(
             groove_profile="flat_arc_groove",
             flat_side=flat_side,
             arc_side=arc_side,
-            arc_radius=max(float(value) for value in finished_radii),
+            arc_radius=arc_radius,
             arc_center_side=arc_center_side,
             dimension_source={
                 **common_sources,
-                "arc_radius": "max(finished_spec.outer_radius, finished_spec.inner_radius)",
+                **orientation_sources,
                 "arc_orientation": "first_wheel_side_and_template_coordinate_system",
             },
             confidence="high",
@@ -160,6 +185,31 @@ def determine_groove_profile(
 def normalize_shape(value: str) -> str:
     normalized = str(value).strip().lower()
     return SHAPE_ALIASES.get(normalized, "unknown")
+
+
+def select_block_to_tile_arc_radius(
+    finished_radii: Sequence[float],
+) -> tuple[float, str]:
+    """Select the production arc and preserve the reason for release reports."""
+    if len(finished_radii) != 2:
+        raise ValueError("Block-to-tile radius selection requires exactly two radii.")
+    outer_radius, inner_radius = (float(value) for value in finished_radii)
+    return (
+        max(outer_radius, inner_radius),
+        "max(finished_spec.outer_radius, finished_spec.inner_radius)",
+    )
+
+
+def uses_lower_arc_center_rule(finished_radii: Sequence[float]) -> bool:
+    """Return whether the flat-arc center must be below the cavity arc.
+
+    The boundary is intentionally strict: a difference of exactly 10.00 mm
+    keeps the standard orientation; only a larger difference flips it.
+    """
+    if len(finished_radii) != 2:
+        raise ValueError("Arc-center orientation requires exactly two radii.")
+    outer_radius, inner_radius = (float(value) for value in finished_radii)
+    return inner_radius - outer_radius > LARGE_INNER_RADIUS_DIFFERENCE_THRESHOLD
 
 
 def resolve_arc_center_side(first_wheel_side: str) -> str:

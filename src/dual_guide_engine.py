@@ -1507,6 +1507,7 @@ class DualGuideTemplateEngine:
             if profile.process_type in {"block_to_tile", "block_to_bread"}:
                 return {
                     "profile_type": "bread_big_r_block_preform",
+                    "arc_center_side": profile.arc_center_side,
                     "bottom_surface_type": (
                         "R_form_arc" if profile.arc_side == "lower" else "plane"
                     ),
@@ -2044,8 +2045,8 @@ def _guide_thickness_geometry_points(
 ) -> tuple[tuple[float, float], tuple[float, float]]:
     if isinstance(profile, TileSection):
         if profile.process_type in {"block_to_tile", "block_to_bread"}:
-            x = geometry.right_x
-            return (x, geometry.base_y), (x, geometry.top_y)
+            x = geometry.guide_thickness_reference_x
+            return (x, geometry.guide_thickness_base_y), (x, geometry.top_y)
         radius = profile.forming_spec.R_form
         opening_half = profile.guide_spec.center_opening / 2.0
         x = geometry.center_x + opening_half + 1.0

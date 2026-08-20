@@ -10,6 +10,7 @@ from .dimension_precision import build_dimension_precision_file_audit
 from .inspection import inspect_release_dxf
 from .machine_config import MachineConfig
 from .global_rules import WHEEL_CUT_IN_RATIO
+from .groove_profile import LARGE_INNER_RADIUS_DIFFERENCE_THRESHOLD
 from .release_entity_audit import build_parametric_duplicate_audit
 from .spec_parser import BlockSpec, FinishedSpec
 from .side_view import build_side_view_geometry
@@ -328,6 +329,12 @@ def _dual_spec_validation_payload(
             "left": "right",
             "right": "left",
         }.get(str(input_rule.get("first_wheel_side")))
+        large_inner_radius = (
+            finished.finished_shape == "tile"
+            and finished.R_inner_finished - finished.R_outer_finished
+            > LARGE_INNER_RADIUS_DIFFERENCE_THRESHOLD
+        )
+        expected_arc_center_side = "lower" if large_inner_radius else opposite
         if isinstance(profile, TileSection):
             add(
                 "arc_surface_follows_first_wheel",
@@ -336,12 +343,14 @@ def _dual_spec_validation_payload(
                 arc_side=input_rule.get("arc_side"),
             )
             add(
-                "arc_center_opposes_first_wheel",
-                opposite is not None
-                and input_rule.get("arc_center_side") == opposite,
+                "arc_center_follows_resolved_orientation_rule",
+                expected_arc_center_side is not None
+                and input_rule.get("arc_center_side") == expected_arc_center_side
+                and profile.arc_center_side == expected_arc_center_side,
                 first_wheel_side=input_rule.get("first_wheel_side"),
                 arc_center_side=input_rule.get("arc_center_side"),
-                expected_arc_center_side=opposite,
+                expected_arc_center_side=expected_arc_center_side,
+                large_inner_radius_rule=large_inner_radius,
             )
         first_vector = input_rule.get("first_wheel_vector")
         center_vector = input_rule.get("arc_center_vector")
@@ -355,13 +364,29 @@ def _dual_spec_validation_payload(
                 for index in (0, 1)
             )
         )
+        vectors_equal = (
+            isinstance(first_vector, list)
+            and isinstance(center_vector, list)
+            and len(first_vector) == 2
+            and len(center_vector) == 2
+            and all(
+                abs(float(first_vector[index]) - float(center_vector[index])) <= 1e-9
+                for index in (0, 1)
+            )
+        )
+        expected_vectors_match = (
+            vectors_equal
+            if expected_arc_center_side == input_rule.get("first_wheel_side")
+            else vectors_opposite
+        )
         if isinstance(profile, TileSection):
             add(
-                "template_coordinate_transform_preserves_opposition",
-                vectors_opposite,
+                "template_coordinate_transform_preserves_arc_center_direction",
+                expected_vectors_match,
                 template_coordinate_system=input_rule.get("template_coordinate_system"),
                 first_wheel_vector=first_vector,
                 arc_center_vector=center_vector,
+                expected_arc_center_side=expected_arc_center_side,
             )
 
     return {
@@ -505,6 +530,16 @@ def _r_form_payload(profile: TileSection | BlockGuideSection) -> dict[str, Any] 
         "R_outer_finished": spec.R_outer_finished,
         "R_inner_finished": None if block_to_bread else spec.R_inner_finished,
         "result": profile.forming_spec.R_form,
+        "arc_surface_side": profile.arc_side,
+        "arc_center_side": profile.arc_center_side,
+        "guide_thickness_reference": (
+            "narrowest_gap_between_arc_apex_and_opposing_plane"
+            if block_to_tile
+            and profile.arc_center_side == "lower"
+            and spec.R_inner_finished - spec.R_outer_finished
+            > LARGE_INNER_RADIUS_DIFFERENCE_THRESHOLD
+            else "standard_cavity_base_datum"
+        ),
         "forming_profile_R_outer": profile.forming_profile.params.R_outer,
         "forming_profile_R_inner": (
             None if block_to_tile or block_to_bread else profile.forming_profile.params.R_inner

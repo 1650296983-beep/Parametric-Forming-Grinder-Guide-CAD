@@ -64,6 +64,28 @@ finished_shape = bread -> process_type = block_to_bread_rectangular
 坐标向量，逻辑方向和屏幕显示方向不得混用。`first_wheel_side` 必须与机台
 `wheel_positions` 的第一项一致，否则禁止 release。
 
+当成品为瓦型、磨前为方块时，主弧半径始终按统一规则取
+`max(外 R, 内 R)`。若输入第二个 R（内 R）减第一个 R（外 R）严格大于
+`10.00 mm`，只翻转型腔主弧的曲率方向：主弧仍与第一砂轮同侧，另一侧仍
+为平面，但主弧圆心改到弧的下方。`10.00 mm` 恰好相等时不得翻转。
+该阈值不得改变 R 的选取规则，也不得覆盖用户明确输入的同 R 瓦型磨前形态。
+判定原因、阈值、圆心方向和导轨厚度基准必须写入输入规则审计。翻转后
+导轨厚度取整个型腔的最窄间距。圆心翻到下方后，下弧向上凸，最窄处为
+主弧中心最高点到对侧平面；原有圆心在上、下弧向下凹时，最窄处仍在弧的
+两端，禁止套用翻转分支的弓高补偿。四处 R0.50 避空不改变该工艺尺寸基准。
+示例：
+
+```text
+finished_spec = R9.25*R32.95*6.8*33*2.5
+pre_grinding_spec = 33*6.8(-0.02/-0.04)*2.7(+0.01/-0.01)
+R_inner - R_outer = 23.70 > 10.00
+groove_profile = lower_R32.95 + upper_plane  # 首砂轮为下，主弧侧不变
+arc_center_side = lower                      # 圆心由弧上方翻到弧下方
+guide_thickness_reference = narrowest_gap_between_arc_apex_and_opposing_plane
+slot_width = 6.81
+guide_thickness = 2.82
+```
+
 ## 产品规格
 
 公司瓦型成品规格为：

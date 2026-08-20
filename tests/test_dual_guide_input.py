@@ -52,6 +52,26 @@ def test_tile_finished_with_block_pregrinding_uses_big_r_bread_profile():
     assert decision.R_form_source == "max(finished_product_R_outer, finished_product_R_inner)"
 
 
+def test_large_inner_radius_dual_guide_uses_center_below_without_changing_r_rule():
+    machine = load_machine_config("triple_double_down_up_up")
+    _, _, profile, decision = build_dual_guide_profile_from_input(
+        {
+            "finished_product_spec": "R9.25*R32.95*6.8*33*2.5",
+            "pre_grinding_spec": "33*6.8(-0.02/-0.04)*2.7(+0.01/-0.01)",
+            "finished_product_shape": "tile",
+            "pre_grinding_shape": "block",
+            "guide_profile_source": "finished_product_big_r_with_pre_grinding_block",
+        },
+        machine,
+    )
+
+    assert profile.forming_spec.R_form == pytest.approx(32.95)
+    assert profile.arc_side == "lower"
+    assert profile.arc_center_side == "lower"
+    assert decision.arc_center_side == "lower"
+    assert decision.R_form_source == "max(finished_product_R_outer, finished_product_R_inner)"
+
+
 def test_same_r_tile_requires_explicit_pregrinding_shape():
     machine = load_machine_config("triple_double_down_up_up")
     _, _, profile, decision = build_dual_guide_profile_from_input(

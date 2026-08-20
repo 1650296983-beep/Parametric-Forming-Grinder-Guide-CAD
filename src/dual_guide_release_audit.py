@@ -87,7 +87,20 @@ def build_dimension_definition_point_audit(
             defpoint2 = _point_payload(point_1)
             defpoint3 = _point_payload(point_2)
             binding_mode = "entity_point"
-            if _rounded_slot_virtual_datum_is_valid(
+            if _narrowest_gap_virtual_datum_is_valid(
+                point_1,
+                point_2,
+                nearest_1,
+                nearest_2,
+                measurement,
+                role,
+                profile,
+            ):
+                point_error = 0.0
+                expected_1 = defpoint2
+                expected_2 = defpoint3
+                binding_mode = "narrowest_arc_apex_to_plane_envelope"
+            elif _rounded_slot_virtual_datum_is_valid(
                 point_1,
                 point_2,
                 nearest_1,
@@ -629,6 +642,44 @@ def _rounded_slot_virtual_datum_is_valid(
     if role == "slot_width":
         return dy <= POINT_TOLERANCE and abs(dx - expected) <= POINT_TOLERANCE
     return dx <= POINT_TOLERANCE and abs(dy - expected) <= POINT_TOLERANCE
+
+
+def _narrowest_gap_virtual_datum_is_valid(
+    point_1: Any,
+    point_2: Any,
+    nearest_1: dict[str, Any],
+    nearest_2: dict[str, Any],
+    measurement: float | None,
+    role: str,
+    profile: TileSection | BlockGuideSection,
+) -> bool:
+    """Allow the real arc apex to the opposing plane's centerline envelope.
+
+    The center opening interrupts the plane at x=0, but that plane remains the
+    approved functional envelope used to define the cavity's minimum gap.
+    """
+    if not (
+        role == "guide_thickness"
+        and isinstance(profile, TileSection)
+        and profile.process_type == "block_to_tile"
+        and profile.arc_side == "lower"
+        and profile.arc_center_side == "lower"
+        and measurement is not None
+    ):
+        return False
+    expected = profile.guide_spec.guide_thickness
+    dx = abs(float(point_2.x) - float(point_1.x))
+    dy = abs(float(point_2.y) - float(point_1.y))
+    if dx > POINT_TOLERANCE or abs(dy - expected) > POINT_TOLERANCE:
+        return False
+    distances = (nearest_1["distance"], nearest_2["distance"])
+    if not any(distance <= POINT_TOLERANCE for distance in distances):
+        return False
+    plane_envelope_allowance = (
+        profile.guide_spec.center_opening / 2.0
+        + profile.guide_spec.relief.relief_size / 2.0
+    )
+    return max(distances) <= plane_envelope_allowance + POINT_TOLERANCE
 
 
 def _rounded_corner_virtual_datum_is_valid(
