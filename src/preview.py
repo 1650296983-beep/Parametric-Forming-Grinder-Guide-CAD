@@ -111,9 +111,17 @@ def _draw_guide_control(ax: plt.Axes, tile_section: TileSection) -> None:
     xs = [x_center - half_slot + guide.guide_slot_width * index / 80 for index in range(81)]
     if tile_section.process_type in {"block_to_tile", "block_to_bread"}:
         if tile_section.arc_side == "lower":
-            lower_center_y = base_y + arc_base
+            arc_center_side = tile_section.arc_center_side or "upper"
+            arc_sagitta = r_form - arc_base
+            if arc_center_side == "lower":
+                top_y += arc_sagitta
+            lower_center_y = (
+                base_y - arc_base if arc_center_side == "lower" else base_y + arc_base
+            )
+            arc_sign = 1.0 if arc_center_side == "lower" else -1.0
             lower_ys = [
-                lower_center_y - sqrt(r_form**2 - (x - x_center) ** 2)
+                lower_center_y
+                + arc_sign * sqrt(r_form**2 - (x - x_center) ** 2)
                 for x in xs
             ]
             upper_ys = [top_y for _ in xs]
@@ -279,11 +287,22 @@ def _draw_dimension_annotations(
         **text_style,
     )
 
+    thickness_reference_y = base_y
+    thickness_reference_x = right_x
+    if (
+        isinstance(section, TileSection)
+        and section.process_type == "block_to_tile"
+        and section.arc_side == "lower"
+        and section.arc_center_side == "lower"
+    ):
+        radius = section.forming_spec.R_form
+        thickness_reference_y = base_y + radius - sqrt(radius**2 - half_slot**2)
+        thickness_reference_x = x_center
     thickness_x = half_outer + 4.0
-    _plot_dimension_line(ax, (right_x, base_y), (thickness_x, base_y), color)
+    _plot_dimension_line(ax, (thickness_reference_x, thickness_reference_y), (thickness_x, thickness_reference_y), color)
     _plot_dimension_line(ax, (right_x, top_y), (thickness_x, top_y), color)
-    _plot_dimension_line(ax, (thickness_x, base_y), (thickness_x, top_y), color)
-    ax.text(thickness_x + 0.45, (base_y + top_y) / 2.0, f"{guide.guide_thickness:.2f}", va="center", **text_style)
+    _plot_dimension_line(ax, (thickness_x, thickness_reference_y), (thickness_x, top_y), color)
+    ax.text(thickness_x + 0.45, (thickness_reference_y + top_y) / 2.0, f"{guide.guide_thickness:.2f}", va="center", **text_style)
 
     if isinstance(section, TileSection) and section.process_type in {"tile", "block_to_tile", "block_to_bread"}:
         ax.plot(

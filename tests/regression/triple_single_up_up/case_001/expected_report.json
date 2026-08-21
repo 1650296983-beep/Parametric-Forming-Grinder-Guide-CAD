@@ -119,14 +119,15 @@
       "result": 21.38
     },
     "guide_outer_height": 27.0,
-    "guide_thickness": 0.04659419386814534,
-    "wheel_cut_allowance": 0.0,
+    "guide_thickness": 2.62,
+    "wheel_cut_allowance": 0.04659419386814534,
     "side_clearance_height": {
-      "formula": "guide_outer_height - side_projected_slot_height - preform_thickness_mid * 0.6",
+      "formula": "guide_outer_height - slot_base_height - guide_thickness + upper_wheel_cut_in",
       "guide_outer_height": 27.0,
-      "side_projected_slot_height": 21.38,
-      "preform_thickness_mid": 2.5,
-      "result": 5.573405806131856
+      "slot_base_height": 21.38,
+      "guide_thickness": 2.62,
+      "upper_wheel_cut_in": 0.04659419386814534,
+      "result": 3.0465941938681462
     },
     "wheel_notch": {
       "natural_cut_in_formula": "preform_block_thickness_mid * 0.6",
@@ -138,9 +139,9 @@
       "lower_cavity_notch_opening": 5.46,
       "upper_cavity_notch_opening": 5.46,
       "upper_opening_limit": 5.46,
-      "upper_effective_cut_in_depth": 0.0,
-      "effective_cut_in_depth": -11.953405806131855,
-      "effective_notch_top_height_from_guide_bottom": 0.04659419386814534,
+      "upper_effective_cut_in_depth": 0.04659419386814534,
+      "effective_cut_in_depth": 9.426594193868144,
+      "effective_notch_top_height_from_guide_bottom": 21.426594193868144,
       "wheel_radius": 80.0,
       "product_length": 9.1,
       "lower_cavity_notch_opening_less_than_product_length": true,
@@ -148,9 +149,9 @@
       "upper_cavity_notch_opening_less_than_product_length": true,
       "upper_cavity_notch_opening_within_limit": true,
       "natural_wheel_center_y": -186.4945753472325,
-      "adjusted_wheel_center_y": -199.94798115336437,
-      "wheel_center_shift": -13.453405806131855,
-      "lower_wheel_center_y": -199.94798115336437,
+      "adjusted_wheel_center_y": -178.56798115336437,
+      "wheel_center_shift": 7.926594193868141,
+      "lower_wheel_center_y": -178.56798115336437,
       "note": "上下砂轮的目标吃入深度均按成型磨前厚度中值的0.6倍计算；最终缺口开口不得超过 product_length * 0.6，超限时移动对应砂轮圆心并同步更新连接线。"
     }
   },
@@ -801,22 +802,22 @@
         "display_text": "R80.00",
         "defpoint2": [
           3468.204666,
-          -18.567981,
+          -16.04117,
           0.0
         ],
         "defpoint3": [
           3468.204666,
-          -98.567981,
+          -96.04117,
           0.0
         ],
         "expected_geometry_point_1": [
           3468.204666,
-          -18.567981,
+          -16.04117,
           0.0
         ],
         "expected_geometry_point_2": [
           3468.204666,
-          -98.567981,
+          -96.04117,
           0.0
         ],
         "point_error": 0.0,
@@ -831,22 +832,22 @@
         "display_text": "R80.00",
         "defpoint2": [
           3648.204666,
-          -18.567981,
+          -16.04117,
           0.0
         ],
         "defpoint3": [
           3648.204666,
-          -98.567981,
+          -96.04117,
           0.0
         ],
         "expected_geometry_point_1": [
           3648.204666,
-          -18.567981,
+          -16.04117,
           0.0
         ],
         "expected_geometry_point_2": [
           3648.204666,
-          -98.567981,
+          -96.04117,
           0.0
         ],
         "point_error": 0.0,
@@ -857,8 +858,8 @@
       {
         "dimension_handle": "20383F4",
         "dimension_role": "other_release_dimension",
-        "measurement": 5.573406,
-        "display_text": "5.57",
+        "measurement": 3.046594,
+        "display_text": "3.05",
         "defpoint2": [
           3468.204666,
           -92.994575,
@@ -866,7 +867,7 @@
         ],
         "defpoint3": [
           3468.204666,
-          -98.567981,
+          -96.04117,
           0.0
         ],
         "expected_geometry_point_1": [
@@ -876,7 +877,7 @@
         ],
         "expected_geometry_point_2": [
           3468.204666,
-          -98.567981,
+          -96.04117,
           0.0
         ],
         "point_error": 0.0,
@@ -885,28 +886,28 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "2038415",
+        "dimension_handle": "2038417",
         "dimension_role": "other_release_dimension",
-        "measurement": 5.573406,
-        "display_text": "5.57",
+        "measurement": 3.046594,
+        "display_text": "3.05",
         "defpoint2": [
-          3677.54205,
+          3670.071841,
           -92.994575,
           0.0
         ],
         "defpoint3": [
           3648.204666,
-          -98.567981,
+          -96.04117,
           0.0
         ],
         "expected_geometry_point_1": [
-          3677.54205,
+          3670.071841,
           -92.994575,
           0.0
         ],
         "expected_geometry_point_2": [
           3648.204666,
-          -98.567981,
+          -96.04117,
           0.0
         ],
         "point_error": 0.0,

@@ -3,6 +3,7 @@ import pytest
 from src.groove_profile import (
     determine_groove_profile,
     resolve_arc_center_side,
+    uses_lower_arc_center_rule,
 )
 
 
@@ -79,6 +80,41 @@ def test_double_r_tile_uses_configured_flat_arc_and_larger_finished_radius():
     assert decision.flat_side == "upper"
     assert decision.arc_center_side == "upper"
     assert decision.guide_profile_source == "finished_product_big_r_with_pre_grinding_block"
+
+
+def test_inner_radius_more_than_12_flips_arc_center_without_changing_r_rule():
+    decision = determine_groove_profile(
+        "block",
+        "tile",
+        2,
+        "triple_single_down_up",
+        "single_guide",
+        ["下", "上"],
+        _rules(),
+        finished_radii=[9.25, 32.95],
+        first_wheel_side="lower",
+    )
+
+    assert decision.groove_profile == "flat_arc_groove"
+    assert decision.arc_radius == pytest.approx(32.95)
+    assert decision.arc_side == "lower"
+    assert decision.flat_side == "upper"
+    assert decision.arc_center_side == "lower"
+    assert decision.dimension_source["large_inner_radius_arc_flip_threshold"] == "10.00 mm"
+    assert decision.dimension_source["arc_radius"] == (
+        "max(finished_spec.outer_radius, finished_spec.inner_radius)"
+    )
+    assert decision.dimension_source["guide_thickness_reference"] == (
+        "narrowest_gap_between_arc_apex_and_opposing_plane"
+    )
+
+
+@pytest.mark.parametrize(
+    ("difference", "expected"),
+    ((9.99, False), (10.00, False), (10.01, True)),
+)
+def test_large_inner_radius_arc_flip_uses_strict_threshold(difference, expected):
+    assert uses_lower_arc_center_rule((20.0, 20.0 + difference)) is expected
 
 
 @pytest.mark.parametrize(

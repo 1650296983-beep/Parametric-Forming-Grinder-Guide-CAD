@@ -97,6 +97,43 @@ def test_exact_block_spec_uses_ratio_cut_in_and_expected_side_styles(
     assert cavity_lines
     assert all(_effective_color(doc, line) == 3 for line in cavity_lines)
     assert all(_effective_linetype(doc, line) == "DASHED" for line in cavity_lines)
+    if machine.guide_sections == 1:
+        cavity_y_values = sorted(
+            {round(float(line.dxf.start.y), 6) for line in cavity_lines}
+        )
+        assert len(cavity_y_values) == 2
+        assert cavity_y_values[1] - cavity_y_values[0] == pytest.approx(
+            profile.guide_spec.guide_thickness,
+            abs=0.001,
+        )
+    else:
+        dual_template = DualGuideTemplateEngine(machine).build_template()
+        side_bounds = (
+            dual_template.guide_section_1.side_bounds,
+            dual_template.guide_section_2.side_bounds,
+            dual_template.assembly_side_bounds,
+        )
+        for x_min, x_max, bottom_y, top_y in side_bounds:
+            cavity_y_values = sorted(
+                {
+                    round(float(line.dxf.start.y), 6)
+                    for line in cavity_lines
+                    if x_min - 0.001
+                    <= (
+                        float(line.dxf.start.x) + float(line.dxf.end.x)
+                    )
+                    / 2.0
+                    <= x_max + 0.001
+                    and bottom_y - 0.001
+                    <= float(line.dxf.start.y)
+                    <= top_y + 0.001
+                }
+            )
+            assert len(cavity_y_values) == 2
+            assert cavity_y_values[1] - cavity_y_values[0] == pytest.approx(
+                profile.guide_spec.guide_thickness,
+                abs=0.001,
+            )
 
     if machine_id in {"bed_618", "double_head_up_down"}:
         _assert_two_cavity_boundaries_with_wheel_gaps(

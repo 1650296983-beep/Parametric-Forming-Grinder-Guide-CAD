@@ -1,7 +1,7 @@
 {
   "name": "forming-grinder-guide-ui",
   "private": true,
-  "version": "1.0.4",
+  "version": "1.1.2",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -50,8 +50,13 @@ def test_triple_single_up_up_block_release_updates_native_dimensions(tmp_path):
     expected_clearance = (
         profile.guide_spec.outer_height
         - side.derived.side_projected_slot_height
-        - expected_cut_in
+        - profile.guide_spec.guide_thickness
+        + expected_cut_in
     )
+    assert side.derived.guide_thickness == pytest.approx(
+        profile.guide_spec.guide_thickness
+    )
+    assert side.derived.wheel_cut_allowance == pytest.approx(expected_cut_in)
     assert side.derived.side_clearance_height == pytest.approx(expected_clearance)
     assert measurements["9.15±0.01"][0] == pytest.approx(9.15)
     assert measurements["2.59"][0] == pytest.approx(2.59)
@@ -59,6 +64,25 @@ def test_triple_single_up_up_block_release_updates_native_dimensions(tmp_path):
     clearance_label = f"{expected_clearance:.2f}"
     assert measurements[clearance_label] == pytest.approx(
         [expected_clearance, expected_clearance]
+    )
+    cavity_base_y = (
+        machine.side_layout.lower_y
+        + side.derived.side_projected_slot_height
+    )
+    cavity_top_y = cavity_base_y + profile.guide_spec.guide_thickness
+    projection_y = sorted(
+        {
+            round(float(entity.dxf.start.y), 6)
+            for entity in doc.modelspace().query('LINE[layer=="SIDE_DERIVED"]')
+            if abs(float(entity.dxf.start.y) - float(entity.dxf.end.y)) <= 0.001
+            and cavity_base_y - 0.001
+            <= float(entity.dxf.start.y)
+            <= cavity_top_y + 0.001
+        }
+    )
+    assert projection_y == pytest.approx([cavity_base_y, cavity_top_y])
+    assert projection_y[1] - projection_y[0] == pytest.approx(
+        profile.guide_spec.guide_thickness
     )
     _assert_r80_bottom_matches_clearance(doc, machine.side_layout.upper_y, side.derived.side_clearance_height)
     assert not any("DEBUG" in entity.dxf.layer for entity in doc.modelspace())

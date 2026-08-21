@@ -120,6 +120,7 @@ class TileSection:
     process_type: Literal["tile", "block_to_tile", "block_to_bread"] = "tile"
     preform_block_spec: BlockSpec | None = None
     arc_side: Literal["upper", "lower"] | None = None
+    arc_center_side: Literal["upper", "lower"] | None = None
 
     @property
     def spec(self) -> FinishedSpec:
@@ -261,6 +262,8 @@ def build_block_to_tile_section(
     slot_base_height: float = 12.0,
     center_opening: float = 1.8,
     arc_side: Literal["upper", "lower"] = "upper",
+    arc_center_side: Literal["upper", "lower"] | None = None,
+    forming_radius: float | None = None,
 ) -> TileSection:
     if not preform_spec.has_width_tolerance:
         raise ValueError("Block-to-tile preform width must include upper/lower tolerance.")
@@ -272,8 +275,15 @@ def build_block_to_tile_section(
         )
 
     finished_profile = build_finished_profile(finished_spec)
+    resolved_forming_radius = (
+        max(finished_spec.R_outer_finished, finished_spec.R_inner_finished)
+        if forming_radius is None
+        else float(forming_radius)
+    )
+    if resolved_forming_radius <= 0.0:
+        raise ValueError("Block-to-tile forming radius must be greater than 0.")
     forming_spec = FormingSpec(
-        R_form=max(finished_spec.R_outer_finished, finished_spec.R_inner_finished),
+        R_form=resolved_forming_radius,
         chord_width=preform_spec.width,
         length=preform_spec.length,
         finished_thickness=preform_spec.thickness_mid,
@@ -295,6 +305,11 @@ def build_block_to_tile_section(
         tolerance_slot_clearance=tolerance_slot_clearance,
         use_tolerance_based_slot_width=True,
     )
+    resolved_arc_center_side = (
+        ("lower" if arc_side == "upper" else "upper")
+        if arc_center_side is None
+        else arc_center_side
+    )
     forming_profile = build_flat_arc_profile(
         radius=forming_spec.R_form,
         chord_width=forming_spec.chord_width,
@@ -302,6 +317,7 @@ def build_block_to_tile_section(
         thickness=forming_spec.finished_thickness,
         profile_type="forming",
         arc_side=arc_side,
+        arc_center_side=resolved_arc_center_side,
     )
     return TileSection(
         finished_spec=finished_spec,
@@ -312,6 +328,7 @@ def build_block_to_tile_section(
         process_type="block_to_tile",
         preform_block_spec=preform_spec,
         arc_side=arc_side,
+        arc_center_side=resolved_arc_center_side,
     )
 
 
@@ -411,18 +428,29 @@ def build_flat_arc_profile(
     thickness: float,
     profile_type: Literal["finished", "forming"],
     arc_side: Literal["upper", "lower"],
+    arc_center_side: Literal["upper", "lower"] | None = None,
 ) -> SectionProfile:
     if chord_width >= 2.0 * radius:
         raise ValueError("Flat-arc profile width must be smaller than 2 * radius.")
     if arc_side not in {"upper", "lower"}:
         raise ValueError("arc_side must be 'upper' or 'lower'.")
+    resolved_arc_center_side = (
+        ("lower" if arc_side == "upper" else "upper")
+        if arc_center_side is None
+        else arc_center_side
+    )
+    if resolved_arc_center_side not in {"upper", "lower"}:
+        raise ValueError("arc_center_side must be 'upper' or 'lower'.")
     half_chord = chord_width / 2.0
     arc_base = sqrt(radius**2 - half_chord**2)
     lower_y = 0.0
     upper_endpoint_y = thickness
+    arc_endpoint_y = upper_endpoint_y if arc_side == "upper" else lower_y
     center = Point(
         0.0,
-        upper_endpoint_y - arc_base if arc_side == "upper" else arc_base,
+        arc_endpoint_y + arc_base
+        if resolved_arc_center_side == "upper"
+        else arc_endpoint_y - arc_base,
     )
     upper_left = Point(-half_chord, upper_endpoint_y)
     upper_right = Point(half_chord, upper_endpoint_y)
@@ -436,9 +464,7 @@ def build_flat_arc_profile(
         thickness=thickness,
         profile_type=profile_type,
         forming_radius_mode=(
-            "single_R_upper_arc_lower_plane"
-            if arc_side == "upper"
-            else "single_R_lower_arc_upper_plane"
+            f"single_R_{arc_side}_arc_{resolved_arc_center_side}_center"
         ),
         profile_shape="bread",
     )
@@ -450,7 +476,7 @@ def build_flat_arc_profile(
                 end=upper_right,
                 center=center,
                 radius=radius,
-                clockwise=True,
+                clockwise=arc_side != resolved_arc_center_side,
             ),
             LineSegment(name="right_side", start=upper_right, end=lower_right),
             LineSegment(name="bottom_plane", start=lower_right, end=lower_left),
@@ -466,7 +492,7 @@ def build_flat_arc_profile(
                 end=lower_left,
                 center=center,
                 radius=radius,
-                clockwise=True,
+                clockwise=arc_side != resolved_arc_center_side,
             ),
             LineSegment(name="left_side", start=lower_left, end=upper_left),
         )

@@ -54,6 +54,54 @@ def test_example_1_keeps_double_r_finished_shape_separate_from_block_envelope():
     assert decision.arc_center_side == "upper"
     assert decision.final_section_profile_type == "flat_arc_big_r_block_preform"
     assert decision.R_form_source == "max(finished_product_R_outer, finished_product_R_inner)"
+    main_arc = next(
+        segment
+        for segment in profile.forming_profile.segments
+        if segment.name == "outer_arc"
+    )
+    top_plane = next(
+        segment
+        for segment in profile.forming_profile.segments
+        if segment.name == "top_plane"
+    )
+    # The legacy lower arc is concave downward (center above it), so the two
+    # chord endpoints remain the narrowest points.  The flip-only sagitta
+    # compensation must never leak into this branch.
+    assert profile.arc_center_side == "upper"
+    assert main_arc.center.y > main_arc.start.y
+    assert top_plane.start.y - main_arc.start.y == pytest.approx(
+        profile.forming_profile.params.thickness
+    )
+
+
+def test_large_inner_radius_example_uses_figure_two_flat_arc_cavity():
+    machine = load_machine_config("triple_single_down_up")
+    _, preform, profile, decision = build_single_guide_profile_from_input(
+        _base_input(
+            finished_product_spec="R9.25*R32.95*6.8*33*2.5",
+            pre_grinding_spec="33*6.8(-0.02/-0.04)*2.7(+0.01/-0.01)",
+            finished_product_shape="tile",
+            finished_spec_order="outer_r_inner_r_width_length_thickness",
+            guide_profile_source="finished_product_big_r_with_pre_grinding_block",
+        ),
+        machine,
+    )
+
+    assert preform.width == pytest.approx(6.8)
+    assert profile.process_type == "block_to_tile"
+    assert profile.forming_spec.R_form == pytest.approx(32.95)
+    assert profile.guide_spec.guide_slot_width == pytest.approx(6.81)
+    assert profile.guide_spec.guide_thickness == pytest.approx(2.82)
+    assert profile.arc_side == "lower"
+    assert profile.arc_center_side == "lower"
+    assert profile.forming_profile.center.y < 0.0
+    assert decision.flat_side == "upper"
+    assert decision.arc_center_side == "lower"
+    assert decision.arc_center_vector == pytest.approx(decision.first_wheel_vector)
+    assert decision.R_form_source == "max(finished_product_R_outer, finished_product_R_inner)"
+    assert decision.dimension_source["guide_thickness_reference"] == (
+        "narrowest_gap_between_arc_apex_and_opposing_plane"
+    )
 
 
 def test_example_2_builds_rectangular_groove_from_block_preform():

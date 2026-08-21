@@ -546,6 +546,42 @@ def _measure_slot_width_from_param_geometry(doc, profile: TileSection | BlockGui
 
 
 def _measure_guide_thickness_from_param_geometry(doc, profile: TileSection | BlockGuideSection) -> float | None:
+    if (
+        isinstance(profile, TileSection)
+        and profile.process_type == "block_to_tile"
+        and profile.arc_side == "lower"
+        and profile.arc_center_side == "lower"
+    ):
+        main_arcs = [
+            entity
+            for entity in doc.modelspace()
+            if entity.dxf.layer == "PARAM_SLOT"
+            and entity.dxftype() == "ARC"
+            and abs(float(entity.dxf.radius) - profile.forming_spec.R_form) <= TOLERANCE
+        ]
+        top_reliefs = [
+            entity
+            for entity in doc.modelspace()
+            if entity.dxf.layer == "PARAM_SLOT"
+            and entity.dxftype() == "ARC"
+            and abs(float(entity.dxf.radius) - profile.guide_spec.relief.relief_size / 2.0)
+            <= TOLERANCE
+        ]
+        if main_arcs and top_reliefs:
+            min_x = min(float(entity.dxf.center.x) for entity in top_reliefs)
+            max_x = max(float(entity.dxf.center.x) for entity in top_reliefs)
+            side_reliefs = [
+                entity
+                for entity in top_reliefs
+                if abs(float(entity.dxf.center.x) - min_x) <= TOLERANCE
+                or abs(float(entity.dxf.center.x) - max_x) <= TOLERANCE
+            ]
+            arc_apex_y = max(
+                float(entity.dxf.center.y) + float(entity.dxf.radius)
+                for entity in main_arcs
+            )
+            top_y = max(float(entity.dxf.center.y) for entity in side_reliefs)
+            return top_y - arc_apex_y
     relief_arcs = [
         entity
         for entity in doc.modelspace()
@@ -991,16 +1027,19 @@ def _check_flat_arc_relief_topology(
         else []
     )
     if isinstance(profile, TileSection) and profile.process_type == "block_to_tile":
-        if profile.arc_side == "upper":
+        if profile.arc_center_side == "lower":
             main_arc_side_ok = bool(main_arcs) and all(
-                float(entity.dxf.center.y) < top_y - TOLERANCE for entity in main_arcs
+                float(entity.dxf.center.y)
+                < (top_y if profile.arc_side == "upper" else base_y) - TOLERANCE
+                for entity in main_arcs
             )
-            expected_main_arc_count = 2
         else:
             main_arc_side_ok = bool(main_arcs) and all(
-                float(entity.dxf.center.y) > base_y + TOLERANCE for entity in main_arcs
+                float(entity.dxf.center.y)
+                > (top_y if profile.arc_side == "upper" else base_y) + TOLERANCE
+                for entity in main_arcs
             )
-            expected_main_arc_count = 1
+        expected_main_arc_count = 2 if profile.arc_side == "upper" else 1
     else:
         main_arc_side_ok = True
         expected_main_arc_count = None
@@ -1047,6 +1086,7 @@ def _check_flat_arc_relief_topology(
                 "expected_arc_count": expected_main_arc_count,
                 "actual_arc_count": len(main_arcs),
                 "arc_side": getattr(profile, "arc_side", None),
+                "arc_center_side": getattr(profile, "arc_center_side", None),
                 "centers": [
                     [
                         round(float(entity.dxf.center.x), 6),

@@ -9,6 +9,11 @@ from .geometry import (
     build_block_to_tile_section,
     build_tile_section,
 )
+from .groove_profile import (
+    resolve_arc_center_side,
+    select_block_to_tile_arc_radius,
+    uses_lower_arc_center_rule,
+)
 from .machine_config import MachineConfig
 from .global_rules import (
     BLOCK_THICKNESS_CLEARANCE,
@@ -35,6 +40,8 @@ class DualGuideInputDecision:
     final_section_profile_type: str
     R_form_source: str
     process_options: dict[str, Any]
+    arc_center_side: str | None = None
+    dimension_source: dict[str, str] | None = None
 
     def as_dict(self) -> dict[str, Any]:
         return {
@@ -46,6 +53,8 @@ class DualGuideInputDecision:
             "final_section_profile_type": self.final_section_profile_type,
             "R_form_source": self.R_form_source,
             "process_options": dict(self.process_options),
+            "arc_center_side": self.arc_center_side,
+            "dimension_source": dict(self.dimension_source or {}),
         }
 
 
@@ -131,6 +140,21 @@ def build_dual_guide_profile_from_input(
             and finished_shape == "tile"
         ):
             arc_side = _first_wheel_side(machine)
+            forming_radius, _ = select_block_to_tile_arc_radius(
+                (
+                    finished_spec.R_outer_finished,
+                    finished_spec.R_inner_finished,
+                )
+            )
+            large_inner_radius = uses_lower_arc_center_rule(
+                (
+                    finished_spec.R_outer_finished,
+                    finished_spec.R_inner_finished,
+                )
+            )
+            arc_center_side = (
+                "lower" if large_inner_radius else resolve_arc_center_side(arc_side)
+            )
             profile = build_block_to_tile_section(
                 finished_spec,
                 pre_grinding_spec,
@@ -145,6 +169,8 @@ def build_dual_guide_profile_from_input(
                 ),
                 center_opening=machine.section_center_opening,
                 arc_side=arc_side,
+                arc_center_side=arc_center_side,
+                forming_radius=forming_radius,
             )
             decision = DualGuideInputDecision(
                 finished_product_spec=finished_raw,
@@ -155,6 +181,19 @@ def build_dual_guide_profile_from_input(
                 final_section_profile_type=f"flat_arc_{arc_side}_big_r_block_preform",
                 R_form_source="max(finished_product_R_outer, finished_product_R_inner)",
                 process_options=asdict(process_options),
+                arc_center_side=arc_center_side,
+                dimension_source={
+                    "arc_center_orientation": (
+                        "center_below_arc_when_inner_radius_minus_outer_radius_gt_10.00_mm"
+                        if large_inner_radius
+                        else "center_opposite_arc_surface"
+                    ),
+                    "guide_thickness_reference": (
+                        "narrowest_gap_between_arc_apex_and_opposing_plane"
+                        if large_inner_radius
+                        else "standard_cavity_base_datum"
+                    ),
+                },
             )
             return finished_spec, pre_grinding_spec, profile, decision
 

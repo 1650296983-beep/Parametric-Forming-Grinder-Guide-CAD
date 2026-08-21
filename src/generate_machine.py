@@ -19,7 +19,7 @@ from .geometry import (
     build_tile_section,
 )
 from .machine_config import load_machine_config
-from .output_naming import build_machine_output_stem
+from .output_naming import build_profile_output_stem
 from .preview import write_block_png_preview, write_png_preview
 from .spec_parser import (
     BlockSpec,
@@ -82,14 +82,6 @@ def main() -> int:
             machine,
             wheel_radius=float(explicit_input.get("wheel_radius", machine.wheel_radius)),
         )
-    name = _resolve_output_name(args.name, explicit_input, machine.machine_name, args.spec)
-    debug_dxf = dxf_dir / f"{name}（调试）.dxf"
-    release_dxf = dxf_dir / f"{name}.dxf"
-    release_candidate_dxf = dxf_dir / f"{name}（正式候选）.dxf"
-    png_path = preview_dir / f"{name}.png"
-    report_json = report_dir / f"{name}_report.json"
-    dimension_audit_json = report_dir / f"{name}_dimension_definition_point_audit.json"
-
     input_rule = None
     if explicit_input is not None:
         parsed_spec, _, profile, decision = build_single_guide_profile_from_input(
@@ -114,6 +106,20 @@ def main() -> int:
         validation = validate_tile_section(profile)
         if not validation.ok:
             raise ValueError("Tile geometry validation failed: " + "; ".join(validation.errors))
+
+    name = _resolve_output_name(
+        args.name,
+        explicit_input,
+        machine.machine_name,
+        args.spec,
+        profile=profile,
+    )
+    debug_dxf = dxf_dir / f"{name}（调试）.dxf"
+    release_dxf = dxf_dir / f"{name}.dxf"
+    release_candidate_dxf = dxf_dir / f"{name}（正式候选）.dxf"
+    png_path = preview_dir / f"{name}.png"
+    report_json = report_dir / f"{name}_report.json"
+    dimension_audit_json = report_dir / f"{name}_dimension_definition_point_audit.json"
 
     write_dxf(
         profile,
@@ -453,6 +459,8 @@ def _resolve_output_name(
     explicit_input: dict[str, object] | None,
     machine_name: str,
     legacy_spec: str | None,
+    *,
+    profile: BlockGuideSection | TileSection | None = None,
 ) -> str:
     """Use the mandatory dual-spec naming rule whenever explicit input is used."""
     if explicit_input is None:
@@ -464,12 +472,13 @@ def _resolve_output_name(
         "finished_spec",
         "finished_product_spec",
     )
-    pre_grinding_spec = _required_input_spec(
-        explicit_input,
-        "pre_grinding_spec",
-        "preform_spec",
+    if profile is None:
+        raise ValueError("显式输入必须先完成槽宽和导轨厚度计算，才能生成输出文件名。")
+    return build_profile_output_stem(
+        finished_spec,
+        profile,
+        machine_name,
     )
-    return build_machine_output_stem(finished_spec, pre_grinding_spec, machine_name)
 
 
 def _required_input_spec(

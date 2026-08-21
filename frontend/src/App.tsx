@@ -50,6 +50,20 @@ const formatProfile = (profile: string) =>
     same_r_tile_groove: "上下同 R 型腔",
   })[profile] ?? profile;
 
+const formatSectionProfile = (profile: string) =>
+  ({
+    rectangular_block_preform: "方块磨前矩形槽",
+    block_to_tile: "方块磨前平面 + 圆弧槽",
+    same_r_tile_preform: "同 R 瓦型磨前型腔",
+  })[profile] ?? formatProfile(profile);
+
+const formatRFormSource = (source: string) =>
+  ({
+    finished_product_target_only_not_guide_profile: "成品仅作磨后目标，不参与导轨型腔",
+    finished_product_max_radius: "取成品双 R 中的较大值",
+    pre_grinding_spec: "取成型磨前规格",
+  })[source] ?? source;
+
 const isTauri = () => "__TAURI_INTERNALS__" in window;
 
 const saveGeneratedFile = async (file: GeneratedFile): Promise<string | null> => {
@@ -144,6 +158,7 @@ export default function App() {
     setValidation(null);
     setGenerationState("idle");
     setGenerationResult(null);
+    setApiError(null);
   };
 
   const validate = async () => {
@@ -341,34 +356,47 @@ function Workspace(props: {
   onBack: () => void;
 }) {
   const { design, selectedMachine, validation } = props;
+  const finishedGuidance = getFinishedSpecGuidance(design);
+  const preGrindingGuidance = getPreGrindingSpecGuidance(design);
+  const missingInputs = [
+    !selectedMachine && "选择机台",
+    !design.finished_spec.trim() && "填写成品规格",
+    !design.pre_grinding_spec.trim() && "填写成型磨前规格",
+  ].filter(Boolean) as string[];
+  const canValidate = !props.isValidating && missingInputs.length === 0;
+
   return (
     <section className="workspace">
       <Stepper active={props.step} />
-      {props.error && <div className="alert error"><strong>需要处理：</strong>{props.error}</div>}
+      {props.error && <div className="alert error" role="alert"><strong>需要处理：</strong>{props.error}</div>}
       {props.step === 1 && (
         <div className="input-layout">
           <div className="form-stack">
             <section className="panel">
-              <PanelTitle number="01" title="选择机台" subtitle="机台固定结构参数来自模板配置，不可在任务中修改。" />
-              <div className="machine-grid">
-                {props.machines.length === 0 && <div className="skeleton-card">正在读取机台配置…</div>}
-                {props.machines.map((machine) => (
-                  <button
-                    key={machine.id}
-                    className={`machine-card ${design.machine_type === machine.id ? "selected" : ""} ${machine.supported_by_web_generation ? "" : "unsupported"}`}
-                    onClick={() => props.onSelectMachine(machine.id)}
-                    disabled={!machine.supported_by_web_generation}
-                    >
-                      <span>{machine.guide_sections === 2 ? "双" : "单"}</span>
-                      <strong>{machine.name}</strong>
-                      <small>{machine.supported_by_web_generation ? `${machine.guide_length} mm · ${machine.wheel_positions.join(" / ")}` : "Web 任务待接入"}</small>
-                      <small className="machine-fixed">固定：上口 {machine.section_center_opening} mm · 下沿 {machine.section_slot_base_height} mm</small>
-                    </button>
-                ))}
+              <PanelTitle number="01" title="选择机台" subtitle="机台结构参数取自模板配置，任务中不可改写。" />
+              <div className="machine-selector">
+                <label>
+                  <span>当前机台</span>
+                  <select value={design.machine_type} onChange={(event) => props.onSelectMachine(event.target.value)} disabled={props.machines.length === 0}>
+                    {props.machines.length === 0 && <option>正在读取机台配置…</option>}
+                    {props.machines.map((machine) => (
+                      <option key={machine.id} value={machine.id} disabled={!machine.supported_by_web_generation}>
+                        {machine.name}{machine.supported_by_web_generation ? "" : "（待接入）"}
+                      </option>
+                    ))}
+                  </select>
+                </label>
+                {selectedMachine && <div className="machine-summary-card">
+                  <span className="machine-kind">{selectedMachine.guide_sections === 2 ? "双导轨" : "单导轨"}</span>
+                  <strong>{selectedMachine.guide_length} mm</strong>
+                  <span>砂轮：{selectedMachine.wheel_positions.join(" / ")}</span>
+                  <span>上口 {selectedMachine.section_center_opening} mm · 下沿 {selectedMachine.section_slot_base_height} mm</span>
+                </div>}
               </div>
             </section>
             <section className="panel form-panel">
-              <PanelTitle number="02" title="输入产品参数" subtitle="成品与成型磨前规格必须独立填写。" />
+              <PanelTitle number="02" title="输入产品参数" subtitle="成品与成型磨前规格分开填写；计算规则只在本地 CAD 引擎执行。" />
+              <div className="spec-grid">
               <div className="spec-group finished">
                 <GroupTitle badge="成品" title="成品规格" hint="用于确定最终形态与 R_form 来源。" />
                 <div className="field-row">
@@ -384,8 +412,9 @@ function Workspace(props: {
                   </div>
                 </div>
                 <label>成品规格
-                  <input value={design.finished_spec} placeholder={design.product_shape_after === "tile_shape" ? "例如：R30*R28*17.4*23.5*3.95" : "例如：R9.6*8.6*42.6*2.1"} onChange={(event) => props.onUpdate("finished_spec", event.target.value)} spellCheck={false} />
+                  <input aria-describedby="finished-spec-guidance" value={design.finished_spec} placeholder={design.product_shape_after === "tile_shape" ? "例如：R30*R28*17.4*23.5*3.95" : "例如：R9.6*8.6*42.6*2.1"} onChange={(event) => props.onUpdate("finished_spec", event.target.value)} spellCheck={false} />
                 </label>
+                <SpecGuidance id="finished-spec-guidance" guidance={finishedGuidance} />
               </div>
               <div className="spec-group preform">
                 <GroupTitle badge="磨前" title="成型磨前规格" hint="槽宽、宽度公差及导轨厚度均以此参数为准。" />
@@ -401,13 +430,17 @@ function Workspace(props: {
                   </label>
                 </div>
                 <label>成型磨前规格
-                  <input value={design.pre_grinding_spec} placeholder="例如：42.6*8.6(-0.07/-0.09)*2.1(+0.01/-0.01)" onChange={(event) => props.onUpdate("pre_grinding_spec", event.target.value)} spellCheck={false} />
+                  <input aria-describedby="pre-grinding-spec-guidance" value={design.pre_grinding_spec} placeholder="例如：42.6*8.6(-0.07/-0.09)*2.1(+0.01/-0.01)" onChange={(event) => props.onUpdate("pre_grinding_spec", event.target.value)} spellCheck={false} />
                 </label>
-                <p className="input-help">方块：长度*宽度(上偏差/下偏差)*厚度(上偏差/下偏差)</p>
+                <SpecGuidance id="pre-grinding-spec-guidance" guidance={preGrindingGuidance} />
+              </div>
+              </div>
+              <div className="process-section">
+                <div><h3>工艺选项</h3><p>仅在明确要求时勾选；默认规则由后端统一执行。</p></div>
                 <div className="process-options">
                   <label className="check-option">
                     <input type="checkbox" checked={design.single_side_or_high_requirement} onChange={(event) => props.onUpdate("single_side_or_high_requirement", event.target.checked)} />
-                    <span>磨单边 / 高要求<small>勾选后厚度间隙固定为 0.09 mm</small></span>
+                    <span>磨单边 / 高要求<small>厚度间隙固定为 0.09 mm</small></span>
                   </label>
                   <label className="check-option">
                     <input type="checkbox" checked={design.high_symmetry_requirement} disabled={design.large_tile_clearance} onChange={(event) => props.onUpdate("high_symmetry_requirement", event.target.checked)} />
@@ -423,13 +456,14 @@ function Workspace(props: {
                 </div>
               </div>
               <div className="form-actions">
-                <span>所有尺寸单位：mm</span>
-                <button className="button primary" onClick={props.onValidate} disabled={props.isValidating || !selectedMachine || !design.finished_spec.trim() || !design.pre_grinding_spec.trim()}>
+                <span>所有尺寸单位：mm · 最终有效性以 CAD 引擎解析为准</span>
+                <button className="button primary" onClick={props.onValidate} disabled={!canValidate}>
                   {props.isValidating ? "正在解析…" : "确认计算"} <b>→</b>
                 </button>
               </div>
             </section>
           </div>
+          <InputReadiness missingInputs={missingInputs} finishedGuidance={finishedGuidance} preGrindingGuidance={preGrindingGuidance} />
         </div>
       )}
       {props.step === 2 && validation && (
@@ -455,11 +489,65 @@ function GroupTitle({ badge, title, hint }: { badge: string; title: string; hint
   return <div className="group-title"><span>{badge}</span><div><h3>{title}</h3><p>{hint}</p></div></div>;
 }
 
+type SpecGuidanceState = "neutral" | "ready" | "attention";
+
+interface SpecGuidanceContent {
+  state: SpecGuidanceState;
+  message: string;
+}
+
+function getFinishedSpecGuidance(design: DesignInput): SpecGuidanceContent {
+  const value = design.finished_spec.trim();
+  if (!value) return { state: "neutral", message: "请使用 * 分隔各字段；CAD 引擎会在下一步执行完整解析。" };
+  const expectedParts = design.product_shape_after === "tile_shape" ? 5 : 4;
+  const parts = value.split("*").filter(Boolean).length;
+  if (parts !== expectedParts) return { state: "attention", message: `当前识别到 ${parts} 段；此形态通常需要 ${expectedParts} 段。仍以 CAD 引擎解析结果为准。` };
+  return { state: "ready", message: `已检测到 ${parts} 个规格字段，下一步将由 CAD 引擎校验数值与形态规则。` };
+}
+
+function getPreGrindingSpecGuidance(design: DesignInput): SpecGuidanceContent {
+  const value = design.pre_grinding_spec.trim();
+  if (!value) return { state: "neutral", message: "磨前规格决定槽宽与导轨厚度，请完整输入尺寸及公差。" };
+  const expectedParts = design.product_shape_before === "rectangular_block" ? 3 : 5;
+  const parts = value.split("*").filter(Boolean).length;
+  if (parts !== expectedParts) return { state: "attention", message: `当前识别到 ${parts} 段；此磨前形态通常需要 ${expectedParts} 段。仍以 CAD 引擎解析结果为准。` };
+  if (design.product_shape_before === "rectangular_block" && !/[()]/.test(value)) return { state: "attention", message: "尚未识别到方块规格中的公差括号；槽宽与厚度计算需要磨前公差。" };
+  return { state: "ready", message: "规格结构已具备，下一步将由 CAD 引擎验证尺寸、公差与机台规则。" };
+}
+
+function SpecGuidance({ id, guidance }: { id: string; guidance: SpecGuidanceContent }) {
+  return <p id={id} className={`spec-guidance ${guidance.state}`} aria-live="polite">{guidance.state === "ready" ? "✓" : guidance.state === "attention" ? "!" : "i"} {guidance.message}</p>;
+}
+
+function InputReadiness({ missingInputs, finishedGuidance, preGrindingGuidance }: {
+  missingInputs: string[];
+  finishedGuidance: SpecGuidanceContent;
+  preGrindingGuidance: SpecGuidanceContent;
+}) {
+  const attentionItems = [
+    finishedGuidance.state === "attention" && "检查成品规格字段数",
+    preGrindingGuidance.state === "attention" && "检查磨前规格字段数或公差",
+  ].filter(Boolean) as string[];
+  const isReady = missingInputs.length === 0 && attentionItems.length === 0;
+
+  return <aside className="input-readiness panel" aria-live="polite">
+    <p className="eyebrow">任务就绪度</p>
+    <h2>{isReady ? "可提交计算" : missingInputs.length ? "还需补充信息" : "建议先检查格式"}</h2>
+    <p>{isReady ? "已完成基础输入。确认计算后，CAD 引擎会执行唯一的工艺解析与规则校验。" : "这里仅做输入提示，不替代后端的规格与工艺判定。"}</p>
+    <ul>
+      {missingInputs.map((item) => <li className="blocking" key={item}><span>!</span>{item}</li>)}
+      {attentionItems.map((item) => <li className="attention" key={item}><span>!</span>{item}</li>)}
+      {isReady && <li className="ready"><span>✓</span>基础输入已齐全</li>}
+    </ul>
+    <div className="readiness-note"><strong>Release 门禁</strong><span>通过本页计算不代表 release 可输出；正式图纸仍需通过 DXF、图层与尺寸定义点审计。</span></div>
+  </aside>;
+}
+
 function Review({ validation, machine, onBack, onGenerate }: { validation: ValidationResult; machine: Machine | null; onBack: () => void; onGenerate: () => void }) {
   const rows = [
     ["槽宽", `${validation.derived.slot_width.toFixed(2)} ±${validation.derived.slot_width_tolerance.toFixed(2)} mm`, "磨前宽度及公差"],
     ["导轨厚度", `${validation.derived.guide_thickness.toFixed(2)} mm`, "磨前厚度中值 + 机台间隙"],
-    ["R_form", validation.decision.arc_radius ? `R${validation.decision.arc_radius.toFixed(2)} mm` : "不适用（矩形槽）", validation.decision.R_form_source],
+    ["R_form", validation.decision.arc_radius ? `R${validation.decision.arc_radius.toFixed(2)} mm` : "不适用（矩形槽）", formatRFormSource(validation.decision.R_form_source)],
     ["避空", validation.derived.relief_label, "工艺规则"],
     ["砂轮半径", `R${validation.decision.process_options.wheel_radius.toFixed(2)} mm`, "任务显式参数（默认 R80）"],
   ];
@@ -469,12 +557,12 @@ function Review({ validation, machine, onBack, onGenerate }: { validation: Valid
       <div className="calculation-table">
         {rows.map(([label, value, source]) => <div key={label}><span>{label}</span><strong>{value}</strong><small>{source}</small></div>)}
       </div>
-      <div className="machine-summary">{machine?.name} · {machine?.guide_length} mm · {validation.decision.final_section_profile_type}</div>
+      <div className="machine-summary">{machine?.name} · {machine?.guide_length} mm · {formatSectionProfile(validation.decision.final_section_profile_type)}</div>
     </section>
     <section className="panel preview-panel">
-      <div className="preview-header"><div><p className="eyebrow">参数化预览</p><h2>{formatProfile(validation.decision.groove_profile)}</h2></div><span className="preview-tag">仅预览</span></div>
-      <SectionPreview profile={validation.decision.groove_profile} />
-      <p className="preview-caption">正式 DXF 将由后端重新生成真实几何与尺寸定义点，不使用此预览代替图纸。</p>
+      <div className="preview-header"><div><p className="eyebrow">计算关系示意</p><h2>{formatProfile(validation.decision.groove_profile)}</h2></div><span className="preview-tag">非真实比例</span></div>
+      <SectionRelationshipDiagram profile={validation.decision.groove_profile} />
+      <p className="preview-caption">这里仅说明型腔关系，不代表最终几何。真实尺寸图会在候选 DXF 通过审计后由 CAD 引擎生成。</p>
     </section>
     <section className="panel audit-panel">
       <p className="eyebrow">规则审查</p>
@@ -486,7 +574,7 @@ function Review({ validation, machine, onBack, onGenerate }: { validation: Valid
   </div>;
 }
 
-function SectionPreview({ profile }: { profile: string }) {
+function SectionRelationshipDiagram({ profile }: { profile: string }) {
   return <div className="drawing-canvas"><div className="axis horizontal" /><div className="axis vertical" /><div className={`slot-figure ${profile}`}><span className="slot-label">型腔</span><i /><b /><em /></div><div className="dimension-line width"><span>槽宽</span></div><div className="dimension-line height"><span>导轨厚度</span></div></div>;
 }
 
@@ -513,9 +601,45 @@ function ArtifactSaveButton({ file }: { file: GeneratedFile }) {
 
   return <div className={`artifact-save ${state}`}>
     <button type="button" onClick={() => void saveFile()} disabled={state === "saving"}>
-      {state === "saving" ? "保存中…" : state === "saved" ? "再次另存" : "另存为"}
+      {state === "saving" ? "保存中…" : state === "saved" ? "再次另存副本" : "另存副本"}
     </button>
     {message && <small role="status" title={message}>{message}</small>}
+  </div>;
+}
+
+function ArtifactOpenButton({ file }: { file: GeneratedFile }) {
+  const [state, setState] = useState<"idle" | "opening" | "opened" | "error">("idle");
+  const [message, setMessage] = useState<string | null>(null);
+  const isDrawing = /\.(dxf|dwg)$/i.test(file.name);
+  const canOpen = Boolean(file.can_open && file.task_id && file.relative_path);
+
+  if (!canOpen) return null;
+
+  const openFile = async () => {
+    setState("opening");
+    setMessage(null);
+    try {
+      await api.openTaskFile(file.task_id!, file.relative_path!);
+      setState("opened");
+      setMessage("已交给本机默认程序打开。");
+    } catch (openError) {
+      setState("error");
+      setMessage(openError instanceof Error ? openError.message : "文件打开失败。");
+    }
+  };
+
+  return <div className={`artifact-open ${state}`}>
+    <button type="button" onClick={() => void openFile()} disabled={state === "opening"}>
+      {state === "opening" ? "正在打开…" : isDrawing ? "打开图纸" : "打开文件"}
+    </button>
+    {message && <small role="status" title={message}>{message}</small>}
+  </div>;
+}
+
+function ArtifactActions({ file }: { file: GeneratedFile }) {
+  return <div className="artifact-actions">
+    <ArtifactOpenButton file={file} />
+    <ArtifactSaveButton file={file} />
   </div>;
 }
 
@@ -523,7 +647,26 @@ function Generation({ isGenerating, state, error, validation, result }: { isGene
   const stages = ["读取机台配置", "解析产品规格", "重建参数化槽口", "生成候选 release DXF", "运行完整校验", "晋级正式 release"];
   const passed = state === "passed";
   const files = result?.files ?? {};
-  return <section className={`generation-view panel ${passed ? "result-passed" : ""}`}><div className={`result-icon ${passed ? "success" : state === "failed" ? "failure" : "running"}`}>{passed ? "✓" : state === "failed" ? "!" : "…"}</div><p className="eyebrow">生成任务</p><h2>{isGenerating ? "正在重建图纸与校验" : passed ? "正式图纸已通过校验" : "正式 release 未输出"}</h2><p>{isGenerating ? "后端正在按固定工作流生成候选文件。" : passed ? "release.dxf 已由候选文件晋级。" : error ?? "任务结束。"}</p>{passed && result?.preview && <div className="output-preview"><img src={result.preview.url} alt="带尺寸标注的导轨截面预览" /></div>}<ol className="generation-steps">{stages.map((label, index) => <li key={label} className={isGenerating && index > 2 ? "waiting" : passed || (!isGenerating && index < 5) ? "ok" : state === "failed" && index === 4 ? "bad" : "waiting"}><span>{passed || (!isGenerating && index < 5) ? "✓" : index + 1}</span>{label}</li>)}</ol>{validation && <div className="result-summary"><strong>{formatProfile(validation.decision.groove_profile)}</strong><span>槽宽 {validation.derived.slot_width.toFixed(2)} mm</span><span>导轨厚度 {validation.derived.guide_thickness.toFixed(2)} mm</span></div>}{passed && <div className="output-files"><h3>可保存文件</h3>{Object.entries(files).map(([key, file]) => <div className="output-file-row" key={key}><span>▧</span><div><strong>{file.label}</strong><small>{file.name}</small></div><ArtifactSaveButton file={file} /></div>)}</div>}</section>;
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+
+  useEffect(() => {
+    if (!isGenerating) {
+      setElapsedSeconds(0);
+      return;
+    }
+    const startedAt = Date.now();
+    const timer = window.setInterval(
+      () => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000)),
+      1000,
+    );
+    return () => window.clearInterval(timer);
+  }, [isGenerating]);
+
+  return <section className={`generation-view panel ${passed ? "result-passed" : ""}`} aria-live="polite"><div className={`result-icon ${passed ? "success" : state === "failed" ? "failure" : "running"}`}>{passed ? "✓" : state === "failed" ? "!" : "…"}</div><p className="eyebrow">生成任务</p><h2>{isGenerating ? "正在重建图纸与校验" : passed ? "正式图纸已通过校验" : "正式 release 未输出"}</h2><p>{isGenerating ? "候选图纸正在后台生成；只有完整校验结束后，步骤才会变为完成。" : passed ? "release.dxf 已由候选文件晋级。" : error ?? "任务结束。"}</p>{isGenerating && <div className="generation-activity" role="status"><div className="generation-scan" aria-hidden="true"><i /><b /><span /></div><div><strong>CAD 引擎工作中</strong><small>已运行 {elapsedSeconds} 秒 · 正在等待真实校验结果</small></div></div>}{passed && result?.preview && <div className="output-preview"><img src={result.preview.url} alt="带尺寸标注的导轨截面预览" /></div>}<ol className="generation-steps">{stages.map((label, index) => {
+    const isFailurePoint = state === "failed" && index === stages.length - 1;
+    const className = passed ? "ok" : isFailurePoint ? "bad" : "waiting";
+    return <li key={label} className={className}><span>{passed ? "✓" : isFailurePoint ? "!" : index + 1}</span>{label}</li>;
+  })}</ol>{validation && <div className="result-summary"><strong>{formatProfile(validation.decision.groove_profile)}</strong><span>槽宽 {validation.derived.slot_width.toFixed(2)} mm</span><span>导轨厚度 {validation.derived.guide_thickness.toFixed(2)} mm</span></div>}{passed && <div className="output-files"><h3>本地图纸库</h3><p className="artifact-library-note">文件已保存在该历史任务中。直接打开不会复制文件；“另存副本”才会在所选位置生成第二份。</p>{Object.entries(files).map(([key, file]) => <div className="output-file-row" key={key}><span>▧</span><div><strong>{file.label}</strong><small>{file.name}</small></div><ArtifactActions file={file} /></div>)}</div>}</section>;
 }
 
 function History({ history, isLoading, error, initialTaskId, onRefresh }: {
@@ -702,7 +845,7 @@ function TaskDetailContent({ detail }: { detail: TaskDetail }) {
       <div><h3>计算与门禁</h3><dl><dt>槽宽</dt><dd>{formatMillimeter(detail.derived.slot_width)}</dd><dt>导轨厚度</dt><dd>{formatMillimeter(detail.derived.guide_thickness)}</dd><dt>DXF 几何检查</dt><dd>{auditLabel(detail.audit.inspection_passed)}</dd><dt>尺寸定义点</dt><dd>{auditLabel(detail.audit.dimension_points_passed)}</dd></dl></div>
       {detail.preview && <div className="task-preview"><h3>截面预览</h3><a href={detail.preview.url} target="_blank" rel="noreferrer"><img src={detail.preview.url} alt={`${detail.finished_spec} 导轨截面预览`} /></a></div>}
     </div>
-    <div className="task-files"><h3>可用文件</h3>{files.length === 0 ? <p>该任务没有可保存的授权文件。</p> : files.map(([key, file]) => <div className="task-file-row" key={key}><span>{file.label}</span><small>{file.name}</small><ArtifactSaveButton file={file} /></div>)}</div>
+    <div className="task-files"><h3>任务图纸库</h3>{files.length === 0 ? <p>该任务没有可打开的授权文件。</p> : <><p className="artifact-library-note">直接打开任务内原文件；仅在需要交付副本时使用“另存副本”。</p>{files.map(([key, file]) => <div className="task-file-row" key={key}><span>{file.label}</span><small>{file.name}</small><ArtifactActions file={file} /></div>)}</>}</div>
   </section>;
 }
 
@@ -750,7 +893,7 @@ function Rules() {
 function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolean) => void }) {
   const [settings, setSettings] = useState<DesktopSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [version, setVersion] = useState("1.0.3");
+  const [version, setVersion] = useState("1.1.2");
   const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
   const [updateMessage, setUpdateMessage] = useState("尚未检查更新。");
   const [checking, setChecking] = useState(false);

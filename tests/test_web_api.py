@@ -143,7 +143,7 @@ def test_web_api_generates_release_gated_dual_guide_artifacts(tmp_path: Path, mo
     assert result["report"]["checks"]["synchronized_parameters"] is True
     assert result["report"]["dimension_definition_point_audit"]["release_allowed"] is True
     assert result["files"]["release_dxf"]["name"] == (
-        "R30×R28×17.4×23.5×3.95（23.5×17.4×3.95）三头机双导轨（下上上）.dxf"
+        "R30×R28×17.4×23.5×3.95（R30.00×17.43×4.07）三头机双导轨（下上上）.dxf"
     )
     assert Path(result["report"]["paths"]["release_dxf"]).is_file()
     assert Path(result["report"]["paths"]["preview_png"]).is_file()
@@ -330,7 +330,53 @@ def test_task_file_payload_only_exposes_generated_task_files(tmp_path: Path) -> 
     )
 
     assert payload["preview_png"]["url"].endswith("/artifacts/preview/guide.png")
+    assert payload["preview_png"]["relative_path"] == "artifacts/preview/guide.png"
+    assert payload["preview_png"]["can_open"] is True
     assert payload["report_json"]["name"] == "guide_report.json"
+
+
+def test_open_task_file_uses_authorized_local_artifact(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+    task_dir = tmp_path / "abc123def456" / "artifacts" / "dxf"
+    task_dir.mkdir(parents=True)
+    release = task_dir / "guide.dxf"
+    release.write_bytes(b"release")
+    opened: list[Path] = []
+    monkeypatch.setattr(web_api, "_launch_local_file", opened.append)
+
+    status, _, body = _call_asgi(
+        "POST",
+        "/api/tasks/abc123def456/open",
+        body=json.dumps(
+            {"relative_path": "artifacts/dxf/guide.dxf"}
+        ).encode(),
+        headers={"content-type": "application/json"},
+    )
+
+    assert status == 200
+    assert json.loads(body)["status"] == "opened"
+    assert opened == [release.resolve()]
+
+
+def test_open_task_file_rejects_path_outside_task(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+    outside = tmp_path / "outside.dxf"
+    outside.write_bytes(b"outside")
+
+    status, _, _ = _call_asgi(
+        "POST",
+        "/api/tasks/abc123def456/open",
+        body=json.dumps({"relative_path": "../outside.dxf"}).encode(),
+        headers={"content-type": "application/json"},
+    )
+
+    assert status == 404
 
 
 def test_dwg_export_report_includes_reopen_entity_audit(tmp_path: Path, monkeypatch) -> None:

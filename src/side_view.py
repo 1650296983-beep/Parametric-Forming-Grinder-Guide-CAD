@@ -163,17 +163,24 @@ def _build_block_side_view_geometry(
         )
         projected_height = guide.outer_height - fixed_top_gap - guide.guide_thickness
         wheel_depth = effective_upper_cut_in
-        side_clearance = guide.outer_height - projected_height - wheel_depth
+        # The side cavity must retain the real guide thickness. The limited
+        # wheel cut-in is an additional depth below its top projection.
+        side_clearance = (
+            guide.outer_height
+            - projected_height
+            - guide.guide_thickness
+            + wheel_depth
+        )
         derived = SideViewDerivedSpec(
             slot_base_height=projected_height,
             side_cut_in_allowance=0.0,
             side_projected_slot_height=projected_height,
             guide_outer_height=guide.outer_height,
-            guide_thickness=wheel_depth,
-            wheel_cut_allowance=0.0,
+            guide_thickness=guide.guide_thickness,
+            wheel_cut_allowance=wheel_depth,
             side_clearance_height=side_clearance,
-            wheel_notch_depth=wheel_depth,
-            wheel_cut_in_depth=wheel_depth,
+            wheel_notch_depth=projected_height + effective_lower_cut_in,
+            wheel_cut_in_depth=effective_lower_cut_in,
             wheel_notch_opening=lower_opening,
             wheel_notch_opening_limit=opening_limit,
             lower_cavity_notch_opening=lower_opening,

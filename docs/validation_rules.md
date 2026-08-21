@@ -34,6 +34,9 @@ side_projected_slot_height = slot_base_height + side_cut_in_allowance
 side_clearance_height = guide_outer_height - slot_base_height - guide_thickness + wheel_cut_allowance
 ```
 
+侧视型腔投影厚度必须独立对照截面真实导轨厚度。禁止使用同一个派生值同时
+生成投影和校验投影，否则错误厚度会自洽地通过检查。
+
 默认：
 
 - `side_cut_in_allowance = 0.50`

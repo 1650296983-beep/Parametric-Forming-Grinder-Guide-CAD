@@ -183,8 +183,8 @@ After the one-time macOS Keychain setup, publish an approved stable GitHub
 Release to the Tencent COS mainland mirror with:
 
 ```bash
-./scripts/publish_cos_release_local.sh v1.0.4 --dry-run
-./scripts/publish_cos_release_local.sh v1.0.4
+./scripts/publish_cos_release_local.sh v1.1.2 --dry-run
+./scripts/publish_cos_release_local.sh v1.1.2
 ```
 
 The local publisher verifies the signed GitHub assets and checksums, uploads
@@ -213,13 +213,14 @@ artifacts are created only in the temporary export. The same checks run in
 GitHub Actions for every push and pull request.
 
 For explicit dual-spec tasks, the formal DXF filename is fixed as
-`成品规格（磨前规格）机台类型.dxf`. Tolerance annotations are deliberately excluded
-from the filename, while remaining in the drawing and validation report. To
-keep a downloaded file portable on macOS and Windows, specification separators
-are displayed as `×` instead of `*`; for example:
+`成品规格（型腔参数）机台类型.dxf`. The cavity parameters come from the final
+validated geometry: rectangular cavities use `槽宽×导轨厚度`, one-arc cavities
+use `R成型×槽宽×导轨厚度`, and two-arc cavities use
+`2-R成型×槽宽×导轨厚度`. To keep a downloaded file portable on macOS and
+Windows, separators are displayed as `×` instead of `*`; for example:
 
 ```text
-R20.15×7×41×1.65（41×7×1.7）双头机（上下）.dxf
+R9.25×R32.95×6.8×33×2.5（R32.95×6.81×2.82）三头机单导轨（下上）.dxf
 ```
 
 ## Generate Output

@@ -63,6 +63,10 @@ export const api = {
   }),
   tasks: (limit = 100) => request<TaskHistoryResult>(`/api/tasks?limit=${limit}`).then(withAbsoluteFileUrls),
   task: (taskId: string) => request<TaskDetail>(`/api/tasks/${encodeURIComponent(taskId)}`).then(withAbsoluteFileUrls),
+  openTaskFile: (taskId: string, relativePath: string) => request<{ status: "opened"; name: string }>(
+    `/api/tasks/${encodeURIComponent(taskId)}/open`,
+    { method: "POST", body: JSON.stringify({ relative_path: relativePath }) },
+  ),
   deleteTask: (taskId: string) => request<{ task_id: string; status: "deleted" }>(
     `/api/tasks/${encodeURIComponent(taskId)}`,
     { method: "DELETE" },

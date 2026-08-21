@@ -394,7 +394,15 @@ def _add_lower_facing_flat_arc_slot_entities(
     opening_half = guide.center_opening / 2.0
     center_x = anchor.slot_center_x
     base_y = anchor.bottom + guide.slot_base_height
-    top_y = base_y + guide.guide_thickness
+    arc_base = sqrt(radius**2 - half_slot**2)
+    arc_center_side = tile_section.arc_center_side or "upper"
+    if arc_center_side not in {"upper", "lower"}:
+        raise ValueError(f"Unsupported flat-arc center side: {arc_center_side!r}")
+    arc_sagitta = radius - arc_base
+    thickness_reference_y = (
+        base_y + arc_sagitta if arc_center_side == "lower" else base_y
+    )
+    top_y = thickness_reference_y + guide.guide_thickness
     left_x = center_x - half_slot
     right_x = center_x + half_slot
     opening_left_x = center_x - opening_half
@@ -407,11 +415,14 @@ def _add_lower_facing_flat_arc_slot_entities(
     if guide.guide_slot_width <= guide.center_opening + 4.0 * relief_radius:
         raise ValueError("Slot width is too small for the configured top opening and relief geometry.")
 
-    arc_base = sqrt(radius**2 - half_slot**2)
-    # A lower-facing tile surface must have its radius center above the cavity.
-    # This is the physical inverse of the upper-facing case and follows the
-    # first-wheel-side rule (first wheel below -> arc below, center above).
-    lower_center = Point(center_x, base_y + arc_base)
+    # The large-inner-R rule keeps the R surface below but moves its center
+    # below the arc.  In that branch the narrowest cavity gap is at the arc
+    # apex, not at its chord endpoints, so the opposing plane is offset by the
+    # sagitta and the thickness dimension binds to the true apex.
+    lower_center = Point(
+        center_x,
+        base_y + arc_base if arc_center_side == "upper" else base_y - arc_base,
+    )
     center_left_relief = Point(
         opening_left_x - center_transition_radius,
         top_y + center_transition_radius,
@@ -483,7 +494,7 @@ def _add_lower_facing_flat_arc_slot_entities(
         # For a lower-facing R surface, this ordering must emit the short
         # bottom arc; the opposite ordering draws its almost-complete helper
         # circle instead of the production contour.
-        clockwise=True,
+        clockwise=arc_center_side == "upper",
         layer="PARAM_SLOT",
     )
 
@@ -505,6 +516,8 @@ def _add_lower_facing_flat_arc_slot_entities(
         center_transition_radius=center_transition_radius,
         center_transition_left_center=center_left_relief.as_tuple(),
         center_transition_right_center=center_right_relief.as_tuple(),
+        thickness_reference_y=thickness_reference_y,
+        thickness_reference_x=(center_x if arc_center_side == "lower" else right_x),
     )
 
 
@@ -1477,8 +1490,10 @@ def _update_block_thickness_dimension(doc, dimension, label: str, geometry: Slot
     old_y2 = dimension.dxf.defpoint3.y
     old_bottom = min(old_y1, old_y2)
     old_top = max(old_y1, old_y2)
-    dimension.dxf.defpoint2 = (geometry.right_x, geometry.top_y, dimension.dxf.defpoint2.z)
-    dimension.dxf.defpoint3 = (geometry.right_x, geometry.base_y, dimension.dxf.defpoint3.z)
+    thickness_base_y = geometry.guide_thickness_base_y
+    thickness_reference_x = geometry.guide_thickness_reference_x
+    dimension.dxf.defpoint2 = (thickness_reference_x, geometry.top_y, dimension.dxf.defpoint2.z)
+    dimension.dxf.defpoint3 = (thickness_reference_x, thickness_base_y, dimension.dxf.defpoint3.z)
     dimension.dxf.text = label
     _set_dimension_actual_measurement(dimension, geometry.guide_thickness)
     _transform_dimension_block(
@@ -1487,10 +1502,10 @@ def _update_block_thickness_dimension(doc, dimension, label: str, geometry: Slot
         lambda point: _map_thickness_dimension_point(
             point,
             old_x,
-            geometry.right_x,
+            thickness_reference_x,
             old_bottom,
             old_top,
-            geometry.base_y,
+            thickness_base_y,
             geometry.top_y,
         ),
     )
