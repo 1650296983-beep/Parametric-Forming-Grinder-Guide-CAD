@@ -95,6 +95,7 @@ def add_side_view_to_dxf(
             modelspace,
             geometry,
             output_mode,
+            side_style,
         )
     return geometry
 
@@ -1249,18 +1250,28 @@ def _add_text(modelspace, text: str, insert: tuple[float, float], layer: str) ->
     )
 
 
-def _add_block_projected_height_dimensions(modelspace, geometry: SideViewGeometry, output_mode: str) -> None:
+def _add_block_projected_height_dimensions(
+    modelspace,
+    geometry: SideViewGeometry,
+    output_mode: str,
+    side_style: str,
+) -> None:
     layout = geometry.layout
     projected_y = layout.lower_y + geometry.derived.side_projected_slot_height
+    label = f"{geometry.derived.side_projected_slot_height:.2f}"
+    offset = 28.0
+    if side_style == "double_head_up_down":
+        label += "（投影基准）"
+        offset = 42.0
     for center_x, side in ((layout.center_a_x, -1.0), (layout.center_b_x, 1.0)):
-        dim_x = center_x + side * 28.0
+        dim_x = center_x + side * offset
         add_linear_dimension_with_text(
             modelspace,
             (center_x, layout.lower_y),
             (center_x, projected_y),
             (dim_x, layout.lower_y),
             (dim_x, projected_y),
-            f"{geometry.derived.side_projected_slot_height:.2f}",
+            label,
             (dim_x + side * 1.5, (layout.lower_y + projected_y) / 2.0),
             angle=90.0,
             text_rotation=90.0,

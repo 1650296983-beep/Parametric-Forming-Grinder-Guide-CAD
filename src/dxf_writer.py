@@ -1289,6 +1289,7 @@ def _update_down_up_rectangular_template_dimensions(
         dimensions,
         geometry,
     )
+    top_gap_dim = _find_block_top_gap_dimension(dimensions, geometry)
     relief_size_dim = _find_dimension_by_text(dimensions, "4-<>")
     relief_radius_dim = _find_dimension_by_text(dimensions, "2-<>")
     radius_dimensions = [
@@ -1322,6 +1323,8 @@ def _update_down_up_rectangular_template_dimensions(
             opening_dim,
             geometry,
         )
+    if top_gap_dim is not None:
+        _update_block_top_gap_dimension(doc, top_gap_dim, geometry)
     if relief_size_dim is not None:
         _update_flat_arc_relief_diameter_dimension(
             doc,

@@ -9,7 +9,9 @@ import sys
 ROOT = Path(__file__).resolve().parents[1]
 
 
-def _git_file_mode(path: Path) -> str:
+def _file_mode(path: Path) -> str:
+    if not (ROOT / ".git").exists():
+        return f"100{path.stat().st_mode & 0o777:03o}"
     completed = subprocess.run(
         ["git", "ls-files", "--stage", "--", path.relative_to(ROOT).as_posix()],
         cwd=ROOT,
@@ -29,7 +31,7 @@ def test_desktop_versions_are_consistent() -> None:
         check=False,
     )
     assert completed.returncode == 0, completed.stderr
-    assert json.loads(completed.stdout)["version"] == "1.1.2"
+    assert json.loads(completed.stdout)["version"] == "1.1.3"
 
 
 def test_tauri_requires_signed_updater_artifacts_and_localhost_endpoint() -> None:
@@ -152,8 +154,8 @@ def test_cos_workflow_is_recovery_only_and_local_publisher_is_primary() -> None:
     local_wrapper = ROOT / "scripts" / "publish_cos_release_local.sh"
     local_publisher = ROOT / "scripts" / "publish_github_release_to_cos.py"
     keychain_setup = ROOT / "scripts" / "configure_cos_publisher_keychain.sh"
-    assert _git_file_mode(local_wrapper) == "100755"
-    assert _git_file_mode(keychain_setup) == "100755"
+    assert _file_mode(local_wrapper) == "100755"
+    assert _file_mode(keychain_setup) == "100755"
     for required in (
         "prepare_release_assets",
         "SHA256SUMS.txt",

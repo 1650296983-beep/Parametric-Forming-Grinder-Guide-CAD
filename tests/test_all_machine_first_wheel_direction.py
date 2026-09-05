@@ -68,6 +68,32 @@ def test_single_r_bread_with_block_preform_is_rectangular_on_every_single_guide_
     assert inspection["release_allowed"] is True
 
 
+def test_double_head_up_up_rebinds_rectangular_top_gap_dimension(tmp_path: Path) -> None:
+    machine = load_machine_config("double_head_up_up")
+    _, _, profile, _ = build_single_guide_profile_from_input(
+        {
+            "machine_type": machine.machine_id,
+            "guide_rail_type": machine.guide_type,
+            "wheel_sequence": list(machine.wheel_positions),
+            "first_wheel_side": "upper",
+            "template_coordinate_system": machine.template_coordinate_system,
+            "finished_spec": "R42.5*4.6*12*1.6",
+            "finished_spec_order": "radius_width_length_thickness",
+            "pre_grinding_spec": "12*4.6(-0.035/-0.05)*1.65(+0.01/-0.01)",
+            "product_shape_after": "bread_shape",
+            "product_shape_before": "rectangular_block",
+        },
+        machine,
+    )
+    release = tmp_path / "double_head_up_up_rectangular.dxf"
+    write_dxf(profile, release, output_mode="release", machine_id=machine.machine_id)
+
+    audit = build_dimension_definition_point_audit(release, profile, machine)
+
+    assert audit["release_allowed"] is True
+    assert all(item["bound_to_geometry"] for item in audit["dimensions"])
+
+
 @pytest.mark.parametrize(("machine_id", "expected_arc_side"), SINGLE_GUIDE_MACHINES)
 def test_double_r_block_preform_follows_first_wheel_on_every_single_guide_machine(
     tmp_path: Path,
@@ -107,6 +133,24 @@ def test_double_r_block_preform_follows_first_wheel_on_every_single_guide_machin
     assert inspection["release_allowed"] is True
     _assert_main_r_arcs_are_short_production_segments(release, profile.forming_spec.R_form)
     _assert_block_to_tile_relief_topology(release, profile)
+    if machine_id == "double_head_up_down":
+        projected_height_dimensions = [
+            dimension
+            for dimension in ezdxf.readfile(release).modelspace().query("DIMENSION")
+            if dimension.dxf.text == "12.50（投影基准）"
+        ]
+        assert len(projected_height_dimensions) == 2
+        assert all(
+            abs(float(dimension.get_measurement()) - 12.5) <= 0.01
+            for dimension in projected_height_dimensions
+        )
+        assert [
+            abs(float(dimension.dxf.defpoint.x) - center_x)
+            for dimension, center_x in zip(
+                projected_height_dimensions,
+                (machine.side_layout.center_a_x, machine.side_layout.center_b_x),
+            )
+        ] == pytest.approx([42.0, 42.0])
 
 
 def test_large_inner_radius_figure_two_example_writes_valid_single_arc_release(

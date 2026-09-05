@@ -283,13 +283,13 @@ source code or a Codex conversation:
 Before publishing, run a no-write rehearsal:
 
 ```bash
-./scripts/publish_cos_release_local.sh v1.1.2 --dry-run
+./scripts/publish_cos_release_local.sh v1.1.3 --dry-run
 ```
 
 Publish the approved stable release with one command:
 
 ```bash
-./scripts/publish_cos_release_local.sh v1.1.2
+./scripts/publish_cos_release_local.sh v1.1.3
 ```
 
 Omit the tag only when intentionally publishing the latest non-draft,
