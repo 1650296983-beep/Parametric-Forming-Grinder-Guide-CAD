@@ -84,30 +84,7 @@ def add_side_view_to_dxf(
             )
         else:
             _add_triple_single_down_up_process_dimensions(modelspace, geometry)
-    elif (
-        tile_section.process_type == "block_to_tile"
-        and not _has_dimension_measurement(
-            modelspace,
-            geometry.derived.side_projected_slot_height,
-        )
-    ):
-        _add_block_projected_height_dimensions(
-            modelspace,
-            geometry,
-            output_mode,
-            side_style,
-        )
     return geometry
-
-
-def _has_dimension_measurement(modelspace, expected: float) -> bool:
-    for dimension in modelspace.query("DIMENSION"):
-        try:
-            if abs(float(dimension.get_measurement()) - expected) <= 0.01:
-                return True
-        except Exception:
-            continue
-    return False
 
 
 def _add_triple_single_down_up_process_dimensions(modelspace, geometry: SideViewGeometry) -> None:
@@ -802,22 +779,17 @@ def _update_double_head_up_down_tile_slot_projection_lines(
 ) -> None:
     layout = geometry.layout
     base_y = layout.lower_y + geometry.derived.slot_base_height
-    projected_y = layout.lower_y + geometry.derived.side_projected_slot_height
     top_y = base_y + geometry.derived.guide_thickness
-    y = entity.dxf.start.y
-    if abs(y - base_y) <= 0.05:
-        entity.dxf.start = (entity.dxf.start.x, base_y, entity.dxf.start.z)
-        entity.dxf.end = (entity.dxf.end.x, base_y, entity.dxf.end.z)
+    center_x = (float(entity.dxf.start.x) + float(entity.dxf.end.x)) / 2.0
+    y = float(entity.dxf.start.y)
+    if (
+        str(entity.dxf.linetype).upper() == "DASHED"
+        and layout.left_x - 0.01 <= center_x <= layout.right_x + 0.01
+        and base_y - 0.6 <= y <= top_y + 0.6
+    ):
         entity.dxf.layer = SIDE_DERIVED_LAYER
-        _split_lower_cavity_notch_line(entity, geometry, layout.center_b_x)
-    elif abs(y - projected_y) <= 0.6:
-        entity.dxf.start = (entity.dxf.start.x, projected_y, entity.dxf.start.z)
-        entity.dxf.end = (entity.dxf.end.x, projected_y, entity.dxf.end.z)
-        entity.dxf.layer = SIDE_DERIVED_LAYER
-    elif abs(y - top_y) <= 0.6:
-        entity.dxf.start = (entity.dxf.start.x, top_y, entity.dxf.start.z)
-        entity.dxf.end = (entity.dxf.end.x, top_y, entity.dxf.end.z)
-        entity.dxf.layer = SIDE_DERIVED_LAYER
+        entity.dxf.color = 256
+        entity.dxf.linetype = "BYLAYER"
 
 
 def _replace_endpoint_near(entity, center_x: float, new_left: float, new_right: float) -> None:
@@ -1248,37 +1220,6 @@ def _add_text(modelspace, text: str, insert: tuple[float, float], layer: str) ->
             "style": _dimension_text_style(modelspace),
         },
     )
-
-
-def _add_block_projected_height_dimensions(
-    modelspace,
-    geometry: SideViewGeometry,
-    output_mode: str,
-    side_style: str,
-) -> None:
-    layout = geometry.layout
-    projected_y = layout.lower_y + geometry.derived.side_projected_slot_height
-    label = f"{geometry.derived.side_projected_slot_height:.2f}"
-    offset = 28.0
-    if side_style == "double_head_up_down":
-        label += "（投影基准）"
-        offset = 42.0
-    for center_x, side in ((layout.center_a_x, -1.0), (layout.center_b_x, 1.0)):
-        dim_x = center_x + side * offset
-        add_linear_dimension_with_text(
-            modelspace,
-            (center_x, layout.lower_y),
-            (center_x, projected_y),
-            (dim_x, layout.lower_y),
-            (dim_x, projected_y),
-            label,
-            (dim_x + side * 1.5, (layout.lower_y + projected_y) / 2.0),
-            angle=90.0,
-            text_rotation=90.0,
-            layer=SIDE_DIMENSION_LAYER,
-            include_fallback=False,
-            include_native=True,
-        )
 
 
 def _add_bed_618_projected_height_dimension(modelspace, geometry: SideViewGeometry) -> None:

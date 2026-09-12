@@ -12,6 +12,7 @@ from src.dual_guide_release_audit import build_dimension_definition_point_audit
 from src.guide_design_input import build_single_guide_profile_from_input
 from src.inspection import inspect_release_dxf
 from src.machine_config import load_machine_config
+from src.side_view import build_side_view_geometry
 
 
 SINGLE_GUIDE_MACHINES = (
@@ -133,24 +134,62 @@ def test_double_r_block_preform_follows_first_wheel_on_every_single_guide_machin
     assert inspection["release_allowed"] is True
     _assert_main_r_arcs_are_short_production_segments(release, profile.forming_spec.R_form)
     _assert_block_to_tile_relief_topology(release, profile)
-    if machine_id == "double_head_up_down":
-        projected_height_dimensions = [
-            dimension
+    if machine_id in {
+        "double_head_up_down",
+        "double_head_up_up",
+        "triple_single_up_up",
+    }:
+        projected_height = build_side_view_geometry(
+            profile,
+            layout=machine.side_layout,
+        ).derived.side_projected_slot_height
+        assert not any(
+            dimension.dxf.layer == "SIDE_DIMENSION"
+            and abs(float(dimension.get_measurement()) - projected_height) <= 0.01
             for dimension in ezdxf.readfile(release).modelspace().query("DIMENSION")
-            if dimension.dxf.text == "12.50（投影基准）"
-        ]
-        assert len(projected_height_dimensions) == 2
-        assert all(
-            abs(float(dimension.get_measurement()) - 12.5) <= 0.01
-            for dimension in projected_height_dimensions
         )
-        assert [
-            abs(float(dimension.dxf.defpoint.x) - center_x)
-            for dimension, center_x in zip(
-                projected_height_dimensions,
-                (machine.side_layout.center_a_x, machine.side_layout.center_b_x),
-            )
-        ] == pytest.approx([42.0, 42.0])
+
+
+def test_double_head_up_down_removes_historical_projection_lines(tmp_path: Path) -> None:
+    machine = load_machine_config("double_head_up_down")
+    _, _, profile, _ = build_single_guide_profile_from_input(
+        {
+            "machine_type": machine.machine_id,
+            "guide_rail_type": machine.guide_type,
+            "wheel_sequence": list(machine.wheel_positions),
+            "first_wheel_side": "upper",
+            "template_coordinate_system": machine.template_coordinate_system,
+            "finished_spec": "R27.03*R23.53*5.24*40*3.5",
+            "pre_grinding_spec": "40*5.24(+0.01/-0.01)*3.65(+0.01/-0.01)",
+            "product_shape_after": "tile_shape",
+            "product_shape_before": "rectangular_block",
+            "single_side_or_high_requirement": True,
+        },
+        machine,
+    )
+    release = tmp_path / "double_head_up_down.dxf"
+    write_dxf(profile, release, output_mode="release", machine_id=machine.machine_id)
+
+    doc = ezdxf.readfile(release)
+    geometry = build_side_view_geometry(profile, layout=machine.side_layout)
+    base_y = machine.side_layout.lower_y + geometry.derived.slot_base_height
+    top_y = base_y + geometry.derived.guide_thickness
+    assert not any(
+        line.dxf.layer == "SIDE_TEMPLATE"
+        and str(line.dxf.linetype).upper() == "DASHED"
+        and abs(float(line.dxf.start.y) - float(line.dxf.end.y)) <= 0.001
+        and base_y - 0.6 <= float(line.dxf.start.y) <= top_y + 0.6
+        and machine.side_layout.left_x - 0.001
+        <= (float(line.dxf.start.x) + float(line.dxf.end.x)) / 2.0
+        <= machine.side_layout.right_x + 0.001
+        for line in doc.modelspace().query("LINE")
+    )
+    assert not any(
+        dimension.dxf.layer == "SIDE_DIMENSION"
+        and abs(float(dimension.get_measurement()) - 12.5) <= 0.01
+        for dimension in doc.modelspace().query("DIMENSION")
+    )
+    assert inspect_release_dxf(profile, machine, release)["release_allowed"] is True
 
 
 def test_large_inner_radius_figure_two_example_writes_valid_single_arc_release(

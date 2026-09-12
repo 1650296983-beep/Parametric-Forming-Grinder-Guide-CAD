@@ -143,7 +143,19 @@ def cavity_projection_matches_pre_grinding_shape(
             )
         }
     )
-    return observed == expected
+    stale_template_projection = section.process_type == "block_to_tile" and any(
+        entity.dxf.layer == SIDE_TEMPLATE_LAYER
+        and str(entity.dxf.linetype).upper() == "DASHED"
+        and abs(float(entity.dxf.start.y) - float(entity.dxf.end.y)) <= 0.001
+        and geometry.layout.left_x - 0.001
+        <= (float(entity.dxf.start.x) + float(entity.dxf.end.x)) / 2.0
+        <= geometry.layout.right_x + 0.001
+        and base_y - 0.6
+        <= float(entity.dxf.start.y)
+        <= base_y + geometry.derived.guide_thickness + 0.6
+        for entity in doc.modelspace().query("LINE")
+    )
+    return observed == expected and not stale_template_projection
 
 
 def write_side_view_report(
