@@ -110,9 +110,9 @@ actual_opening = min(natural_opening, opening_limit)
 effective_cut_in_depth = 80 - sqrt(80^2 - (actual_opening / 2)^2)
 ```
 
-当自然开口未超限时，`effective_cut_in_depth` 必须等于 `preform_block_thickness_mid * 0.6`；超限时不得修改目标吃入公式，而应移动 R80 圆心，使最终开口不大于 `product_length * 0.6`。`block_side_projected_slot_height` 仍由机台模板配置控制，双头机上上默认为 `18.0`。
+当自然开口未超限时，`effective_cut_in_depth` 必须等于 `preform_block_thickness_mid * 0.6`；超限时不得修改目标吃入公式，而应移动 R80 圆心，使最终开口不大于 `product_length * 0.6`。`block_side_projected_slot_height` 仍由机台模板配置控制，双头机上上固定为 `12.0`。
 
-双头机（上上）的 `18.0` 是型腔投影下沿高度，投影上沿必须再加真实
+双头机（上上）的 `12.0` 是型腔投影下沿高度，也是截面槽底距导轨下沿高度；投影上沿必须再加真实
 `guide_thickness`；砂轮有效吃入量只用于移动 R80 圆心，不得作为型腔厚度。
 
 双头机（上下）方块磨前侧视图只保留型腔上下两条虚线。下边界在下 R80 处断开，上边界在上 R80 处断开；不得保留模板中的平行偏移副本形成重影。下、上 R80 的冠点分别进入型腔 `effective_cut_in_depth`，两条边界随当前导轨厚度同步重建。
@@ -151,7 +151,7 @@ side_clearance_height = 27.0 - 12.0 - 1.83 + 0.20 = 13.37
 
 `side_projected_slot_height` 继续用于内部计算和报告。当该高度不是实际型腔投影边界时，
 release 不输出辅助尺寸；当前包括双头机（上下）的 `12.50`、双头机（上上）的
-`18.50` 和三头机单导轨（上上）的动态投影基准。618 磨床的 `20.90` 对应真实固定
+`12.50` 和三头机单导轨（上上）的动态投影基准。618 磨床的 `20.90` 对应真实固定
 投影边界，继续保留。
 
 模板中的历史型腔投影线必须在重建前全部归入受控型腔图层并清除。校验应同时检查

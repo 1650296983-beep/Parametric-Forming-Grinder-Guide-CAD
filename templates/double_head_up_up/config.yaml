@@ -8,7 +8,7 @@ section_template: section_template.dxf
 side_template: side_template.dxf
 section_outer_width: 35.0
 section_center_opening: 2.0
-section_slot_base_height: 18.0
+section_slot_base_height: 12.0
 layout:
   left_x: 3391.69462996248
   center_a_x: 3481.69462996248
@@ -20,6 +20,6 @@ layout:
   template_min_y: -290.0
   template_max_y: -150.0
   block_side_mode: "fixed_projected_height"
-  block_side_projected_slot_height: 18.0
+  block_side_projected_slot_height: 12.0
   block_projected_top_mode: "guide_thickness"
 side_template_copy_min_x: 3300.0

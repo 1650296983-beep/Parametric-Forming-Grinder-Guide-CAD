@@ -942,11 +942,7 @@ def _write_block_template_based_dxf(
     use_reference_rectangular_rebuild = (
         is_triple_down_up or is_dual_spec_rectangular
     )
-    slot_base_y = (
-        anchor.bottom + machine_config.section_slot_base_height
-        if is_triple_down_up
-        else _extract_existing_block_slot_base_y(modelspace, anchor)
-    )
+    slot_base_y = anchor.bottom + block_section.guide_spec.slot_base_height
     if machine_config.side_layout.block_side_mode == "fixed_top_gap":
         fixed_top_gap = machine_config.side_layout.block_fixed_top_gap
         if fixed_top_gap is None:
@@ -1056,26 +1052,6 @@ def _extract_block_template_anchor(modelspace) -> TemplateAnchor:
     top = bottom + 27.0
     slot_center_x = (left + right) / 2.0
     return TemplateAnchor(left=left, right=right, bottom=bottom, top=top, slot_center_x=slot_center_x)
-
-
-def _extract_existing_block_slot_base_y(modelspace, anchor: TemplateAnchor) -> float:
-    candidates = []
-    for entity in modelspace.query("DIMENSION"):
-        try:
-            measurement = float(entity.get_measurement())
-        except Exception:
-            continue
-        if measurement < 4.0:
-            continue
-        if not (entity.dxf.hasattr("defpoint2") and entity.dxf.hasattr("defpoint3")):
-            continue
-        p2 = entity.dxf.defpoint2
-        p3 = entity.dxf.defpoint3
-        if abs(p2.y - p3.y) < 0.001 and anchor.bottom <= p2.y <= anchor.top:
-            candidates.append(p2.y)
-    if candidates:
-        return min(candidates)
-    return anchor.bottom + 21.85
 
 
 def _is_block_template_param_entity(entity, anchor: TemplateAnchor) -> bool:
@@ -1240,7 +1216,6 @@ def _update_block_template_dimensions(
     relief_radius_dim = _find_dimension_by_text(dimensions, "2-<>")
     relief_size_dim = _find_dimension_by_text(dimensions, "4-<>")
     top_gap_dim = _find_block_top_gap_dimension(dimensions, geometry)
-    height_dim = _find_dimension_by_text(dimensions, "18")
 
     for dimension in dimensions:
         dimension.dxf.layer = DIMENSION_LAYER
@@ -1260,10 +1235,7 @@ def _update_block_template_dimensions(
         )
     if top_gap_dim is not None:
         _update_block_top_gap_dimension(doc, top_gap_dim, geometry)
-    if height_dim is not None:
-        _set_dimension_actual_measurement(height_dim, geometry.slot_base_height)
-        height_dim.dxf.text = _format_compact_decimal(geometry.slot_base_height)
-        _set_dimension_block_text(doc, height_dim, _format_compact_decimal(geometry.slot_base_height))
+    _update_section_slot_base_dimension(dimensions, geometry)
 
 
 def _update_down_up_rectangular_template_dimensions(
@@ -1337,8 +1309,24 @@ def _update_down_up_rectangular_template_dimensions(
             relief_radius_dim,
             geometry,
         )
+    _update_section_slot_base_dimension(dimensions, geometry)
     for dimension in radius_dimensions:
         modelspace.delete_entity(dimension)
+
+
+def _update_section_slot_base_dimension(dimensions, geometry: SlotDimensionGeometry) -> None:
+    height_dim = _find_dimension_by_text(dimensions, "18")
+    if height_dim is None:
+        return
+    bottom = height_dim.dxf.defpoint2
+    top_y = bottom.y + geometry.slot_base_height
+    height_dim.dxf.defpoint3 = (height_dim.dxf.defpoint3.x, top_y, bottom.z)
+    height_dim.dxf.defpoint = (height_dim.dxf.defpoint.x, top_y, bottom.z)
+    midpoint = height_dim.dxf.text_midpoint
+    height_dim.dxf.text_midpoint = (midpoint.x, (bottom.y + top_y) / 2.0, midpoint.z)
+    _set_dimension_actual_measurement(height_dim, geometry.slot_base_height)
+    height_dim.dxf.text = _format_compact_decimal(geometry.slot_base_height)
+    height_dim.render()
 
 
 def _dimension_near_geometry(

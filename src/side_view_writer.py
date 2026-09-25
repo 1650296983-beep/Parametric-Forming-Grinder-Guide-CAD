@@ -986,7 +986,10 @@ def _update_derived_dimension(entity, geometry: SideViewGeometry, side_style: st
         _set_actual_measurement(entity, derived.side_clearance_height)
         entity.dxf.text = f"{derived.side_clearance_height:.2f}"
         return True
-    elif derived.side_projected_slot_height >= 18.0 and 2.0 <= measurement <= 8.0:
+    elif (
+        geometry.layout.block_side_mode == "fixed_projected_height"
+        or derived.side_projected_slot_height >= 18.0
+    ) and 2.0 <= measurement <= 8.0:
         _set_block_side_clearance_dimension_points(entity, geometry)
         _set_actual_measurement(entity, derived.side_clearance_height)
         entity.dxf.text = f"{derived.side_clearance_height:.2f}"

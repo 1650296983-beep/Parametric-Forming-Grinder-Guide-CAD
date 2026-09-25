@@ -109,12 +109,12 @@
     }
   },
   "side_view": {
-    "slot_base_height": 18.0,
+    "slot_base_height": 12.0,
     "side_cut_in_allowance": 0.0,
     "side_projected_slot_height": {
       "formula": "block_side_projected_slot_height",
-      "block_side_projected_slot_height": 18.0,
-      "result": 18.0
+      "block_side_projected_slot_height": 12.0,
+      "result": 12.0
     },
     "guide_outer_height": 27.0,
     "guide_thickness": 3.12,
@@ -122,10 +122,10 @@
     "side_clearance_height": {
       "formula": "guide_outer_height - slot_base_height - guide_thickness + upper_wheel_cut_in",
       "guide_outer_height": 27.0,
-      "slot_base_height": 18.0,
+      "slot_base_height": 12.0,
       "guide_thickness": 3.12,
       "upper_wheel_cut_in": 0.04659419386814534,
-      "result": 5.926594193868145
+      "result": 11.926594193868144
     },
     "wheel_notch": {
       "natural_cut_in_formula": "preform_block_thickness_mid * 0.6",
@@ -138,8 +138,8 @@
       "upper_cavity_notch_opening": 5.46,
       "upper_opening_limit": 5.46,
       "upper_effective_cut_in_depth": 0.04659419386814534,
-      "effective_cut_in_depth": 6.046594193868145,
-      "effective_notch_top_height_from_guide_bottom": 18.046594193868145,
+      "effective_cut_in_depth": 0.04659419386814534,
+      "effective_notch_top_height_from_guide_bottom": 12.046594193868145,
       "wheel_radius": 80.0,
       "product_length": 9.1,
       "lower_cavity_notch_opening_less_than_product_length": true,
@@ -147,9 +147,9 @@
       "upper_cavity_notch_opening_less_than_product_length": true,
       "upper_cavity_notch_opening_within_limit": true,
       "natural_wheel_center_y": -338.2419156952224,
-      "adjusted_wheel_center_y": -333.9953215013543,
-      "wheel_center_shift": 4.246594193868134,
-      "lower_wheel_center_y": -333.9953215013543,
+      "adjusted_wheel_center_y": -339.9953215013543,
+      "wheel_center_shift": -1.753405806131866,
+      "lower_wheel_center_y": -339.9953215013543,
       "note": "上下砂轮的目标吃入深度均按成型磨前厚度中值的0.6倍计算；最终缺口开口不得超过 product_length * 0.6，超限时移动对应砂轮圆心并同步更新连接线。"
     }
   },
@@ -294,7 +294,7 @@
               "side": "left",
               "center": [
                 3232.974058,
-                -250.921718
+                -256.921718
               ],
               "start_angle": 0.0,
               "end_angle": 270.0,
@@ -307,7 +307,7 @@
               "side": "left",
               "center": [
                 3232.974058,
-                -254.041718
+                -260.041718
               ],
               "start_angle": 90.0,
               "end_angle": 0.0,
@@ -320,7 +320,7 @@
               "side": "right",
               "center": [
                 3242.124058,
-                -250.921718
+                -256.921718
               ],
               "start_angle": 270.0,
               "end_angle": 180.0,
@@ -333,7 +333,7 @@
               "side": "right",
               "center": [
                 3242.124058,
-                -254.041718
+                -260.041718
               ],
               "start_angle": 180.0,
               "end_angle": 90.0,
@@ -559,22 +559,22 @@
         "display_text": "9.15{\\H0.7x;\\S+0.01^ -0.01;} ",
         "defpoint2": [
           3232.974058,
-          -254.041718,
+          -260.041718,
           0.0
         ],
         "defpoint3": [
           3242.124058,
-          -254.041718,
+          -260.041718,
           0.0
         ],
         "expected_geometry_point_1": [
           3232.974058,
-          -254.041718,
+          -260.041718,
           0.0
         ],
         "expected_geometry_point_2": [
           3242.124058,
-          -254.041718,
+          -260.041718,
           0.0
         ],
         "point_error": 0.0,
@@ -589,22 +589,22 @@
         "display_text": "3.12",
         "defpoint2": [
           3242.124058,
-          -250.921718,
+          -256.921718,
           0.0
         ],
         "defpoint3": [
           3242.124058,
-          -254.041718,
+          -260.041718,
           0.0
         ],
         "expected_geometry_point_1": [
           3242.124058,
-          -250.921718,
+          -256.921718,
           0.0
         ],
         "expected_geometry_point_2": [
           3242.124058,
-          -254.041718,
+          -260.041718,
           0.0
         ],
         "point_error": 0.0,
@@ -619,22 +619,22 @@
         "display_text": "2-R0.50",
         "defpoint2": [
           3239.049058,
-          -250.421718,
+          -256.421718,
           0.0
         ],
         "defpoint3": [
           3239.049058,
-          -250.921718,
+          -256.921718,
           0.0
         ],
         "expected_geometry_point_1": [
           3239.049058,
-          -250.421718,
+          -256.421718,
           0.0
         ],
         "expected_geometry_point_2": [
           3239.049058,
-          -250.921718,
+          -256.921718,
           0.0
         ],
         "point_error": 0.0,
@@ -649,22 +649,22 @@
         "display_text": "4-∅1.00",
         "defpoint2": [
           3232.974058,
-          -250.921718,
+          -256.921718,
           0.0
         ],
         "defpoint3": [
           3232.542526,
-          -250.66917,
+          -256.66917,
           0.0
         ],
         "expected_geometry_point_1": [
           3232.974058,
-          -250.921718,
+          -256.921718,
           0.0
         ],
         "expected_geometry_point_2": [
           3232.542526,
-          -250.66917,
+          -256.66917,
           0.0
         ],
         "point_error": 0.0,
@@ -675,11 +675,11 @@
       {
         "dimension_handle": "202A805",
         "dimension_role": "other_release_dimension",
-        "measurement": 5.88,
-        "display_text": "5.88",
+        "measurement": 11.88,
+        "display_text": "11.88",
         "defpoint2": [
           3242.124058,
-          -250.921718,
+          -256.921718,
           0.0
         ],
         "defpoint3": [
@@ -689,7 +689,7 @@
         ],
         "expected_geometry_point_1": [
           3242.124058,
-          -250.921718,
+          -256.921718,
           0.0
         ],
         "expected_geometry_point_2": [
@@ -704,9 +704,9 @@
       },
       {
         "dimension_handle": "202AB5F",
-        "dimension_role": "other_release_dimension",
-        "measurement": 18.0,
-        "display_text": "18.00",
+        "dimension_role": "fixed_slot_base_12",
+        "measurement": 12.0,
+        "display_text": "12.00",
         "defpoint2": [
           3255.049058,
           -272.041718,
@@ -714,7 +714,7 @@
         ],
         "defpoint3": [
           3255.049058,
-          -254.041718,
+          -260.041718,
           0.0
         ],
         "expected_geometry_point_1": [
@@ -724,7 +724,7 @@
         ],
         "expected_geometry_point_2": [
           3255.049058,
-          -254.041718,
+          -260.041718,
           0.0
         ],
         "point_error": 0.0,
@@ -733,7 +733,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "202ADC1",
+        "dimension_handle": "202ADCF",
         "dimension_role": "fixed_span_90",
         "measurement": 90.0,
         "display_text": "90.00",
@@ -763,7 +763,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "202ADCF",
+        "dimension_handle": "202ADDD",
         "dimension_role": "other_release_dimension",
         "measurement": 200.0,
         "display_text": "200.00",
@@ -793,28 +793,28 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "202ADF4",
+        "dimension_handle": "202AE02",
         "dimension_role": "wheel_radius",
         "measurement": 80.0,
         "display_text": "R80.00",
         "defpoint2": [
           3481.69463,
-          -170.96851,
+          -176.96851,
           0.0
         ],
         "defpoint3": [
           3481.69463,
-          -250.96851,
+          -256.96851,
           0.0
         ],
         "expected_geometry_point_1": [
           3481.69463,
-          -170.96851,
+          -176.96851,
           0.0
         ],
         "expected_geometry_point_2": [
           3481.69463,
-          -250.96851,
+          -256.96851,
           0.0
         ],
         "point_error": 0.0,
@@ -823,28 +823,28 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "202ADFD",
+        "dimension_handle": "202AE0B",
         "dimension_role": "other_release_dimension",
-        "measurement": 5.926594,
-        "display_text": "5.93",
+        "measurement": 11.926594,
+        "display_text": "11.93",
         "defpoint2": [
-          3451.47658,
+          3439.670691,
           -245.041916,
           0.0
         ],
         "defpoint3": [
           3481.69463,
-          -250.96851,
+          -256.96851,
           0.0
         ],
         "expected_geometry_point_1": [
-          3451.47658,
+          3439.670691,
           -245.041916,
           0.0
         ],
         "expected_geometry_point_2": [
           3481.69463,
-          -250.96851,
+          -256.96851,
           0.0
         ],
         "point_error": 0.0,
@@ -853,28 +853,28 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "202AE1C",
+        "dimension_handle": "202AE28",
         "dimension_role": "wheel_radius",
         "measurement": 80.0,
         "display_text": "R80.00",
         "defpoint2": [
           3681.69463,
-          -170.96851,
+          -176.96851,
           0.0
         ],
         "defpoint3": [
           3681.69463,
-          -250.96851,
+          -256.96851,
           0.0
         ],
         "expected_geometry_point_1": [
           3681.69463,
-          -170.96851,
+          -176.96851,
           0.0
         ],
         "expected_geometry_point_2": [
           3681.69463,
-          -250.96851,
+          -256.96851,
           0.0
         ],
         "point_error": 0.0,
@@ -883,28 +883,28 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "202AE25",
+        "dimension_handle": "202AE31",
         "dimension_role": "other_release_dimension",
-        "measurement": 5.926594,
-        "display_text": "5.93",
+        "measurement": 11.926594,
+        "display_text": "11.93",
         "defpoint2": [
-          3711.91268,
+          3723.718569,
           -245.041916,
           0.0
         ],
         "defpoint3": [
           3681.69463,
-          -250.96851,
+          -256.96851,
           0.0
         ],
         "expected_geometry_point_1": [
-          3711.91268,
+          3723.718569,
           -245.041916,
           0.0
         ],
         "expected_geometry_point_2": [
           3681.69463,
-          -250.96851,
+          -256.96851,
           0.0
         ],
         "point_error": 0.0,
@@ -913,7 +913,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "202AE44",
+        "dimension_handle": "202AE4E",
         "dimension_role": "fixed_guide_length_590",
         "measurement": 435.0,
         "display_text": "435.00",
@@ -943,7 +943,7 @@
         "bound_to_geometry": true
       },
       {
-        "dimension_handle": "202AE51",
+        "dimension_handle": "202AE5B",
         "dimension_role": "other_release_dimension",
         "measurement": 145.0,
         "display_text": "145.00",

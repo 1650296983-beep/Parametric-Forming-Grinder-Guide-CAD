@@ -90,9 +90,14 @@ def test_double_head_up_up_rebinds_rectangular_top_gap_dimension(tmp_path: Path)
     write_dxf(profile, release, output_mode="release", machine_id=machine.machine_id)
 
     audit = build_dimension_definition_point_audit(release, profile, machine)
+    dimensions = list(ezdxf.readfile(release).modelspace().query("DIMENSION"))
+    section_base = next(dim for dim in dimensions if dim.dxf.layer == "DIMENSION" and dim.dxf.text == "12.00")
 
     assert audit["release_allowed"] is True
     assert all(item["bound_to_geometry"] for item in audit["dimensions"])
+    assert section_base.get_measurement() == pytest.approx(12.0)
+    assert section_base.dxf.defpoint3.y - section_base.dxf.defpoint2.y == pytest.approx(12.0)
+    assert not any(dim.dxf.text == "18.00" for dim in dimensions)
 
 
 @pytest.mark.parametrize(("machine_id", "expected_arc_side"), SINGLE_GUIDE_MACHINES)

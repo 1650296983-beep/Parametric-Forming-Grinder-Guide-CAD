@@ -226,7 +226,12 @@ def write_machine_report(
             "guide_thickness": round(guide.guide_thickness, 6),
             "side_projected_slot_height": round(side.derived.side_projected_slot_height, 6),
             "side_clearance_height": round(side.derived.side_clearance_height, 6),
-            "side_clearance_formula": _side_clearance_formula(profile),
+            "side_clearance_formula": (
+                f"{side.derived.guide_outer_height:.2f} - "
+                f"{side.derived.slot_base_height:.2f} - "
+                f"{side.derived.guide_thickness:.2f} + "
+                f"{side.derived.wheel_cut_allowance:.2f}"
+            ),
         },
         "checks": {
             "debug_generated": debug_dxf.exists() and debug_dxf.stat().st_size > 0,
@@ -358,6 +363,7 @@ def _build_profile(
         slot_reference=slot_reference,
         slot_clearance=block_slot_clearance,
         outer_width=block_outer_width,
+        slot_base_height=12.0 if machine is None else machine.section_slot_base_height,
         thickness_clearance_mid=(
             default_block_thickness_clearance
             if thickness_clearance_mid is None
@@ -408,14 +414,6 @@ def _product_report(parsed_spec: FinishedSpec | BlockSpec, profile: TileSection 
         "R_form": None,
         "spec_rule": "QG38002 方块：长x宽x高；槽宽=选定参考尺寸+上下公差平均值+槽宽余量。",
     }
-
-
-def _side_clearance_formula(profile: TileSection | BlockGuideSection) -> str:
-    if isinstance(profile, BlockGuideSection):
-        spec = profile.block_spec
-        return f"27.00 - 18.00 - {spec.thickness:.2f} * 0.60"
-    guide = profile.guide_spec
-    return f"{guide.outer_height:.2f} - {guide.slot_base_height:.2f} - {guide.guide_thickness:.2f} + 0.20"
 
 
 def _release_hides_debug_layers(doc) -> bool:

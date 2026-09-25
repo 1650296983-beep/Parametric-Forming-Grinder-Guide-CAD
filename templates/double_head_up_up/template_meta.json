@@ -1,9 +1,9 @@
 {
   "machine_id": "double_head_up_up",
-  "template_version": "v1.1.1",
+  "template_version": "v1.1.2",
   "source_template_file": "section_template.dxf; side_template.dxf",
   "sha256": "adbefdc1c5068c9449c8d78704166e77ac44da1701111f0465edc8b103d0d422",
-  "change_reason": "Correct side cavity projection to use true guide thickness instead of limited wheel cut-in depth.",
+  "change_reason": "Move double-head upper-upper section and side cavity base from 18 mm to 12 mm, rebinding geometry and dimensions.",
   "approved_by": "1650296983-beep",
-  "approved_date": "2026-07-28"
+  "approved_date": "2026-09-25"
 }

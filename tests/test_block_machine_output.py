@@ -9,6 +9,7 @@ from src.global_rules import HIGH_REQUIREMENT_THICKNESS_CLEARANCE, wheel_notch_o
 from src.dxf_writer import write_dxf
 from src.side_view import build_side_view_geometry
 from src.machine_config import load_machine_config
+from src.guide_design_input import build_single_guide_profile_from_input
 from src.spec_parser import parse_block_spec
 
 
@@ -34,7 +35,8 @@ def test_double_head_up_up_block_spec_uses_selected_slot_reference(tmp_path):
 
     assert profile.guide_spec.guide_slot_width == pytest.approx(9.01)
     assert profile.guide_spec.guide_thickness == pytest.approx(2.09)
-    assert side.derived.side_projected_slot_height == pytest.approx(18.0)
+    assert machine.section_slot_base_height == pytest.approx(12.0)
+    assert side.derived.side_projected_slot_height == pytest.approx(12.0)
     expected_opening = wheel_notch_opening_limit(spec.length)
     expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
     assert side.derived.guide_thickness == pytest.approx(
@@ -42,7 +44,7 @@ def test_double_head_up_up_block_spec_uses_selected_slot_reference(tmp_path):
     )
     assert side.derived.side_clearance_height == pytest.approx(
         profile.guide_spec.outer_height
-        - 18.0
+        - 12.0
         - profile.guide_spec.guide_thickness
         + expected_cut_in
     )
@@ -54,7 +56,16 @@ def test_double_head_up_up_block_spec_uses_selected_slot_reference(tmp_path):
     assert measurements[clearance_label] == pytest.approx(
         [side.derived.side_clearance_height] * 2
     )
-    assert measurements["18.00"][0] == pytest.approx(18.0)
+    assert measurements["12.00"][0] == pytest.approx(12.0)
+    section_base_dim = next(
+        dim for dim in doc.modelspace().query("DIMENSION")
+        if dim.dxf.layer == "DIMENSION" and dim.dxf.text == "12.00"
+    )
+    assert section_base_dim.dxf.defpoint3.y - section_base_dim.dxf.defpoint2.y == pytest.approx(12.0)
+    assert section_base_dim.dxf.defpoint3.y == pytest.approx(
+        min(line.dxf.start.y for line in doc.modelspace().query("LINE")
+            if line.dxf.layer == "PARAM_SLOT" and line.dxf.start.y == pytest.approx(line.dxf.end.y))
+    )
     assert _section_dimension_block_text(doc, "9.01±0.01").startswith("9.01{\\H0.7x;\\S+0.01^ -0.01;}")
 
     r80_centers = [
@@ -148,7 +159,7 @@ def test_double_head_up_up_side_r80_closes_for_variable_thickness(tmp_path):
     expected_cut_in = 80.0 - sqrt(80.0**2 - (expected_opening / 2.0) ** 2)
     assert side.derived.side_clearance_height == pytest.approx(
         profile.guide_spec.outer_height
-        - 18.0
+        - 12.0
         - profile.guide_spec.guide_thickness
         + expected_cut_in
     )
@@ -167,6 +178,33 @@ def test_double_head_up_up_side_r80_closes_for_variable_thickness(tmp_path):
         and entity.dxf.end.y == pytest.approx(cavity_top_y, abs=0.001)
     ]
     assert len(cavity_top_lines) == 3
+
+
+def test_double_head_up_up_same_r_tile_uses_12mm_base(tmp_path):
+    machine = load_machine_config("double_head_up_up")
+    _, _, profile, _ = build_single_guide_profile_from_input(
+        {
+            "machine_type": machine.machine_id,
+            "guide_rail_type": machine.guide_type,
+            "wheel_sequence": list(machine.wheel_positions),
+            "first_wheel_side": "upper",
+            "template_coordinate_system": machine.template_coordinate_system,
+            "finished_spec": "R24*R21.8*8.5*15.4*2.2",
+            "pre_grinding_spec": "R24*R24*8.53(+0.01/-0.01)*15.4*2.48",
+            "product_shape_after": "tile_shape",
+            "product_shape_before": "same_r_tile",
+        },
+        machine,
+    )
+    release = tmp_path / "same_r_tile.dxf"
+    write_dxf(profile, release, output_mode="release", machine_id=machine.machine_id)
+    dimensions = list(ezdxf.readfile(release).modelspace().query("DIMENSION"))
+    base = next(dim for dim in dimensions if dim.dxf.layer == "DIMENSION" and dim.dxf.text == "12.00")
+
+    assert profile.guide_spec.slot_base_height == pytest.approx(12.0)
+    assert base.get_measurement() == pytest.approx(12.0)
+    assert abs(base.dxf.defpoint3.y - base.dxf.defpoint2.y) == pytest.approx(12.0)
+    assert not any(dim.dxf.text == "18.00" for dim in dimensions)
 
 
 def _dimension_measurements_by_text(doc) -> dict[str, list[float]]:
@@ -227,7 +265,6 @@ def _assert_section_has_standard_2mm_neck(doc) -> None:
         line
         for line in neck_lines
         if line.dxf.start.y == pytest.approx(-245.0417181848652, abs=0.001)
-        and line.dxf.end.y > -252.5
     ]
     assert len(top_neck_lines) == 2
     xs = sorted(line.dxf.start.x for line in top_neck_lines)
@@ -239,6 +276,6 @@ def _assert_section_has_standard_2mm_neck(doc) -> None:
         and entity.dxftype() == "ARC"
         and entity.dxf.radius == pytest.approx(0.5)
         and 3220 <= entity.dxf.center.x <= 3255
-        and -260 <= entity.dxf.center.y <= -245
+        and -272 <= entity.dxf.center.y <= -245
     ]
     assert len(section_arcs) == 6
