@@ -28,6 +28,10 @@ tolerance to the existing failure view. Unexpected engine exceptions still
 propagate after their traceback is saved in `logs/generator_error.log` for
 windowed-runtime diagnostics. A rejected candidate is removed and cannot become
 a formal DXF.
+Generator stdout/stderr and the parent subprocess decoder use UTF-8 explicitly.
+This includes English Windows hosts whose captured streams otherwise use
+cp1252: printing a Chinese output filename after successful validation must not
+raise `UnicodeEncodeError` or leave the desktop waiting on an exception dialog.
 
 The localhost service has one local administrator and no login database,
 password, session token, device authorization, offline licence, or remote

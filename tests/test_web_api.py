@@ -98,6 +98,8 @@ def test_failed_generator_uses_report_when_windowed_process_has_no_stderr(tmp_pa
     monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
 
     def rejected_generation(command, **kwargs):
+        assert kwargs["encoding"] == "utf-8"
+        assert kwargs["env"]["PYTHONIOENCODING"] == "utf-8"
         output_dir = Path(command[command.index("--output-dir") + 1])
         output_dir.mkdir(parents=True)
         (output_dir / "failed_report.json").write_text(json.dumps({

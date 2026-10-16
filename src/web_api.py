@@ -324,6 +324,9 @@ def generate_design(
             cwd=PROJECT_ROOT,
             capture_output=True,
             text=True,
+            encoding="utf-8",
+            errors="replace",
+            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
             check=False,
         )
     except OSError as error:

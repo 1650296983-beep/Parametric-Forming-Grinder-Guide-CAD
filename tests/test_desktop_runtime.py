@@ -45,6 +45,32 @@ def test_frozen_generator_does_not_hide_unexpected_errors(monkeypatch, tmp_path)
     assert "RuntimeError: unexpected engine error" in (tmp_path / "logs" / "generator_error.log").read_text(encoding="utf-8")
 
 
+def test_frozen_generator_captures_chinese_paths_on_english_windows(monkeypatch):
+    import io
+    import sys
+    from desktop import sidecar_entry
+    from src import generate_machine
+
+    output = io.BytesIO()
+    errors = io.BytesIO()
+    stdout = io.TextIOWrapper(output, encoding="cp1252", write_through=True)
+    stderr = io.TextIOWrapper(errors, encoding="cp1252", write_through=True)
+
+    def completed_generation():
+        print("RELEASE_DXF: C:/任务/双头机（上下）.dxf")
+        print("校验报告已生成", file=sys.stderr)
+        return 0
+
+    monkeypatch.setattr(sys, "argv", ["sidecar", "generate-machine"])
+    monkeypatch.setattr(sys, "stdout", stdout)
+    monkeypatch.setattr(sys, "stderr", stderr)
+    monkeypatch.setattr(generate_machine, "main", completed_generation)
+
+    assert sidecar_entry.main() == 0
+    assert "任务/双头机（上下）.dxf" in output.getvalue().decode("utf-8")
+    assert "校验报告已生成" in errors.getvalue().decode("utf-8")
+
+
 def test_desktop_paths_use_configured_unicode_data_root(tmp_path: Path, monkeypatch) -> None:
     root = tmp_path / "用户数据" / "FormingGrinderCAD"
     monkeypatch.setenv("CAD_DESKTOP_MODE", "1")

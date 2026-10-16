@@ -60,6 +60,11 @@ def _serve(port: int, status_file: Path | None) -> int:
 
 def main() -> int:
     if len(sys.argv) > 1 and sys.argv[1] == "generate-machine":
+        # Captured streams on English Windows default to cp1252 even in a
+        # windowed executable. Chinese task paths must not crash a completed job.
+        for stream in (sys.stdout, sys.stderr):
+            if stream is not None and hasattr(stream, "reconfigure"):
+                stream.reconfigure(encoding="utf-8", errors="backslashreplace")
         # Frozen child-process dispatch for the existing isolated generator.
         from src.generate_machine import ReleaseValidationError, main as generate_machine_main
 
