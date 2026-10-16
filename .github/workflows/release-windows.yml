@@ -105,8 +105,8 @@ jobs:
       - name: Build PyInstaller onedir sidecar
         run: python -m PyInstaller --noconfirm --clean packaging/pyinstaller/forming_grinder_cad.spec
 
-      - name: Smoke-test packaged sidecar health and shutdown
-        run: python scripts/smoke_sidecar.py dist/forming_grinder_cad_sidecar/forming_grinder_cad_sidecar.exe
+      - name: Smoke-test packaged sidecar health and narrow-block generation
+        run: python scripts/smoke_sidecar.py dist/forming_grinder_cad_sidecar/forming_grinder_cad_sidecar.exe --narrow-block
 
       - name: Optionally import Authenticode certificate
         id: authenticode
@@ -205,7 +205,8 @@ jobs:
             "python=$((python --version) 2>&1)",
             "node=$(node --version)",
             "rust=$(rustc --version)",
-            "machine_regressions=7/7"
+            "machine_regressions=7/7",
+            "narrow_block_generation=2/2"
           ) | Set-Content -Encoding utf8 BUILD-SUMMARY.txt
           "installer=$($installer.FullName)" >> $env:GITHUB_ENV
 

@@ -1,3 +1,3 @@
 """Single Python-side version marker checked by the release tooling."""
 
-APP_VERSION = "1.1.5"
+APP_VERSION = "1.1.6"

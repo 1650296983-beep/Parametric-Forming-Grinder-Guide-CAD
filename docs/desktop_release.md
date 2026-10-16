@@ -5,6 +5,12 @@ The desktop shell does not change CAD geometry or process rules: React remains
 the UI, Python remains the only CAD business implementation, and every formal
 DXF/DWG remains behind the existing release gate.
 
+Version v1.1.6 repairs the narrow rectangular-preform section-height dimension
+binding, uses UTF-8 for captured generator output on English Windows, and returns
+report-backed release failures to the desktop. Both double-head machines must
+generate the reported R13.2 / 3.05 mm case with the real frozen engine before a
+signed installer can be published. Existing COS v1.1.5 objects remain immutable.
+
 ## Runtime architecture
 
 1. Tauri enforces a single desktop instance.
@@ -304,13 +310,13 @@ source code or a Codex conversation:
 Before publishing, run a no-write rehearsal:
 
 ```bash
-./scripts/publish_cos_release_local.sh v1.1.5 --dry-run
+./scripts/publish_cos_release_local.sh v1.1.6 --dry-run
 ```
 
 Publish the approved stable release with one command:
 
 ```bash
-./scripts/publish_cos_release_local.sh v1.1.5
+./scripts/publish_cos_release_local.sh v1.1.6
 ```
 
 Omit the tag only when intentionally publishing the latest non-draft,
