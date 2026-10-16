@@ -25,7 +25,9 @@ without a PyInstaller unhandled-exception dialog. The HTTP adapter reads the
 persisted failure report even when the windowed process has no stderr, records
 the task as failed, and returns the failed dimension text, point error and
 tolerance to the existing failure view. Unexpected engine exceptions still
-propagate. A rejected candidate is removed and cannot become a formal DXF.
+propagate after their traceback is saved in `logs/generator_error.log` for
+windowed-runtime diagnostics. A rejected candidate is removed and cannot become
+a formal DXF.
 
 The localhost service has one local administrator and no login database,
 password, session token, device authorization, offline licence, or remote

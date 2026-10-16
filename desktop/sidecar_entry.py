@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import socket
 import sys
+import traceback
 
 from desktop.runtime_paths import get_runtime_paths
 from desktop.version import APP_VERSION
@@ -69,6 +70,16 @@ def main() -> int:
             if sys.stderr is not None:
                 print(str(error), file=sys.stderr)
             return 1
+        except Exception:
+            # Windowed executables can have no stderr. Preserve the traceback
+            # before PyInstaller displays an unexpected-exception dialog.
+            try:
+                error_log = get_runtime_paths().logs / "generator_error.log"
+                with error_log.open("a", encoding="utf-8") as stream:
+                    traceback.print_exc(file=stream)
+            except OSError:
+                pass
+            raise
 
     parser = argparse.ArgumentParser(description="Forming Grinder CAD localhost sidecar")
     parser.add_argument("--port", type=int, default=0)

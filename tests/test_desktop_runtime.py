@@ -28,7 +28,7 @@ def test_frozen_generator_exits_normally_when_release_validation_fails(monkeypat
         assert "尺寸 12.00" in capsys.readouterr().err
 
 
-def test_frozen_generator_does_not_hide_unexpected_errors(monkeypatch):
+def test_frozen_generator_does_not_hide_unexpected_errors(monkeypatch, tmp_path):
     import sys
     from desktop import sidecar_entry
     from src import generate_machine
@@ -38,8 +38,11 @@ def test_frozen_generator_does_not_hide_unexpected_errors(monkeypatch):
 
     monkeypatch.setattr(sys, "argv", ["sidecar", "generate-machine"])
     monkeypatch.setattr(generate_machine, "main", broken_generation)
+    monkeypatch.setenv("CAD_DESKTOP_MODE", "1")
+    monkeypatch.setenv("CAD_APP_DATA_ROOT", str(tmp_path))
     with pytest.raises(RuntimeError, match="unexpected engine error"):
         sidecar_entry.main()
+    assert "RuntimeError: unexpected engine error" in (tmp_path / "logs" / "generator_error.log").read_text(encoding="utf-8")
 
 
 def test_desktop_paths_use_configured_unicode_data_root(tmp_path: Path, monkeypatch) -> None:
