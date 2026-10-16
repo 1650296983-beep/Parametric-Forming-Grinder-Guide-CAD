@@ -91,6 +91,13 @@ release 中不得残留旧规格参数化槽口图元。检查对象包括：
 模板直径标注必须按直径两端点和真实圆心审计。`4-∅1.00` 的几何半径
 为 0.50 mm；不得把直径 DIMENSION 的一个端点误当圆心。
 
+方块磨前矩形槽的截面下沿高度标注，必须按其外框底边到槽底的几何关系识别，
+不得只按模板文字 `18` 查找；模板中的尺寸文字允许为空。槽宽或槽底高度变化后，
+型腔内的旧定义点必须重绑到当前槽底与侧部避空的真实切点，另一端绑定外框底角；
+既有外框投影式标注保留外框竖边上的基准 X，并更新槽底高度 Y。
+必须重新渲染标注块，使引出线、显示值、定义点和实测高度一致。上部间距标注同样
+必须跟随当前槽顶更新，不得沿用历史 `6.85` 等尺寸的旧取点。
+
 `triple_double_down_up_up` 还必须审计 release 中全部 DIMENSION 的定义点，并输出 `dimension_definition_point_audit.json`。每项必须包含 `dimension_role`、`measurement`、`display_text`、`defpoint2`、`defpoint3`、两个预期几何点、`point_error` 和 `bound_to_geometry`；`point_error > 0.01 mm` 时禁止 release。
 
 双导轨机型的 `release_allowed = true` 必须同时满足：显式输入规则正确、机台外轮廓为白色 Continuous、型腔投影线为绿色 DASHED、全部尺寸定义点绑定真实几何、上下砂轮缺口安全规则通过、双导轨两节参数同步。

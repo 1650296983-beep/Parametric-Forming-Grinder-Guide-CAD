@@ -16,6 +16,7 @@ from urllib.request import Request, urlopen
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("executable", type=Path)
+    parser.add_argument("--narrow-block", action="store_true", help="Generate both reported narrow-block cases with the packaged engine.")
     args = parser.parse_args()
     data_root = Path(tempfile.mkdtemp(prefix="成型磨CAD-"))
     status_file = data_root / "temp" / "sidecar-status.json"
@@ -28,6 +29,7 @@ def main() -> int:
         encoding="utf-8",
         env=environment,
     )
+    generation_checks = []
     try:
         deadline = time.monotonic() + 60
         while not status_file.is_file():
@@ -51,6 +53,44 @@ def main() -> int:
                 time.sleep(0.1)
         expected = {"tasks", "output", "temp", "logs"}
         assert expected <= {path.name for path in data_root.iterdir()}
+        if args.narrow_block:
+            for machine_id, wheels, relief in (
+                ("double_head_up_up", ["上", "上"], "4-0.5"),
+                ("double_head_up_down", ["上", "下"], "4-0.25"),
+            ):
+                request = Request(
+                    f"http://127.0.0.1:{port}/api/designs/generate",
+                    data=json.dumps({"design": {
+                        "machine_type": machine_id,
+                        "guide_rail_type": "single_guide",
+                        "wheel_sequence": wheels,
+                        "first_wheel_side": "upper",
+                        "template_coordinate_system": "section_xy_y_up",
+                        "finished_spec": "R13.2*3.05*5.6*0.9",
+                        "pre_grinding_spec": "5.6*3.05（-0.04/-0.055）*0.93（+0.01/-0.01）",
+                        "product_shape_after": "bread_shape",
+                        "product_shape_before": "rectangular_block",
+                        "high_symmetry_requirement": True,
+                        "relief": relief,
+                    }}, ensure_ascii=True).encode("utf-8"),
+                    headers={"Content-Type": "application/json"},
+                    method="POST",
+                )
+                with urlopen(request, timeout=120) as response:
+                    result = json.load(response)
+                assert result["ok"] and result["release_allowed"], result.get("stderr")
+                report = result["report"]
+                audit = report["dimension_definition_point_audit"]
+                assert audit["release_allowed"] and audit["all_dimensions_bound_to_geometry"]
+                assert report["process_parameters"]["slot_width"]["slot_width"] == 3.03
+                assert report["process_parameters"]["guide_thickness"]["result"] == 1.05
+                assert Path(report["paths"]["release_dxf"]).is_file()
+                generation_checks.append({
+                    "machine_id": machine_id,
+                    "release_allowed": True,
+                    "dimension_count": audit["dimension_count"],
+                    "max_point_error": max(item["point_error"] for item in audit["dimensions"]),
+                })
     finally:
         if process.poll() is None and "port" in locals():
             try:
@@ -70,6 +110,7 @@ def main() -> int:
                 "health": "ok",
                 "terminated": True,
                 "unicode_data_root": str(data_root),
+                "generation_checks": generation_checks,
             },
             ensure_ascii=True,
         )

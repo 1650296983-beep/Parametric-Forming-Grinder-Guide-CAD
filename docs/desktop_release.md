@@ -19,6 +19,14 @@ DXF/DWG remains behind the existing release gate.
 6. Windows release builds use the GUI subsystem, and both the Tauri process and
    Python sidecar run without a console window.
 
+A completed validation rejection is an expected generation failure: the frozen
+`generate-machine` child catches `ReleaseValidationError` and exits with code 1,
+without a PyInstaller unhandled-exception dialog. The HTTP adapter reads the
+persisted failure report even when the windowed process has no stderr, records
+the task as failed, and returns the failed dimension text, point error and
+tolerance to the existing failure view. Unexpected engine exceptions still
+propagate. A rejected candidate is removed and cannot become a formal DXF.
+
 The localhost service has one local administrator and no login database,
 password, session token, device authorization, offline licence, or remote
 account control. It never uploads tasks, drawings, reports, previews, settings,
@@ -58,6 +66,10 @@ PyInstaller, sidecar, and NSIS checks on `windows-latest`, but explicitly sets
 `createUpdaterArtifacts=false`. It uploads the test Setup.exe, build summary,
 and SHA-256 as a 14-day Actions Artifact. It has read-only repository
 permissions, reads no signing Secrets, and cannot create or modify a Release.
+The validation build also runs `smoke_sidecar.py --narrow-block`: it sends the
+reported R13.2 / 3.05 mm narrow-block inputs through the packaged localhost API
+for both double-head machines, requiring a formal DXF and a passing definition-
+point audit from the actual frozen generator.
 
 ## Python sidecar build and smoke test
 

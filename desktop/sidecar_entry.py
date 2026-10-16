@@ -60,10 +60,15 @@ def _serve(port: int, status_file: Path | None) -> int:
 def main() -> int:
     if len(sys.argv) > 1 and sys.argv[1] == "generate-machine":
         # Frozen child-process dispatch for the existing isolated generator.
-        from src.generate_machine import main as generate_machine_main
+        from src.generate_machine import ReleaseValidationError, main as generate_machine_main
 
         sys.argv = [sys.argv[0], *sys.argv[2:]]
-        return generate_machine_main()
+        try:
+            return generate_machine_main()
+        except ReleaseValidationError as error:
+            if sys.stderr is not None:
+                print(str(error), file=sys.stderr)
+            return 1
 
     parser = argparse.ArgumentParser(description="Forming Grinder CAD localhost sidecar")
     parser.add_argument("--port", type=int, default=0)

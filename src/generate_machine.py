@@ -32,8 +32,12 @@ from .spec_parser import (
 )
 from .side_view import build_side_view_geometry
 from .side_view_config import SideViewTemplateConfig
-from .validation_report import write_validation_report_json
+from .validation_report import validation_failure_message, write_validation_report_json
 from .validator import validate_tile_section
+
+
+class ReleaseValidationError(ValueError):
+    """An expected release-gate rejection with a report already written."""
 
 
 def main() -> int:
@@ -182,7 +186,7 @@ def main() -> int:
         )
     else:
         release_candidate_dxf.unlink(missing_ok=True)
-        raise ValueError(f"Release validation failed; formal DXF was not written. See report: {report_json}")
+        raise ReleaseValidationError(f"{validation_failure_message(report)}\n报告：{report_json}")
 
     print(f"DEBUG_DXF: {debug_dxf}")
     print(f"RELEASE_DXF: {release_dxf}")

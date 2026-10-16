@@ -1315,18 +1315,36 @@ def _update_down_up_rectangular_template_dimensions(
 
 
 def _update_section_slot_base_dimension(dimensions, geometry: SlotDimensionGeometry) -> None:
-    height_dim = _find_dimension_by_text(dimensions, "18")
-    if height_dim is None:
-        return
-    bottom = height_dim.dxf.defpoint2
-    top_y = bottom.y + geometry.slot_base_height
-    height_dim.dxf.defpoint3 = (height_dim.dxf.defpoint3.x, top_y, bottom.z)
-    height_dim.dxf.defpoint = (height_dim.dxf.defpoint.x, top_y, bottom.z)
-    midpoint = height_dim.dxf.text_midpoint
-    height_dim.dxf.text_midpoint = (midpoint.x, (bottom.y + top_y) / 2.0, midpoint.z)
-    _set_dimension_actual_measurement(height_dim, geometry.slot_base_height)
-    height_dim.dxf.text = _format_compact_decimal(geometry.slot_base_height)
-    height_dim.render()
+    """Find the section's bottom-to-floor datum even when template text is empty."""
+    for dimension in dimensions:
+        if not (dimension.dxf.hasattr("defpoint2") and dimension.dxf.hasattr("defpoint3")):
+            continue
+        p2, p3 = dimension.dxf.defpoint2, dimension.dxf.defpoint3
+        lower, upper = sorted((p2, p3), key=lambda point: point.y)
+        if not (
+            abs(lower.y - geometry.outer_bottom) <= 0.001
+            and geometry.outer_bottom + 0.001 < upper.y < geometry.outer_top - 0.001
+            and all(
+                geometry.outer_left - 0.001 <= point.x <= geometry.outer_right + 0.001
+                for point in (p2, p3)
+            )
+            and abs(float(dimension.get_measurement()) - (upper.y - lower.y)) <= 0.001
+        ):
+            continue
+        # Retain an existing outer-frame projection datum. A template point
+        # inside the section must follow the actual floor/relief tangent.
+        floor_x = geometry.right_x - geometry.relief_radius
+        for outer_x in (geometry.outer_left, geometry.outer_right):
+            if abs(upper.x - outer_x) <= 0.001:
+                floor_x = outer_x
+        floor_point = (floor_x, geometry.base_y, upper.z)
+        bottom_point = (geometry.outer_right, geometry.outer_bottom, lower.z)
+        dimension.dxf.defpoint2, dimension.dxf.defpoint3 = (
+            (bottom_point, floor_point) if p2.y < p3.y else (floor_point, bottom_point)
+        )
+        _set_dimension_actual_measurement(dimension, geometry.slot_base_height)
+        dimension.dxf.text = _format_compact_decimal(geometry.slot_base_height)
+        dimension.render()
 
 
 def _dimension_near_geometry(

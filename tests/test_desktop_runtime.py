@@ -3,8 +3,43 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from desktop import runtime_paths
 from src.web_api import _task_retention_days
+
+
+@pytest.mark.parametrize("has_stderr", (True, False))
+def test_frozen_generator_exits_normally_when_release_validation_fails(monkeypatch, capsys, has_stderr):
+    import sys
+    from desktop import sidecar_entry
+    from src import generate_machine
+
+    def rejected_generation():
+        raise generate_machine.ReleaseValidationError("尺寸 12.00 定义点未绑定几何")
+
+    monkeypatch.setattr(sys, "argv", ["sidecar", "generate-machine", "--machine-id", "double_head_up_down"])
+    monkeypatch.setattr(generate_machine, "main", rejected_generation)
+    if not has_stderr:
+        monkeypatch.setattr(sys, "stderr", None)
+
+    assert sidecar_entry.main() == 1
+    if has_stderr:
+        assert "尺寸 12.00" in capsys.readouterr().err
+
+
+def test_frozen_generator_does_not_hide_unexpected_errors(monkeypatch):
+    import sys
+    from desktop import sidecar_entry
+    from src import generate_machine
+
+    def broken_generation():
+        raise RuntimeError("unexpected engine error")
+
+    monkeypatch.setattr(sys, "argv", ["sidecar", "generate-machine"])
+    monkeypatch.setattr(generate_machine, "main", broken_generation)
+    with pytest.raises(RuntimeError, match="unexpected engine error"):
+        sidecar_entry.main()
 
 
 def test_desktop_paths_use_configured_unicode_data_root(tmp_path: Path, monkeypatch) -> None:

@@ -52,6 +52,7 @@ from .machine_config import MachineConfig, load_machine_config
 from .output_naming import build_profile_output_stem
 from .preview import write_block_png_preview, write_png_preview
 from .spec_parser import parse_company_bread_spec, parse_company_tile_spec
+from .validation_report import validation_failure_message
 from .web_task_repository import StoredWebTask, WebTaskRepository
 
 
@@ -343,12 +344,22 @@ def generate_design(
         "stderr": completed.stderr,
     }
     if completed.returncode != 0:
+        message = completed.stderr or "生成进程未成功完成。"
+        failure_report_path = next((task_dir / "artifacts").glob("**/*_report.json"), None)
+        failure_report = None
+        if failure_report_path is not None:
+            try:
+                failure_report = json.loads(failure_report_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError):
+                pass
+        if failure_report is not None and failure_report.get("release_allowed") is False:
+            message = validation_failure_message(failure_report)
         WebTaskRepository(WEB_OUTPUT_ROOT).finish(
             task_dir,
             status="failed",
-            error=completed.stderr or "生成进程未成功完成。",
+            error=message,
         )
-        return result
+        return {**result, "stderr": message, "release_allowed": False}
 
     report_path = next((task_dir / "artifacts").glob("**/*_report.json"), None)
     if report_path is None:
