@@ -34,6 +34,30 @@ WORKFLOW_STEPS = (
 )
 
 
+def validation_failure_message(report: dict[str, Any]) -> str:
+    """Describe failed release gates using the persisted validation evidence."""
+    reasons = []
+    audit = report.get("dimension_definition_point_audit") or {}
+    for dimension in audit.get("dimensions", []):
+        if not dimension.get("bound_to_geometry", True):
+            reasons.append(
+                f"尺寸 {dimension.get('display_text') or dimension.get('dimension_role')} "
+                f"定义点未绑定几何（偏差 {dimension.get('point_error')} mm，"
+                f"允许 {audit.get('point_tolerance', 0.01)} mm）"
+            )
+    for gate in ("inspection", "dual_spec_validation"):
+        for check in report.get(gate, {}).get("checks", []):
+            if check.get("ok") is False:
+                reasons.append(str(check["name"]))
+    for gate in ("parametric_duplicate_audit", "dimension_precision_audit"):
+        if report.get(gate, {}).get("release_allowed") is False:
+            reasons.append(gate)
+    if audit.get("all_required_roles_pass") is False:
+        reasons.append("关键尺寸角色审计未通过")
+    message = "完整 DXF 校验未通过，正式图纸未输出。"
+    return message + ("\n" + "\n".join(reasons) if reasons else "")
+
+
 def write_validation_report_json(
     profile: TileSection | BlockGuideSection,
     parsed_spec: FinishedSpec | BlockSpec,

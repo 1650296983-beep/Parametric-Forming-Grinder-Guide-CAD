@@ -8,6 +8,7 @@ import os
 from pathlib import Path
 import socket
 import sys
+import traceback
 
 from desktop.runtime_paths import get_runtime_paths
 from desktop.version import APP_VERSION
@@ -59,11 +60,31 @@ def _serve(port: int, status_file: Path | None) -> int:
 
 def main() -> int:
     if len(sys.argv) > 1 and sys.argv[1] == "generate-machine":
+        # Captured streams on English Windows default to cp1252 even in a
+        # windowed executable. Chinese task paths must not crash a completed job.
+        for stream in (sys.stdout, sys.stderr):
+            if stream is not None and hasattr(stream, "reconfigure"):
+                stream.reconfigure(encoding="utf-8", errors="backslashreplace")
         # Frozen child-process dispatch for the existing isolated generator.
-        from src.generate_machine import main as generate_machine_main
+        from src.generate_machine import ReleaseValidationError, main as generate_machine_main
 
         sys.argv = [sys.argv[0], *sys.argv[2:]]
-        return generate_machine_main()
+        try:
+            return generate_machine_main()
+        except ReleaseValidationError as error:
+            if sys.stderr is not None:
+                print(str(error), file=sys.stderr)
+            return 1
+        except Exception:
+            # Windowed executables can have no stderr. Preserve the traceback
+            # before PyInstaller displays an unexpected-exception dialog.
+            try:
+                error_log = get_runtime_paths().logs / "generator_error.log"
+                with error_log.open("a", encoding="utf-8") as stream:
+                    traceback.print_exc(file=stream)
+            except OSError:
+                pass
+            raise
 
     parser = argparse.ArgumentParser(description="Forming Grinder CAD localhost sidecar")
     parser.add_argument("--port", type=int, default=0)

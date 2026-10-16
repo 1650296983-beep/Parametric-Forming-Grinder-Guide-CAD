@@ -5,6 +5,12 @@ The desktop shell does not change CAD geometry or process rules: React remains
 the UI, Python remains the only CAD business implementation, and every formal
 DXF/DWG remains behind the existing release gate.
 
+Version v1.1.6 repairs the narrow rectangular-preform section-height dimension
+binding, uses UTF-8 for captured generator output on English Windows, and returns
+report-backed release failures to the desktop. Both double-head machines must
+generate the reported R13.2 / 3.05 mm case with the real frozen engine before a
+signed installer can be published. Existing COS v1.1.5 objects remain immutable.
+
 ## Runtime architecture
 
 1. Tauri enforces a single desktop instance.
@@ -18,6 +24,20 @@ DXF/DWG remains behind the existing release gate.
    an abnormally exited engine.
 6. Windows release builds use the GUI subsystem, and both the Tauri process and
    Python sidecar run without a console window.
+
+A completed validation rejection is an expected generation failure: the frozen
+`generate-machine` child catches `ReleaseValidationError` and exits with code 1,
+without a PyInstaller unhandled-exception dialog. The HTTP adapter reads the
+persisted failure report even when the windowed process has no stderr, records
+the task as failed, and returns the failed dimension text, point error and
+tolerance to the existing failure view. Unexpected engine exceptions still
+propagate after their traceback is saved in `logs/generator_error.log` for
+windowed-runtime diagnostics. A rejected candidate is removed and cannot become
+a formal DXF.
+Generator stdout/stderr and the parent subprocess decoder use UTF-8 explicitly.
+This includes English Windows hosts whose captured streams otherwise use
+cp1252: printing a Chinese output filename after successful validation must not
+raise `UnicodeEncodeError` or leave the desktop waiting on an exception dialog.
 
 The localhost service has one local administrator and no login database,
 password, session token, device authorization, offline licence, or remote
@@ -58,6 +78,13 @@ PyInstaller, sidecar, and NSIS checks on `windows-latest`, but explicitly sets
 `createUpdaterArtifacts=false`. It uploads the test Setup.exe, build summary,
 and SHA-256 as a 14-day Actions Artifact. It has read-only repository
 permissions, reads no signing Secrets, and cannot create or modify a Release.
+The validation build also runs `smoke_sidecar.py --narrow-block`: it sends the
+reported R13.2 / 3.05 mm narrow-block inputs through the packaged localhost API
+for both double-head machines, requiring a formal DXF and a passing definition-
+point audit from the actual frozen generator.
+Each packaged generation has a five-minute deadline and logs its elapsed time.
+Failed Windows validation runs preserve the smoke task directory as a diagnostic
+artifact, so a timeout can be checked against the actual DXF/report progress.
 
 ## Python sidecar build and smoke test
 
@@ -283,13 +310,13 @@ source code or a Codex conversation:
 Before publishing, run a no-write rehearsal:
 
 ```bash
-./scripts/publish_cos_release_local.sh v1.1.5 --dry-run
+./scripts/publish_cos_release_local.sh v1.1.6 --dry-run
 ```
 
 Publish the approved stable release with one command:
 
 ```bash
-./scripts/publish_cos_release_local.sh v1.1.5
+./scripts/publish_cos_release_local.sh v1.1.6
 ```
 
 Omit the tag only when intentionally publishing the latest non-draft,

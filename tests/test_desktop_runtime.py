@@ -3,8 +3,72 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
+
 from desktop import runtime_paths
 from src.web_api import _task_retention_days
+
+
+@pytest.mark.parametrize("has_stderr", (True, False))
+def test_frozen_generator_exits_normally_when_release_validation_fails(monkeypatch, capsys, has_stderr):
+    import sys
+    from desktop import sidecar_entry
+    from src import generate_machine
+
+    def rejected_generation():
+        raise generate_machine.ReleaseValidationError("尺寸 12.00 定义点未绑定几何")
+
+    monkeypatch.setattr(sys, "argv", ["sidecar", "generate-machine", "--machine-id", "double_head_up_down"])
+    monkeypatch.setattr(generate_machine, "main", rejected_generation)
+    if not has_stderr:
+        monkeypatch.setattr(sys, "stderr", None)
+
+    assert sidecar_entry.main() == 1
+    if has_stderr:
+        assert "尺寸 12.00" in capsys.readouterr().err
+
+
+def test_frozen_generator_does_not_hide_unexpected_errors(monkeypatch, tmp_path):
+    import sys
+    from desktop import sidecar_entry
+    from src import generate_machine
+
+    def broken_generation():
+        raise RuntimeError("unexpected engine error")
+
+    monkeypatch.setattr(sys, "argv", ["sidecar", "generate-machine"])
+    monkeypatch.setattr(generate_machine, "main", broken_generation)
+    monkeypatch.setenv("CAD_DESKTOP_MODE", "1")
+    monkeypatch.setenv("CAD_APP_DATA_ROOT", str(tmp_path))
+    with pytest.raises(RuntimeError, match="unexpected engine error"):
+        sidecar_entry.main()
+    assert "RuntimeError: unexpected engine error" in (tmp_path / "logs" / "generator_error.log").read_text(encoding="utf-8")
+
+
+def test_frozen_generator_captures_chinese_paths_on_english_windows(monkeypatch):
+    import io
+    import sys
+    from desktop import sidecar_entry
+    from src import generate_machine
+
+    output = io.BytesIO()
+    errors = io.BytesIO()
+    stdout = io.TextIOWrapper(output, encoding="cp1252", write_through=True)
+    stderr = io.TextIOWrapper(errors, encoding="cp1252", write_through=True)
+
+    def completed_generation():
+        print("RELEASE_DXF: C:/任务/双头机（上下）.dxf")
+        print("校验报告已生成", file=sys.stderr)
+        return 0
+
+    monkeypatch.setattr(sys, "argv", ["sidecar", "generate-machine"])
+    monkeypatch.setattr(sys, "stdout", stdout)
+    monkeypatch.setattr(sys, "stderr", stderr)
+    monkeypatch.setattr(generate_machine, "main", completed_generation)
+
+    assert sidecar_entry.main() == 0
+    assert "任务/双头机（上下）.dxf" in output.getvalue().decode("utf-8")
+    assert "校验报告已生成" in errors.getvalue().decode("utf-8")
 
 
 def test_desktop_paths_use_configured_unicode_data_root(tmp_path: Path, monkeypatch) -> None:

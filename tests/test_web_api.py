@@ -92,6 +92,42 @@ def _triple_single_block_request() -> DesignInput:
     )
 
 
+def test_failed_generator_uses_report_when_windowed_process_has_no_stderr(tmp_path, monkeypatch):
+    import subprocess
+
+    monkeypatch.setattr(web_api, "WEB_OUTPUT_ROOT", tmp_path)
+
+    def rejected_generation(command, **kwargs):
+        assert kwargs["encoding"] == "utf-8"
+        assert kwargs["env"]["PYTHONIOENCODING"] == "utf-8"
+        output_dir = Path(command[command.index("--output-dir") + 1])
+        output_dir.mkdir(parents=True)
+        (output_dir / "failed_report.json").write_text(json.dumps({
+            "release_allowed": False,
+            "dimension_definition_point_audit": {
+                "point_tolerance": 0.01,
+                "all_required_roles_pass": True,
+                "dimensions": [{
+                    "display_text": "6.85", "point_error": 2.903167,
+                    "bound_to_geometry": False,
+                }],
+            },
+        }), encoding="utf-8")
+        return subprocess.CompletedProcess(command, 1, stdout="", stderr="")
+
+    monkeypatch.setattr(web_api.subprocess, "run", rejected_generation)
+    result = generate_design(GenerationRequest(design=_triple_single_block_request()), user=LOCAL_ADMIN)
+
+    assert result["ok"] is False
+    assert result["release_allowed"] is False
+    assert "6.85" in result["stderr"]
+    assert "2.903167 mm" in result["stderr"]
+    assert "0.01 mm" in result["stderr"]
+    record = WebTaskRepository(tmp_path).get(result["task_id"])
+    assert record.status == "failed"
+    assert record.error == result["stderr"]
+
+
 def _triple_double_tile_request() -> DesignInput:
     return DesignInput(
         machine_type="triple_double_down_up_up",
