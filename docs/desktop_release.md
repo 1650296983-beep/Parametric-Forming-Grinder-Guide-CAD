@@ -70,6 +70,9 @@ The validation build also runs `smoke_sidecar.py --narrow-block`: it sends the
 reported R13.2 / 3.05 mm narrow-block inputs through the packaged localhost API
 for both double-head machines, requiring a formal DXF and a passing definition-
 point audit from the actual frozen generator.
+Each packaged generation has a five-minute deadline and logs its elapsed time.
+Failed Windows validation runs preserve the smoke task directory as a diagnostic
+artifact, so a timeout can be checked against the actual DXF/report progress.
 
 ## Python sidecar build and smoke test
 
