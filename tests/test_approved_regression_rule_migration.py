@@ -78,7 +78,7 @@ def test_rule_migration_rejects_displaced_actual_wheel_even_with_passed_report(
     wheel.dxf.center = (wheel.dxf.center.x, wheel.dxf.center.y - 1.0, 0)
     doc.saveas(path)
     # Persisted success is deliberately kept unchanged. Compare must re-read DXF.
-    report = json.loads((case / "actual_report.json").read_text())
+    report = json.loads((case / "actual_report.json").read_text(encoding="utf-8"))
     assert report["release_allowed"]
 
     result = regression.compare_case(case)

@@ -9,15 +9,16 @@ Version v1.1.6 repairs the narrow rectangular-preform section-height dimension
 binding, uses UTF-8 for captured generator output on English Windows, and returns
 report-backed release failures to the desktop.
 
-Version v1.1.7 scales the wire-entry opening to 30% of final slot width, rounded
+Version v1.1.8 scales the wire-entry opening to 30% of final slot width, rounded
 down to 0.01 mm and capped at each machine's original opening. It preserves the
 fixed center R0.50 transitions and rejects intersecting reliefs. Wheel notches
 are rebuilt from current cavity surfaces, including the upper crown projection
 of same-R preforms; the final geometry participates in release validation.
 Packaged smoke tests generate the original 3.03 mm / default 4-1 input with a
 0.90 mm opening on both double-head machines, and require HTTP 422 for a still
-incompatible 2.53 mm / default 4-1 input. Existing published COS objects remain
-immutable. The subsequent UI redesign is local development after this release.
+incompatible 2.53 mm / default 4-1 input. The unpublished v1.1.7 build stopped
+on a Windows test UTF-8 decoding error; v1.1.8 explicitly reads the report as
+UTF-8. Existing published COS objects remain immutable. The subsequent UI redesign is local development after this release.
 
 ## Runtime architecture
 
