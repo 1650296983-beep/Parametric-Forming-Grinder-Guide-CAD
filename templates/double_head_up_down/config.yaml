@@ -3,6 +3,7 @@ machine_name: 双头机（上下）
 guide_length: 435.0
 wheel_positions: ["上", "下"]
 guide_sections: 1
+section_center_opening: 1.5  # Original machine opening, now the cap for the shared 30% rule.
 section_slot_base_height: 12.0
 side_fixed_spans: [90.0, 200.0, 145.0]
 section_template: section_template.dxf

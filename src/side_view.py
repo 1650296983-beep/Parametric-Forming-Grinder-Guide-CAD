@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from math import sqrt
 
 from .block_geometry import BlockGuideSection
+from .cavity_projection import derive_cavity_projection_profile
 from .geometry import TileSection
 from .side_view_config import SideViewLayoutConfig, SideViewTemplateConfig
 from .global_rules import WHEEL_CUT_IN_RATIO, wheel_notch_opening_limit
@@ -28,6 +29,7 @@ class SideViewDerivedSpec:
     lower_cavity_notch_opening: float
     upper_cavity_notch_opening: float
     upper_cavity_notch_opening_limit: float | None
+    upper_cavity_sagitta: float = 0.0
 
 
 @dataclass(frozen=True)
@@ -74,10 +76,12 @@ def build_side_view_geometry(
         upper_requested_cut_in,
         opening_limit,
     )
+    upper_cavity_sagitta = max(derive_cavity_projection_profile(tile_section, guide.guide_thickness).offsets) - guide.guide_thickness
     side_clearance_height = (
         guide.outer_height
         - guide.slot_base_height
         - guide.guide_thickness
+        - upper_cavity_sagitta
         + effective_upper_cut_in
     )
     derived = SideViewDerivedSpec(
@@ -95,6 +99,7 @@ def build_side_view_geometry(
         lower_cavity_notch_opening=lower_cavity_notch_opening,
         upper_cavity_notch_opening=upper_cavity_notch_opening,
         upper_cavity_notch_opening_limit=opening_limit,
+        upper_cavity_sagitta=upper_cavity_sagitta,
     )
     return SideViewGeometry(template=template, layout=layout, derived=derived)
 

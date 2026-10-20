@@ -94,7 +94,7 @@ Guide defaults:
 - `guide_slot_width_tolerance = +/-0.01`
 - `product_preform_width = chord_width(-0.02/-0.04)`
 - `relief_label = 4-r0.5`
-- fixed guide template: `outer_width=33.0`, `outer_height=27.0`, `slot_base_height=12.0`, `center_offset=1.5`
+- fixed guide template: `outer_width=33.0`, `outer_height=27.0`, `slot_base_height=12.0`; center opening is 30% of final slot width, rounded down to 0.01 mm and capped at each machine's original `section_center_opening` (default `center_offset=1.5` for standalone geometry).
 
 ## Run Tests
 

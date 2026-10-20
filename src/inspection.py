@@ -6,7 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .block_geometry import BlockGuideSection
-from .cavity_projection import derive_cavity_projection_profile
+from .cavity_projection import derive_cavity_projection_profile, audit_wheel_projection_openings
 from .dimension_writer import DIMENSION_LAYER, TEXT_NOTE_LAYER
 from .dimension_roles import (
     LOWER_WHEEL_KEY_PROCESS_HEIGHT,
@@ -656,17 +656,20 @@ def _check_upper_wheel_notch_safety(
     profile: TileSection | BlockGuideSection,
     machine: MachineConfig,
 ) -> InspectionCheck | None:
-    if not isinstance(profile, TileSection) or "上" not in machine.wheel_positions:
+    if "上" not in machine.wheel_positions:
         return None
     side = _build_machine_side(profile, machine)
     expected = side.derived.upper_cavity_notch_opening
     opening_limit = side.derived.upper_cavity_notch_opening_limit
     measurements = _measure_upper_wheel_notch_openings_from_geometry(doc, side, machine)
     differences = [abs(measured - expected) for measured in measurements]
+    projection_audits = audit_upper_wheel_projection_openings(doc, profile, machine)
     within_limit = (
-        bool(measurements)
+        len(measurements) == machine.wheel_positions.count("上")
         and opening_limit is not None
         and all(measured <= opening_limit + TOLERANCE for measured in measurements)
+        and bool(projection_audits)
+        and all(audit["release_allowed"] for audit in projection_audits)
     )
     matches_report = bool(differences) and all(difference < 0.01 for difference in differences)
     return _check(
@@ -676,12 +679,40 @@ def _check_upper_wheel_notch_safety(
             "product_length": round(profile.process_length, 6),
             "opening_limit": _round_optional(opening_limit),
             "openings_measured_from_geometry": [round(value, 6) for value in measurements],
+            "projection_opening_audits": projection_audits,
             "opening_report_value": round(expected, 6),
             "differences": [round(value, 6) for value in differences],
             "opening_within_limit": within_limit,
             "geometry_measurement_matches_report": matches_report,
         },
     )
+
+
+def audit_upper_wheel_projection_openings(doc, profile, machine: MachineConfig) -> list[dict[str, Any]]:
+    """Audit every assigned upper wheel at all true cavity projection levels."""
+    side = _build_machine_side(profile, machine)
+    projection = derive_cavity_projection_profile(profile, side.derived.guide_thickness)
+    base_y = side.layout.lower_y + side.derived.slot_base_height
+    levels = tuple(base_y + offset for offset in projection.offsets)
+    audits = []
+    for index, position in enumerate(machine.wheel_positions):
+        if position != "上":
+            continue
+        center_x = side.layout.center_a_x if index == 0 else side.layout.center_b_x
+        arc = _find_upper_wheel_r80_arc(doc, center_x, max(levels), side.template.wheel_radius)
+        audit = audit_wheel_projection_openings(arc, levels, side.derived.upper_cavity_notch_opening_limit)
+        datum = max(audit["projection_levels"], key=lambda entry: entry["cavity_y"])
+        expected = side.derived.upper_cavity_notch_opening
+        datum_matches = datum["opening"] is not None and abs(datum["opening"] - expected) < 0.01
+        audit.update(
+            station=index + 1, center_x=center_x,
+            cavity_datum_y=max(levels), expected_opening=expected,
+            controlling_projection_intersects=datum["opening"] is not None,
+            controlling_projection_matches_report=datum_matches,
+            release_allowed=audit["release_allowed"] and datum_matches,
+        )
+        audits.append(audit)
+    return audits
 
 
 def _check_side_r80_dimensions_bound_to_arcs(doc, machine: MachineConfig) -> InspectionCheck:
@@ -769,6 +800,7 @@ def _check_upper_wheel_cut_in(
         machine.side_layout.lower_y
         + profile.guide_spec.slot_base_height
         + profile.guide_spec.guide_thickness
+        + side.derived.upper_cavity_sagitta
     )
     measured = None if arc is None else slot_top_y - (float(arc.dxf.center.y) - radius)
     ok = measured is not None and abs(measured - expected) <= TOLERANCE and measured > 0.0
@@ -1105,7 +1137,7 @@ def _required_dimension_expectations(doc, profile, machine, side) -> dict[str, d
     layout = machine.side_layout
     derived = side.derived
     base_y = layout.lower_y + derived.slot_base_height
-    slot_top_y = base_y + derived.guide_thickness
+    slot_top_y = base_y + derived.guide_thickness + derived.upper_cavity_sagitta
     upper_low_y = layout.upper_y - derived.side_clearance_height
     lower_opening = derived.lower_cavity_notch_opening
     return {
@@ -1281,6 +1313,7 @@ def _measure_upper_wheel_notch_openings_from_geometry(
             side.layout.lower_y
             + side.derived.slot_base_height
             + side.derived.guide_thickness
+            + side.derived.upper_cavity_sagitta
         )
         arc = _find_upper_wheel_r80_arc(doc, center_x, slot_top_y, radius)
         if arc is not None:

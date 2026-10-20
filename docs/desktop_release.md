@@ -7,9 +7,17 @@ DXF/DWG remains behind the existing release gate.
 
 Version v1.1.6 repairs the narrow rectangular-preform section-height dimension
 binding, uses UTF-8 for captured generator output on English Windows, and returns
-report-backed release failures to the desktop. Both double-head machines must
-generate the reported R13.2 / 3.05 mm case with the real frozen engine before a
-signed installer can be published. Existing COS v1.1.5 objects remain immutable.
+report-backed release failures to the desktop.
+
+Version v1.1.7 scales the wire-entry opening to 30% of final slot width, rounded
+down to 0.01 mm and capped at each machine's original opening. It preserves the
+fixed center R0.50 transitions and rejects intersecting reliefs. Wheel notches
+are rebuilt from current cavity surfaces, including the upper crown projection
+of same-R preforms; the final geometry participates in release validation.
+Packaged smoke tests generate the original 3.03 mm / default 4-1 input with a
+0.90 mm opening on both double-head machines, and require HTTP 422 for a still
+incompatible 2.53 mm / default 4-1 input. Existing published COS objects remain
+immutable. The subsequent UI redesign is local development after this release.
 
 ## Runtime architecture
 
@@ -38,6 +46,9 @@ Generator stdout/stderr and the parent subprocess decoder use UTF-8 explicitly.
 This includes English Windows hosts whose captured streams otherwise use
 cp1252: printing a Chinese output filename after successful validation must not
 raise `UnicodeEncodeError` or leave the desktop waiting on an exception dialog.
+Rectangular block/relief incompatibility is also an expected rejection:
+`BlockReliefGeometryError` exits normally. The shared profile builder checks
+these constraints before the Web adapter can launch the frozen generator.
 
 The localhost service has one local administrator and no login database,
 password, session token, device authorization, offline licence, or remote
@@ -78,10 +89,10 @@ PyInstaller, sidecar, and NSIS checks on `windows-latest`, but explicitly sets
 `createUpdaterArtifacts=false`. It uploads the test Setup.exe, build summary,
 and SHA-256 as a 14-day Actions Artifact. It has read-only repository
 permissions, reads no signing Secrets, and cannot create or modify a Release.
-The validation build also runs `smoke_sidecar.py --narrow-block`: it sends the
-reported R13.2 / 3.05 mm narrow-block inputs through the packaged localhost API
-for both double-head machines, requiring a formal DXF and a passing definition-
-point audit from the actual frozen generator.
+The validation build also runs `smoke_sidecar.py --narrow-block`: it requires
+both validation and generation endpoints to reject incompatible 2.53 mm / 4-1
+inputs with HTTP 422, then requires formal DXFs with 0.90 mm openings and passing
+definition-point audits for the 3.03 mm upper/upper and upper/lower fixtures.
 Each packaged generation has a five-minute deadline and logs its elapsed time.
 Failed Windows validation runs preserve the smoke task directory as a diagnostic
 artifact, so a timeout can be checked against the actual DXF/report progress.

@@ -7,6 +7,8 @@ import json
 from pathlib import Path
 from typing import Any, Iterable
 
+from .global_rules import section_center_opening
+
 
 TOLERANCE = 0.01
 COMPARISON_TOLERANCE = 0.001
@@ -161,6 +163,12 @@ def compare_reference_to_generated(
     approved_overrides = {
         str(value) for value in rule.get("approved_reference_overrides", ())
     }
+    # The approved proportional opening can differ from an archived fixed
+    # opening. Accept that delta only when the current value obeys the rule.
+    if "center_opening_max" in fixed and abs(
+        generated_opening - section_center_opening(generated_slot_width, float(fixed["center_opening_max"]))
+    ) <= COMPARISON_TOLERANCE:
+        approved_overrides.add("center_opening")
     checks = {
         "outer_width": _comparison(reference.outer_width, float(fixed["outer_width"])),
         "outer_height": _comparison(reference.outer_height, float(fixed.get("outer_height", 27.0))),

@@ -214,6 +214,8 @@ def build_validation_report_payload(
                 "outer_height": guide.outer_height,
                 "slot_base_height": guide.slot_base_height,
                 "center_opening": guide.center_opening,
+                "center_opening_max": machine.section_center_opening,
+                "center_opening_rule": "floor(min(slot_width * 0.30, machine.section_center_opening), 0.01 mm)",
                 "slot_center_offset": guide.slot_center_offset,
             },
             "side": {
@@ -686,11 +688,12 @@ def _side_clearance_height_payload(profile: TileSection | BlockGuideSection, sid
             "result": side.derived.side_clearance_height,
         }
     return {
-        "formula": "guide_outer_height - slot_base_height - guide_thickness + wheel_cut_allowance",
+        "formula": "guide_outer_height - slot_base_height - guide_thickness - upper_cavity_sagitta + wheel_cut_allowance",
         "guide_outer_height": side.derived.guide_outer_height,
         "slot_base_height": side.derived.slot_base_height,
         "guide_thickness": side.derived.guide_thickness,
         "wheel_cut_allowance": side.derived.wheel_cut_allowance,
+        "upper_cavity_sagitta": side.derived.upper_cavity_sagitta,
         "result": side.derived.side_clearance_height,
     }
 
@@ -729,6 +732,8 @@ def _wheel_notch_payload(
         "upper_cavity_notch_opening": upper_cavity_opening,
         "upper_opening_limit": side.derived.upper_cavity_notch_opening_limit,
         "upper_effective_cut_in_depth": side.derived.wheel_cut_allowance,
+        "upper_cavity_datum": "highest_actual_cavity_projection",
+        "upper_cavity_datum_y": machine.side_layout.lower_y + side.derived.slot_base_height + side.derived.guide_thickness + side.derived.upper_cavity_sagitta,
         "effective_cut_in_depth": effective_cut_in_depth,
         "effective_notch_top_height_from_guide_bottom": side.derived.wheel_notch_depth,
         "wheel_radius": radius,

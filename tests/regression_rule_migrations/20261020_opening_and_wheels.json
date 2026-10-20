@@ -1,0 +1,3092 @@
+{
+  "schema_version": 1,
+  "rules": [
+    "2026-10-20 user approved section opening floor(min(slot_width * 0.30, original machine cap), 0.01 mm).",
+    "2026-10-20 repair applies existing 0.6 product-length opening limit at every true cavity projection and recalculates upper wheel placements."
+  ],
+  "provenance": "Values record reviewed local outputs for the approved rule repair; user approval applies to the rules, not an individual review of each golden value. Original expected_* files remain frozen.",
+  "cases": {
+    "bed_618/case_001": {
+      "frozen_sha256": {
+        "expected_audit.json": "e48ffc10dc3e9f276b220c91847d6444e2d587d9763e208c2219cbe780fbfc88",
+        "expected_debug.dxf": "9a2c420adf9503e3c1bc57f48536e46015934832c6e42928d0cc7812eba24153",
+        "expected_dimension_definition_point_audit.json": "8988c656302f9ada1f84a9cdb8dac5ecba7dcd5a2c8833fc8e802a116206898c",
+        "expected_preview.png": "64ec2650ccf526f5867096d882cc0323fab14760b538a38ae0f007449c1fdf3f",
+        "expected_release.dxf": "7fe098ccc432fcce643ce82b8767ac1e2bb0f4fff0558b20bda711bdfa96257f",
+        "expected_report.json": "764bf9a61d8ec36733a89ea6bfd7f59e14b3d5d5cfdabd66ef824ffd519dde4b",
+        "input.json": "ddbd6ff4f16472f31f232f616f33d8c8e8c1a4dcc8ea91dd4ca324646b09340a"
+      },
+      "changes": [
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "definition_points_measured"
+          ],
+          "before": 4.405255,
+          "after": 4.127689
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "dimension_group_42_measured"
+          ],
+          "before": 4.405255,
+          "after": 4.127689
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "display_text"
+          ],
+          "before": "4.41",
+          "after": "4.13"
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "expected"
+          ],
+          "before": 4.405255,
+          "after": 4.127689
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "geometry_measured"
+          ],
+          "before": 4.405255,
+          "after": 4.127689
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening"
+          ],
+          "before": 2.0,
+          "after": 1.86
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_max"
+          ],
+          "before": null,
+          "after": 2.0,
+          "added": true
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_rule"
+          ],
+          "before": null,
+          "after": "floor(min(slot_width * 0.30, machine.section_center_opening), 0.01 mm)",
+          "added": true
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "SIDE_DERIVED_count"
+          ],
+          "before": 6,
+          "after": 5
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3240.351869,
+          "after": 3240.421869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3240.351869,
+          "after": 3240.421869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3242.351869,
+          "after": 3242.281869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "measurement"
+          ],
+          "before": 2.0,
+          "after": 1.86
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "text"
+          ],
+          "before": "2.00",
+          "after": "1.86"
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3242.851869,
+          "after": 3242.781869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 59.29537,
+          "after": 59.301102
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3242.351869,
+          "after": 3242.281869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 59.29537,
+          "after": 59.301102
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3248.076988,
+          "after": 3248.006988
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 63.347263,
+          "after": 63.352995
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3239.299369,
+          "after": 3239.334369
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 58.737024,
+          "after": 58.741134
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 137.015577,
+          "after": 137.293143
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 57.015577,
+          "after": 57.293143
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 44.615577,
+          "after": 44.893143
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint3",
+            1
+          ],
+          "before": 57.015577,
+          "after": 57.293143
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 59.218205,
+          "after": 59.356988
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "measurement"
+          ],
+          "before": 4.405255,
+          "after": 4.127689
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "text"
+          ],
+          "before": "4.41",
+          "after": "4.13"
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 43,
+          "after": 42
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "extents",
+            "max_y"
+          ],
+          "before": 217.015577,
+          "after": 217.293143
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "layer_entity_counts",
+            "SIDE_DERIVED"
+          ],
+          "before": 6,
+          "after": 5
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "line_count"
+          ],
+          "before": 43,
+          "after": 42
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "SIDE_DERIVED_count"
+          ],
+          "before": 6,
+          "after": 5
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3240.351869,
+          "after": 3240.421869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3240.351869,
+          "after": 3240.421869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3242.351869,
+          "after": 3242.281869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "measurement"
+          ],
+          "before": 2.0,
+          "after": 1.86
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "text"
+          ],
+          "before": "2.00",
+          "after": "1.86"
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3242.851869,
+          "after": 3242.781869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 59.29537,
+          "after": 59.301102
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3242.351869,
+          "after": 3242.281869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 59.29537,
+          "after": 59.301102
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3248.076988,
+          "after": 3248.006988
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 63.347263,
+          "after": 63.352995
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3239.299369,
+          "after": 3239.334369
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 58.737024,
+          "after": 58.741134
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 137.015577,
+          "after": 137.293143
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 57.015577,
+          "after": 57.293143
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 44.615577,
+          "after": 44.893143
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint3",
+            1
+          ],
+          "before": 57.015577,
+          "after": 57.293143
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 59.218205,
+          "after": 59.356988
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "measurement"
+          ],
+          "before": 4.405255,
+          "after": 4.127689
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "text"
+          ],
+          "before": "4.41",
+          "after": "4.13"
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 36,
+          "after": 35
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "extents",
+            "max_y"
+          ],
+          "before": 217.015577,
+          "after": 217.293143
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "layer_entity_counts",
+            "SIDE_DERIVED"
+          ],
+          "before": 6,
+          "after": 5
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "line_count"
+          ],
+          "before": 36,
+          "after": 35
+        }
+      ]
+    },
+    "double_head_up_down/case_001": {
+      "frozen_sha256": {
+        "expected_audit.json": "b4f1fc130139a5981a709336f2e3296fdc40a272af964a8df2ff843eb457ab68",
+        "expected_debug.dxf": "4eeadc34ae6025f884bdb4fdc9d459acf9392a0152923d0c975415ce52a02d22",
+        "expected_dimension_definition_point_audit.json": "b5a6985e2b8933647fb3939372b60de045bd1bfebca46d299fcfe6fed5b99280",
+        "expected_preview.png": "438f3aa9d6a970e69936f472e50d286c91648af1437b6f26b68baf393115ccc1",
+        "expected_release.dxf": "2b1289d7be1ed3b0cbaa328a757a883aabcf1ad96ad5d60a2cba4692e8cbdafe",
+        "expected_report.json": "6afa81e8102768ad538a2f6203f774526b5671736ff3dbfc457eeace853c2012",
+        "input.json": "ab199ed70d37bc9f421515c6c4f17aab55b9f431e6ac25fe6e28f76daa2e8df9"
+      },
+      "changes": [
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "definition_points_measured"
+          ],
+          "before": 13.271857,
+          "after": 13.123447
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "dimension_group_42_measured"
+          ],
+          "before": 13.271857,
+          "after": 13.123447
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "display_text"
+          ],
+          "before": "13.27",
+          "after": "13.12"
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "expected"
+          ],
+          "before": 13.271857,
+          "after": 13.123447
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            3,
+            "details",
+            "geometry_measured"
+          ],
+          "before": 13.271857,
+          "after": 13.123447
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening"
+          ],
+          "before": 1.5,
+          "after": 1.35
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_max"
+          ],
+          "before": null,
+          "after": 1.5,
+          "added": true
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_rule"
+          ],
+          "before": null,
+          "after": "floor(min(slot_width * 0.30, machine.section_center_opening), 0.01 mm)",
+          "added": true
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "SIDE_DERIVED_count"
+          ],
+          "before": 7,
+          "after": 6
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3240.601869,
+          "after": 3240.676869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3240.601869,
+          "after": 3240.676869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3242.101869,
+          "after": 3242.026869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "measurement"
+          ],
+          "before": 1.5,
+          "after": 1.35
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "text"
+          ],
+          "before": "1.50",
+          "after": "1.35"
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3239.846869,
+          "after": 3239.884369
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 49.713182,
+          "after": 49.716448
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 49.577828,
+          "after": 49.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": 49.577828,
+          "after": 49.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 56.213756,
+          "after": 56.287961
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "measurement"
+          ],
+          "before": 13.271857,
+          "after": 13.123447
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "text"
+          ],
+          "before": "13.27",
+          "after": "13.12"
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 129.577828,
+          "after": 129.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 49.577828,
+          "after": 49.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 37.177828,
+          "after": 37.326238
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 47,
+          "after": 46
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "extents",
+            "max_y"
+          ],
+          "before": 209.577828,
+          "after": 209.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "layer_entity_counts",
+            "SIDE_DERIVED"
+          ],
+          "before": 7,
+          "after": 6
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "line_count"
+          ],
+          "before": 47,
+          "after": 46
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "SIDE_DERIVED_count"
+          ],
+          "before": 7,
+          "after": 6
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3240.601869,
+          "after": 3240.676869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3240.601869,
+          "after": 3240.676869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3242.101869,
+          "after": 3242.026869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "measurement"
+          ],
+          "before": 1.5,
+          "after": 1.35
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "text"
+          ],
+          "before": "1.50",
+          "after": "1.35"
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3239.846869,
+          "after": 3239.884369
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 49.713182,
+          "after": 49.716448
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 49.577828,
+          "after": 49.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": 49.577828,
+          "after": 49.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 56.213756,
+          "after": 56.287961
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "measurement"
+          ],
+          "before": 13.271857,
+          "after": 13.123447
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "text"
+          ],
+          "before": "13.27",
+          "after": "13.12"
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 129.577828,
+          "after": 129.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 49.577828,
+          "after": 49.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 37.177828,
+          "after": 37.326238
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 40,
+          "after": 39
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "extents",
+            "max_y"
+          ],
+          "before": 209.577828,
+          "after": 209.726238
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "layer_entity_counts",
+            "SIDE_DERIVED"
+          ],
+          "before": 7,
+          "after": 6
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "line_count"
+          ],
+          "before": 40,
+          "after": 39
+        }
+      ]
+    },
+    "double_head_up_up/case_001": {
+      "frozen_sha256": {
+        "expected_audit.json": "c7cd1903dd5117d8235b19df44cebc4046373c855f9527a2c34529f584624339",
+        "expected_debug.dxf": "f07d3246627b44c5223b07db1ce85d844bcdb98df6b470543b2bc45d0eb60685",
+        "expected_dimension_definition_point_audit.json": "acbc73a05342360fe69863d90327dd7a4408a990ac4a5cbbdebb6e5d774e6a53",
+        "expected_preview.png": "2d344192535f139735ce9b889feb30f31003dc46f44b60a8cfffd628d4096a24",
+        "expected_release.dxf": "5c436d09d3443249d4195585a99a576fd4c5e39c62db77a4cbed77654e1d113e",
+        "expected_report.json": "ac907f57084e17d480a299d20054b230ae4a9a03a7c2f020459a4114a89ef5a3",
+        "input.json": "17d7e697512aeac19b510aebbef38c9f8a1968f0bb5d7a7640951fcfa9e250eb"
+      },
+      "changes": [
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_max"
+          ],
+          "before": null,
+          "after": 2.0,
+          "added": true
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_rule"
+          ],
+          "before": null,
+          "after": "floor(min(slot_width * 0.30, machine.section_center_opening), 0.01 mm)",
+          "added": true
+        }
+      ]
+    },
+    "triple_double_down_up_up/case_001": {
+      "frozen_sha256": {
+        "expected_audit.json": "17a429d6797c49cf708ff120011531aae1f83df59796d6fb5830d5492570d5af",
+        "expected_debug.dxf": "50222d77f2e69664956e7c4a6dba56186d163817cb90b3ae775d91d41dc1627f",
+        "expected_dimension_definition_point_audit.json": "0675a43817dcc3d33a79eaaf89551d953eca5cfaa7e6943af535f9722b5279e0",
+        "expected_preview.png": "af3abc3166cff79f2b0d9723f75774a7d39671bfa0cbe651bb27a0e6dbd9a61c",
+        "expected_release.dxf": "f7bd73f23b58a77482073234782e4f06fcb03630ca25882e11f2dfc40f3f1e30",
+        "expected_report.json": "d755606a3d6bb030d0cceb71eb37b814d3f453c85899582a894a3e46257bb7de",
+        "input.json": "03b1e8b348e039336fb1745aeb3e983f742c50b336590034eb05918c4c4da0e8"
+      },
+      "changes": [
+        {
+          "path": [
+            "dimension_audit",
+            "required_roles",
+            "upper_wheel_related",
+            "expected_measurement"
+          ],
+          "before": 12.7,
+          "after": 11.926594
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            1,
+            "dimension_defpoint",
+            1
+          ],
+          "before": -603.179,
+          "after": -602.406
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            1,
+            "expected_wheel_crown_point",
+            1
+          ],
+          "before": -603.179,
+          "after": -602.406
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            1,
+            "measured_value"
+          ],
+          "before": 12.7,
+          "after": 11.927
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            1,
+            "wheel_center",
+            1
+          ],
+          "before": -523.179,
+          "after": -522.406
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            2,
+            "dimension_defpoint",
+            1
+          ],
+          "before": -603.179,
+          "after": -602.406
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            2,
+            "expected_wheel_crown_point",
+            1
+          ],
+          "before": -603.179,
+          "after": -602.406
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            2,
+            "measured_value"
+          ],
+          "before": 12.7,
+          "after": 11.927
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            2,
+            "wheel_center",
+            1
+          ],
+          "before": -523.179,
+          "after": -522.406
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            4,
+            "dimension_defpoint",
+            1
+          ],
+          "before": -186.388,
+          "after": -185.615
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            4,
+            "expected_wheel_crown_point",
+            1
+          ],
+          "before": -186.388,
+          "after": -185.615
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            4,
+            "measured_value"
+          ],
+          "before": 12.7,
+          "after": 11.927
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            4,
+            "wheel_center",
+            1
+          ],
+          "before": -106.388,
+          "after": -105.615
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            5,
+            "dimension_defpoint",
+            1
+          ],
+          "before": -186.388,
+          "after": -185.615
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            5,
+            "expected_wheel_crown_point",
+            1
+          ],
+          "before": -186.388,
+          "after": -185.615
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            5,
+            "measured_value"
+          ],
+          "before": 12.7,
+          "after": 11.927
+        },
+        {
+          "path": [
+            "report",
+            "dimension_checks",
+            5,
+            "wheel_center",
+            1
+          ],
+          "before": -106.388,
+          "after": -105.615
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "upper_wheel_related",
+            "expected_measurement"
+          ],
+          "before": 12.7,
+          "after": 11.926594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3422.706592,
+          "after": 3422.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3422.706592,
+          "after": 3422.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -180.037514,
+          "after": -179.651054
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "measurement"
+          ],
+          "before": 12.7,
+          "after": 11.92708
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "text"
+          ],
+          "before": "12.70",
+          "after": "11.93"
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3602.706592,
+          "after": 3602.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3602.706592,
+          "after": 3602.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -180.037514,
+          "after": -179.651054
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "measurement"
+          ],
+          "before": 12.7,
+          "after": 11.92708
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "text"
+          ],
+          "before": "12.70",
+          "after": "11.93"
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3422.706592,
+          "after": 3422.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -106.387514,
+          "after": -105.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3422.706592,
+          "after": 3422.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3420.706592,
+          "after": 3420.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -191.287514,
+          "after": -190.514594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3602.706592,
+          "after": 3602.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -106.387514,
+          "after": -105.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3602.706592,
+          "after": 3602.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3600.706592,
+          "after": 3600.707
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -191.287514,
+          "after": -190.514594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3668.4539,
+          "after": 3668.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3668.4539,
+          "after": 3668.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -596.828672,
+          "after": -596.442133
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            26,
+            "measurement"
+          ],
+          "before": 12.7,
+          "after": 11.926922
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            26,
+            "text"
+          ],
+          "before": "12.70",
+          "after": "11.93"
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3848.4539,
+          "after": 3848.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3848.4539,
+          "after": 3848.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -596.828672,
+          "after": -596.442133
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            27,
+            "measurement"
+          ],
+          "before": 12.7,
+          "after": 11.926922
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            27,
+            "text"
+          ],
+          "before": "12.70",
+          "after": "11.93"
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3668.4539,
+          "after": 3668.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -523.178672,
+          "after": -522.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3668.4539,
+          "after": 3668.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3666.4539,
+          "after": 3666.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -608.078672,
+          "after": -607.305594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3848.4539,
+          "after": 3848.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -523.178672,
+          "after": -522.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3848.4539,
+          "after": 3848.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3846.4539,
+          "after": 3846.454
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -608.078672,
+          "after": -607.305594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3422.706592,
+          "after": 3422.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3422.706592,
+          "after": 3422.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -180.037514,
+          "after": -179.651054
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "measurement"
+          ],
+          "before": 12.7,
+          "after": 11.92708
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "text"
+          ],
+          "before": "12.70",
+          "after": "11.93"
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3602.706592,
+          "after": 3602.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3602.706592,
+          "after": 3602.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -180.037514,
+          "after": -179.651054
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "measurement"
+          ],
+          "before": 12.7,
+          "after": 11.92708
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "text"
+          ],
+          "before": "12.70",
+          "after": "11.93"
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3422.706592,
+          "after": 3422.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -106.387514,
+          "after": -105.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3422.706592,
+          "after": 3422.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3420.706592,
+          "after": 3420.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -191.287514,
+          "after": -190.514594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3602.706592,
+          "after": 3602.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -106.387514,
+          "after": -105.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3602.706592,
+          "after": 3602.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -186.387514,
+          "after": -185.614594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3600.706592,
+          "after": 3600.707
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -191.287514,
+          "after": -190.514594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3668.4539,
+          "after": 3668.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3668.4539,
+          "after": 3668.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -596.828672,
+          "after": -596.442133
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            26,
+            "measurement"
+          ],
+          "before": 12.7,
+          "after": 11.926922
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            26,
+            "text"
+          ],
+          "before": "12.70",
+          "after": "11.93"
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3848.4539,
+          "after": 3848.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "defpoint2",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3848.4539,
+          "after": 3848.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -596.828672,
+          "after": -596.442133
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            27,
+            "measurement"
+          ],
+          "before": 12.7,
+          "after": 11.926922
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            27,
+            "text"
+          ],
+          "before": "12.70",
+          "after": "11.93"
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3668.4539,
+          "after": 3668.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -523.178672,
+          "after": -522.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3668.4539,
+          "after": 3668.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3666.4539,
+          "after": 3666.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -608.078672,
+          "after": -607.305594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3848.4539,
+          "after": 3848.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -523.178672,
+          "after": -522.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3848.4539,
+          "after": 3848.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -603.178672,
+          "after": -602.405594
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3846.4539,
+          "after": 3846.454
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -608.078672,
+          "after": -607.305594
+        }
+      ]
+    },
+    "triple_double_up_up_up/case_001": {
+      "frozen_sha256": {
+        "expected_audit.json": "6551292032ef6959defc7321414f344cf2b3a38d6c86db96734766687958deb5",
+        "expected_debug.dxf": "a731b8790e7c05ce468d016b94340f63c5070d8947bb8f64c7cb374f7538de03",
+        "expected_dimension_definition_point_audit.json": "fedb3893dae65d9adede94dcd245e488d53537f56d86d686dd4f12bcad2b6c86",
+        "expected_preview.png": "d3f8cc82d07bbdbc48b636e4db82ff754698d2bbd5270ff3bc52b6769f5f5531",
+        "expected_release.dxf": "e317a1d45274f19768439922eb7d192214a5149f15ac55f7e08e1e3f88c1a0d8",
+        "expected_report.json": "e0ea2388d41b2bdd0d9f326a23642c63cefbeeeb164360dea8cc9923fc384691",
+        "input.json": "ddf24b576c5c4b6374dbb145bd9ef4e7a4e3358285ebe28c0de6611cdb6c6717"
+      },
+      "changes": []
+    },
+    "triple_single_down_up/case_001": {
+      "frozen_sha256": {
+        "expected_audit.json": "5f6cbdaa8167c4b986160df7e9a3d24b8149ec46f5eefb4b53edf2e9bd3ff12f",
+        "expected_debug.dxf": "885d26527c79ccb30875d88af0c265e100b51a61b90dafb002e08f5dc2f24010",
+        "expected_dimension_definition_point_audit.json": "7675ed45fa80d04dde9157bb60ab0b380cbc8ed3960890ab669ff59890e578e6",
+        "expected_preview.png": "b527e09e1c273b814278069d93f77795d9659253f833440cbb21dae8d5ab7e87",
+        "expected_release.dxf": "d93dcd180d93ebce4cc8e07371cf3b7c4ef6245ea90139a346ed5ccaa47a2299",
+        "expected_report.json": "e33b48afb9280a30a06f7958777b0cd78681fd064cc7c4b99c151a830417f023",
+        "input.json": "47c1684e47b3fcb0e6b08dc4448e238398fbe508f3f81254d3e0f9c1b34bc74f"
+      },
+      "changes": [
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening"
+          ],
+          "before": 2.0,
+          "after": 1.68
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_max"
+          ],
+          "before": null,
+          "after": 2.0,
+          "added": true
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_rule"
+          ],
+          "before": null,
+          "after": "floor(min(slot_width * 0.30, machine.section_center_opening), 0.01 mm)",
+          "added": true
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "section_center_opening",
+            "actual_dimension_measurement"
+          ],
+          "before": 2.0,
+          "after": 1.68
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "section_center_opening",
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3240.351869,
+          "after": 3240.511869
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "section_center_opening",
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3242.351869,
+          "after": 3242.191869
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "section_center_opening",
+            "display_text"
+          ],
+          "before": "2.00",
+          "after": "1.68"
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "section_center_opening",
+            "expected_display_text"
+          ],
+          "before": "2.00",
+          "after": "1.68"
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "section_center_opening",
+            "expected_value"
+          ],
+          "before": 2.0,
+          "after": 1.68
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3240.351869,
+          "after": 3240.511869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3242.351869,
+          "after": 3242.191869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "measurement"
+          ],
+          "before": 2.0,
+          "after": 1.68
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "text"
+          ],
+          "before": "2.00",
+          "after": "1.68"
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3240.351869,
+          "after": 3240.511869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3242.351869,
+          "after": 3242.191869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "measurement"
+          ],
+          "before": 2.0,
+          "after": 1.68
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "text"
+          ],
+          "before": "2.00",
+          "after": "1.68"
+        }
+      ]
+    },
+    "triple_single_up_up/case_001": {
+      "frozen_sha256": {
+        "expected_audit.json": "8b54042038b4f74cb70def87a3e6ee369b94899d88f8961aaf754a7b9a89728b",
+        "expected_debug.dxf": "02faa94a5708f8cc4fb3263f3eed0157aa890f939df96468a5e489b45d6d9aa9",
+        "expected_dimension_definition_point_audit.json": "2577aa4903153b1b4291ec37176eae3120b44d08d296f9e48c96d8a5bd997663",
+        "expected_preview.png": "4e6fd038d62028963b26695b2dd21a754b91442ee37e601c3cdbbf1acfec66b9",
+        "expected_release.dxf": "12f3bb48e5c93e7cbc0dae245e131a30f68d84e49bd409d411b45ba49afa2649",
+        "expected_report.json": "943fb28494aaa35fb6418618ccfc78e9735b7bdc43240dd252c7038eb503ce0d",
+        "input.json": "175a8245a3ea16ea080b23becbebd08efb108d4edd612fdfea9636a69db7049a"
+      },
+      "changes": [
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_max"
+          ],
+          "before": null,
+          "after": 2.0,
+          "added": true
+        },
+        {
+          "path": [
+            "report",
+            "fixed_template_dimensions",
+            "section",
+            "center_opening_rule"
+          ],
+          "before": null,
+          "after": "floor(min(slot_width * 0.30, machine.section_center_opening), 0.01 mm)",
+          "added": true
+        }
+      ]
+    }
+  }
+}

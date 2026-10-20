@@ -2,6 +2,24 @@
 
 校验分为几何校验、DXF 检查、机台配置检查、尺寸一致性检查和报告完整性检查。
 
+## 矩形槽避空前置检查
+
+参数计算阶段必须检查 `guide_thickness > relief_size`，以及
+`slot_width > center_opening + max(2 * relief_size, 2 * 0.50 + relief_size)`。
+前者和宽度第一项保留生成器已有必要条件；第二项确保槽顶平面有正长度，避免
+侧部外避空与中心固定 R0.50 圆弧相交。`relief_size` 为四处侧部避空的直径，
+中心固定 R0.50 保持不变。计算与画图调用同一检查函数；输入不满足时
+返回中文 HTTP 422，说明当前槽宽、开口、避空直径/半径和限制值，不启动子进程，
+不创建图纸任务或正式 DXF。检查通过后仍须执行完整几何和正式图校验。
+
+开口先按 `min(slot_width * 0.30, machine.section_center_opening)` 向下取两位小数，
+其中机台原固定开口值作为该机台上限保留。例如槽宽 3.03 mm、上限 2.00 mm 时，
+实际开口为 0.90 mm；`4-1` 要求槽宽大于 2.90 mm，同时导轨厚度必须大于
+1.00 mm。槽宽 2.53 mm 时，实际开口 0.75 mm，`4-1` 要求槽宽大于
+2.75 mm，仍须在输入阶段拒绝。不得通过自动减小避空或修改槽宽绕过检查。
+直接调用冻结生成器遇到同类参数错误时必须正常返回失败，不得触发
+PyInstaller 未处理异常弹窗。不得因尺寸定义点审计通过而忽略圆弧相交。
+
 ## 几何校验
 
 1. 相邻图元端点距离误差必须小于 0.001 mm。
@@ -31,7 +49,7 @@ slot_width = slot_width_raw rounded half-up to 0.01 mm
 
 ```text
 side_projected_slot_height = slot_base_height + side_cut_in_allowance
-side_clearance_height = guide_outer_height - slot_base_height - guide_thickness + wheel_cut_allowance
+side_clearance_height = guide_outer_height - slot_base_height - guide_thickness - upper_cavity_sagitta + wheel_cut_allowance
 ```
 
 侧视型腔投影厚度必须独立对照截面真实导轨厚度。禁止使用同一个派生值同时
@@ -142,6 +160,28 @@ R0.50 决定，不得随槽宽外移；主 R 的实际圆心必须位于 `arc_si
 3. 定义点绑定最终槽口、外框或安全调整后的 R80 圆弧几何。
 4. report 中输出 `expected_value`、`actual_dimension_measurement`、`display_text`、`definition_points`、`bound_to_geometry` 和 `status`。
 
-任一角色缺失、重复、测量不一致或未绑定几何时，禁止 release。三头机单导轨（下上）截面顶部开口实际为 `2.0 mm`，若仍存在旧 `4.0 mm` 上口尺寸，同样禁止 release。
+任一角色缺失、重复、测量不一致或未绑定几何时，禁止 release。三头机单导轨（下上）截面顶部开口按 30% 比例计算、上限为 `2.0 mm`；标注必须与当前实际开口一致，若仍存在旧 `4.0 mm` 上口尺寸，同样禁止 release。
+
+## 双导轨砂轮真实切入校验
+
+两节局部视图及总装视图的每个砂轮按位置角色独立检查，不能只验证尺寸是否
+绑定某段圆弧。`wheel_notch_geometry_audit` 必须记录当前型腔基准、目标与实测
+吃入量、目标与实测缺口宽度、产品长度限制及外轮廓连接情况。下上上机型
+上砂轮基准取当前最高型腔投影线；上砂轮关键高度由外框顶部至实际弧顶重算，
+不得固定为模板的 12.70 mm。每个砂轮的深度、开口误差与外轮廓端点间距均
+不得大于 0.001 mm；任一缺失、未切到型腔或超过限制时，禁止输出正式图纸。
 
 成型磨前方块厚度仍作为导轨厚度和砂轮吃进量计算参数，但不在 release 图纸中单独标注。
+
+## 上砂轮真实投影开口门禁
+
+所有 7 种机台的上轮限宽以真实型腔最高投影层为基准，瓦型包含上弧顶矢高。
+`cavity_projection.audit_wheel_projection_openings` 从最终 DXF 圆弧与每个投影高度
+求真实交点，输出 `projection_levels`、逐层 `opening` 和 `within_limit`。
+单导轨 `upper_wheel_notch_safety.projection_opening_audits` 与双导轨
+`wheel_notch_geometry_audit.wheels[*].projection_opening_audit` 必须全部通过；
+缺失砂轮、最高层无真实交点、最高层开口与报告不一致，或任一层开口超过
+`product_length * 0.6` 均禁止 release。非控制内侧层无交点时记录 null，不视为缺陷。
+
+跨机台回归覆盖 7 机台 × 3 磨前/成品路径 × 2 组长度及砂轮半径，并逐机注入
+“只按上弧端点限宽”的旧缺陷，确认弧顶超限能被门禁拒绝。

@@ -10,13 +10,16 @@ from src.web_api import _task_retention_days
 
 
 @pytest.mark.parametrize("has_stderr", (True, False))
-def test_frozen_generator_exits_normally_when_release_validation_fails(monkeypatch, capsys, has_stderr):
+@pytest.mark.parametrize("error_kind", ("release", "relief"))
+def test_frozen_generator_exits_normally_for_expected_rejections(monkeypatch, capsys, has_stderr, error_kind):
     import sys
     from desktop import sidecar_entry
     from src import generate_machine
+    from src.block_geometry import BlockReliefGeometryError
 
     def rejected_generation():
-        raise generate_machine.ReleaseValidationError("尺寸 12.00 定义点未绑定几何")
+        error_type = generate_machine.ReleaseValidationError if error_kind == "release" else BlockReliefGeometryError
+        raise error_type("尺寸 12.00 定义点未绑定几何")
 
     monkeypatch.setattr(sys, "argv", ["sidecar", "generate-machine", "--machine-id", "double_head_up_down"])
     monkeypatch.setattr(generate_machine, "main", rejected_generation)

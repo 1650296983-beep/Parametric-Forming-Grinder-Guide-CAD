@@ -58,7 +58,8 @@ center_y = lower_y + effective_notch_top_height - 80
 上砂轮 R80 圆心：
 
 ```text
-center_y = slot_top_y - effective_upper_cut_in_depth + 80
+upper_cavity_datum_y = base_y + max(cavity_projection_offsets)
+center_y = upper_cavity_datum_y - effective_upper_cut_in_depth + wheel_radius
 ```
 
 上砂轮圆弧必须与导轨上表面和型腔槽顶投影线真实相交，槽顶投影线断口端点必须落在 R80 弧上。上下两处 R80 半径标注的圆心定义点和箭头目标点必须跟随重算后的圆弧。
@@ -71,6 +72,18 @@ release 校验必须从 DXF 几何实体直接测量上下 R80 的最终开口�
 
 每条侧视型腔投影线必须与最终砂轮圆弧求真实交点；只有实际相交的线才断开，不得用同一个预估开口强制裁剪全部投影层。
 
+所有机台上砂轮的开口限制基准必须取真实型腔投影的最高层，包括同 R 瓦型的上弧顶。
+`upper_cavity_sagitta = max(cavity_projection_offsets) - guide_thickness`；磨前方块为零，
+磨前瓦型为上弧矢高，不能只按上弧端点高度限制开口。三头双导轨上上上保留其
+`fixed_top_gap` 对应的上弧端点位置，砂轮圆心仍需加上此矢高重算；下上上两节和总装
+继续使用相同公共基准。上轮关键高度、局部吃入量和所有相关 DIMENSION 定义点均须同步更新。
+
+release 必须逐条实测全部真实型腔投影上的圆弧开口，并在报告中保留逐层结果。
+没有真实交点的内侧投影层记为 `opening = null`（无缺口），允许保留完整投影线；
+最高控制层必须真实相交，实测开口须与当前计算值一致，且任一相交层超过
+`product_length * 0.6` 都禁止正式晋级，不能仅检查端点层或报告中的预估值。
+
+
 对于 618 磨床 300 mm 模板，固定分段为：
 
 ```text
@@ -82,7 +95,7 @@ release 校验必须从 DXF 几何实体直接测量上下 R80 的最终开口�
 ```text
 side_projected_slot_height = 20.9
 side_slot_top_height = 20.9 + guide_thickness
-side_clearance_height = guide_outer_height - 20.9 - guide_thickness + wheel_cut_allowance
+side_clearance_height = guide_outer_height - 20.9 - guide_thickness - upper_cavity_sagitta + wheel_cut_allowance
 ```
 
 618 不套用普通瓦型的 `slot_base_height + 0.50` 作为型腔下沿投影高度。
@@ -97,7 +110,7 @@ side_clearance_height = guide_outer_height - 20.9 - guide_thickness + wheel_cut_
 
 ```text
 side_projected_slot_height = slot_base_height + side_cut_in_allowance
-side_clearance_height = guide_outer_height - slot_base_height - guide_thickness + wheel_cut_allowance
+side_clearance_height = guide_outer_height - slot_base_height - guide_thickness - upper_cavity_sagitta + wheel_cut_allowance
 ```
 
 方块导轨侧面砂轮吃入统一使用成型磨前厚度中值：
@@ -138,15 +151,18 @@ block_fixed_top_gap = 3.0
 - `slot_base_height = 12.0`
 - `side_cut_in_allowance = 0.50`
 - `guide_outer_height = 27.0`
-- `wheel_cut_allowance = 0.20`
+- `wheel_cut_allowance` 按磨前厚度目标和缺口上限反算
 
 示例：
 
 ```text
-finished_thickness = 1.65
+pre_grinding_spec = R17.45*R17.45*6.20(-0.02/-0.04)*15.5*1.65
 guide_thickness = 1.83
+upper_cavity_sagitta = 17.45 - sqrt(17.45^2 - (6.20 / 2)^2) = 0.277566
+opening_limit = 15.5 * 0.6 = 9.30
+effective_upper_cut_in_depth = 80 - sqrt(80^2 - (9.30 / 2)^2) = 0.135255
 side_projected_slot_height = 12.0 + 0.50 = 12.50
-side_clearance_height = 27.0 - 12.0 - 1.83 + 0.20 = 13.37
+side_clearance_height = 27.0 - 12.0 - 1.83 - 0.277566 + 0.135255 = 13.027689
 ```
 
 `side_projected_slot_height` 继续用于内部计算和报告。当该高度不是实际型腔投影边界时，
@@ -193,3 +209,11 @@ upper_wheel_key_height = outer_height - slot_base_height - guide_thickness
 DXF 的受控派生几何和校验项，但不进入 PNG 预览，避免缩小截面和干扰操作员复核。
 
 release DXF 中侧面派生尺寸的显示文字、DIMENSION 定义点和几何实测值必须一致。
+
+三头机双导轨（下上上）的第二节两个上砂轮，以及总装图对应的两个上砂轮，
+必须重新计算圆心、弧段端点和外轮廓连接线。上砂轮以当前最高型腔投影线为
+基准，按公共吃入公式和产品长度开口限制向下切入；不能沿用模板半圆槽位置。
+方块磨前的该基准为 `bottom_y + section_slot_base_height + guide_thickness`；
+同 R 瓦型磨前还须加上当前上弧矢高。型腔虚线按最终圆弧真实交点断开。
+上砂轮关键高度取外框顶部到最终弧顶的距离，不保留模板固定 `12.70 mm`。
+两节局部图及总装图的六个砂轮均输出 `wheel_notch_geometry_audit` 并参与 release 门禁。

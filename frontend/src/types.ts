@@ -10,6 +10,8 @@ export interface Machine {
   wheel_positions: string[];
   section_outer_width: number;
   section_center_opening: number;
+  section_center_opening_ratio: number;
+  section_center_opening_max: number;
   section_slot_base_height: number;
   template_coordinate_system: string;
   supported_by_web_generation: boolean;

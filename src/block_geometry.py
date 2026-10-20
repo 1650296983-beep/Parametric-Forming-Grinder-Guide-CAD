@@ -9,7 +9,7 @@ from .spec_parser import (
     ProductPreFormTolerance,
     ReliefSpec,
 )
-from .global_rules import BLOCK_THICKNESS_CLEARANCE
+from .global_rules import BLOCK_THICKNESS_CLEARANCE, CENTER_TRANSITION_RADIUS
 
 
 @dataclass(frozen=True)
@@ -37,6 +37,34 @@ class BlockGuideSection:
     @property
     def process_thickness(self) -> float:
         return self.block_spec.thickness_mid
+
+
+class BlockReliefGeometryError(ValueError):
+    """The explicit rectangular groove/relief combination cannot be generated."""
+
+
+def validate_block_relief_geometry(guide: GuideSpec) -> None:
+    """Reject relief overlap before constructing any rectangular DXF entities."""
+    diameter = guide.relief.relief_size
+    if guide.guide_thickness <= diameter:
+        raise BlockReliefGeometryError(
+            f"导轨厚度 {guide.guide_thickness:.2f} mm 无法容纳当前避空："
+            f"{guide.relief.relief_count} 处直径 {diameter:.2f} mm（R{diameter / 2:.2f}）。"
+            f"当前几何要求导轨厚度大于 {diameter:.2f} mm。请由工艺确认适用的避空方案。"
+        )
+    minimum_width = guide.center_opening + max(
+        2.0 * diameter,
+        2.0 * CENTER_TRANSITION_RADIUS + diameter,
+    )
+    if guide.guide_slot_width <= minimum_width:
+        raise BlockReliefGeometryError(
+            f"槽宽 {guide.guide_slot_width:.2f} mm 无法容纳当前避空："
+            f"中心开口 {guide.center_opening:.2f} mm，"
+            f"中心固定 R{CENTER_TRANSITION_RADIUS:.2f}，"
+            f"{guide.relief.relief_count} 处直径 {diameter:.2f} mm（R{diameter / 2:.2f}），"
+            f"当前几何要求槽宽大于 {minimum_width:.2f} mm。"
+            "请核对规格，或由工艺确认适用的窄槽避空方案；程序不会自动改变尺寸。"
+        )
 
 
 def build_block_guide_section(
@@ -89,6 +117,7 @@ def build_block_guide_section(
         tolerance_slot_clearance=slot_clearance,
         use_tolerance_based_slot_width=True,
     )
+    validate_block_relief_geometry(guide_spec)
     return BlockGuideSection(
         block_spec=spec,
         guide_spec=guide_spec,

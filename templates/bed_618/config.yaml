@@ -9,7 +9,7 @@ section_template: section_template.dxf
 side_template: side_template.dxf
 section_style: bed_618_fixed_base
 section_outer_width: 40.0
-section_center_opening: 2.0
+section_center_opening: 2.0  # Original machine opening, now the cap for the shared 30% rule.
 section_slot_base_height: 20.9
 layout:
   left_x: 3390.483328096916

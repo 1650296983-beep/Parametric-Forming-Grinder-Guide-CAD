@@ -1,4 +1,7 @@
 # AutoCAD DXF source templates use fixed-width group-code lines with meaningful
 # trailing spaces. Do not rewrite or flag those spaces as source-code whitespace.
 templates/legacy_reference/*.dxf -whitespace
-tests/regression/**/expected_*.dxf -whitespace
+tests/regression/**/expected_*.dxf text eol=lf -whitespace
+# Frozen regression hashes must identify the same bytes on Windows and macOS.
+tests/regression/**/expected_*.json text eol=lf
+tests/regression/**/input.json text eol=lf

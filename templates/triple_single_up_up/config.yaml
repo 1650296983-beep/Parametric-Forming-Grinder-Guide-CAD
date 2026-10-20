@@ -9,7 +9,7 @@ section_template: section_template.dxf
 side_template: side_template.dxf
 block_outer_width: 40.0
 section_outer_width: 40.0
-section_center_opening: 2.0
+section_center_opening: 2.0  # Original machine opening, now the cap for the shared 30% rule.
 layout:
   left_x: 3369.204666366889
   center_a_x: 3468.204666366888

@@ -4,7 +4,7 @@ from pathlib import Path
 from dataclasses import dataclass
 
 from .block_geometry import BlockGuideSection
-from .cavity_projection import derive_cavity_projection_profile
+from .cavity_projection import derive_cavity_projection_profile, horizontal_arc_gap
 from .geometry import TileSection
 from .machine_config import MachineConfig
 from .side_view import SideViewGeometry, build_side_view_geometry
@@ -175,7 +175,7 @@ def write_side_view_report(
     dimension_texts_present = False
     r80_count_matches_template = False
     fixed_template_entities_preserved = False
-    no_full_length_derived_lines = False
+    cavity_lines_avoid_wheel_arcs = False
     template_counts: dict[str, int] = {}
     target_counts: dict[str, int] = {}
     template_r80_count = 0
@@ -222,7 +222,7 @@ def write_side_view_report(
             template_r80_count = _r80_arc_count(template_doc, template_layers=None)
             target_r80_count = _r80_arc_count(doc, template_layers={SIDE_TEMPLATE_LAYER})
             r80_count_matches_template = target_r80_count == template_r80_count
-            no_full_length_derived_lines = not _has_full_length_derived_line(doc, geometry.template.fixed_435)
+            cavity_lines_avoid_wheel_arcs = not _has_cavity_line_crossing_wheel_arc(doc, geometry.template.wheel_radius)
             projected_consistency = measure_side_projected_slot_consistency(doc, geometry)
             clearance_consistency = measure_side_clearance_consistency(doc, geometry)
         except Exception:
@@ -268,7 +268,8 @@ def write_side_view_report(
             "  side_clearance_height_formula: "
             f"{geometry.derived.guide_outer_height:.6f} - "
             f"{geometry.derived.slot_base_height:.6f} - "
-            f"{geometry.derived.guide_thickness:.6f} + "
+            f"{geometry.derived.guide_thickness:.6f} - "
+            f"{geometry.derived.upper_cavity_sagitta:.6f} + "
             f"{geometry.derived.wheel_cut_allowance:.6f} = "
             f"{geometry.derived.side_clearance_height:.6f}"
         ),
@@ -322,7 +323,7 @@ def write_side_view_report(
             f"{'PASS' if fixed_template_entities_preserved else 'FAIL'} "
             f"(template={template_counts}, output={target_counts})"
         ),
-        f"  no_full_length_SIDE_DERIVED_lines: {'PASS' if no_full_length_derived_lines else 'FAIL'}",
+        f"  cavity_lines_do_not_cross_wheel_arcs: {'PASS' if cavity_lines_avoid_wheel_arcs else 'FAIL'}",
         f"  release_hides_debug: {'PASS' if release_hides_debug else 'FAIL'}",
         f"  release_hides_formula_text: {'PASS' if release_hides_formula_text else 'FAIL'}",
         f"  side_view_combined_with_section: {'PASS' if side_view_present else 'FAIL'}",
@@ -350,6 +351,7 @@ def _clearance_formula_ok(geometry: SideViewGeometry) -> bool:
             derived.guide_outer_height
             - derived.slot_base_height
             - derived.guide_thickness
+            - derived.upper_cavity_sagitta
             + derived.wheel_cut_allowance
         )
     ) < 1e-9
@@ -540,14 +542,20 @@ def _side_dimension_labels(doc) -> set[str]:
     return labels
 
 
-def _has_full_length_derived_line(doc, fixed_435: float) -> bool:
-    for entity in doc.modelspace():
-        if entity.dxf.layer != SIDE_DERIVED_LAYER or entity.dxftype() != "LINE":
+def _has_cavity_line_crossing_wheel_arc(doc, wheel_radius: float) -> bool:
+    wheel_arcs = [
+        arc for arc in doc.modelspace().query("ARC")
+        if arc.dxf.layer == SIDE_TEMPLATE_LAYER
+        and abs(float(arc.dxf.radius) - wheel_radius) <= 0.001
+    ]
+    for line in doc.modelspace().query("LINE"):
+        if line.dxf.layer != SIDE_DERIVED_LAYER or abs(line.dxf.start.y - line.dxf.end.y) > 0.001:
             continue
-        start = entity.dxf.start
-        end = entity.dxf.end
-        if abs(start.y - end.y) < 1e-6 and abs(abs(end.x - start.x) - fixed_435) < 0.01:
-            return True
+        start_x, end_x = sorted((float(line.dxf.start.x), float(line.dxf.end.x)))
+        for arc in wheel_arcs:
+            gap = horizontal_arc_gap(arc, float(line.dxf.start.y))
+            if gap is not None and max(start_x, gap[0]) + 0.001 < min(end_x, gap[1]):
+                return True
     return False
 
 

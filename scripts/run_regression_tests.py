@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import argparse
+import copy
 from collections import Counter
 from dataclasses import replace
 from datetime import date
@@ -22,11 +23,13 @@ from src.block_geometry import BlockGuideSection, build_block_guide_section
 from src.dual_guide_engine import DualGuideTemplateEngine
 from src.dual_guide_input import build_dual_guide_profile_from_input
 from src.dual_guide_release_audit import (
+    build_dimension_definition_point_audit,
     build_release_line_type_audit,
     write_dimension_definition_point_audit,
 )
 from src.global_rules import BLOCK_THICKNESS_CLEARANCE, wheel_notch_opening_limit
 from src.guide_design_input import build_single_guide_profile_from_input
+from src.inspection import audit_upper_wheel_projection_openings, inspect_release_dxf
 from src.dxf_writer import write_dxf
 from src.generate_machine import _build_profile
 from src.geometry import TileSection
@@ -39,6 +42,7 @@ from src.validator import validate_tile_section
 
 
 REGRESSION_ROOT = REPO_ROOT / "tests" / "regression"
+RULE_MIGRATION_PATH = REPO_ROOT / "tests" / "regression_rule_migrations" / "20261020_opening_and_wheels.json"
 TOLERANCE = 0.01
 HIGH_RISK_NUMBERS = {27.0, 40.0, 80.0, 300.0, 379.0, 435.0, 590.0}
 HIGH_RISK_KEYS = {"guide_length", "guide_sections", "wheel_positions"}
@@ -281,6 +285,7 @@ def generate_dual_guide_case(input_data: dict[str, Any], machine: MachineConfig,
             slot_reference=str(input_data.get("slot_reference", "length")),
             slot_clearance=float(input_data.get("block_slot_clearance", 0.05)),
             outer_width=machine.block_outer_width,
+            center_opening=machine.section_center_opening,
             thickness_clearance_mid=(
                 BLOCK_THICKNESS_CLEARANCE
                 if (thickness_clearance := optional_thickness_clearance(input_data)) is None
@@ -310,6 +315,7 @@ def generate_dual_guide_case(input_data: dict[str, Any], machine: MachineConfig,
         and line_type_audit["release_allowed"]
         and section_contour_audit["release_allowed"]
         and release_result["release_side_dimensions_match_report"]
+        and release_result["wheel_notch_geometry_audit"]["release_allowed"]
         and engine._lower_wheel_release_allowed(profile)
         and engine._upper_wheel_release_allowed(profile)
         and release_result["synchronized"]
@@ -528,7 +534,7 @@ def summarize_template_geometry(machine: MachineConfig) -> dict[str, Any]:
     }
 
 
-def dimension_measurements(doc: Any) -> list[dict[str, Any]]:
+def dimension_measurements(doc: Any, *, entity_order: bool = False) -> list[dict[str, Any]]:
     rows = []
     for entity in doc.modelspace().query("DIMENSION"):
         text = entity.dxf.text if entity.dxf.hasattr("text") else ""
@@ -548,7 +554,7 @@ def dimension_measurements(doc: Any) -> list[dict[str, Any]]:
                 },
             }
         )
-    return sorted(rows, key=dimension_sort_key)
+    return rows if entity_order else sorted(rows, key=dimension_sort_key)
 
 
 def dxf_extents(entities: list[Any]) -> dict[str, float | None]:
@@ -591,6 +597,11 @@ def compare_case(case_dir: Path) -> dict[str, Any]:
             differences.append(f"Missing actual artifact: {actual_path}")
     if differences:
         return {"ok": False, "differences": differences}
+    migration = read_json(RULE_MIGRATION_PATH).get("cases", {}).get(
+        f"{case_dir.parent.name}/{case_dir.name}"
+    ) if RULE_MIGRATION_PATH.exists() else None
+    if migration is not None:
+        return compare_rule_migration(case_dir, migration)
     input_data = read_json(case_dir / "input.json")
     machine = load_machine_config(str(input_data["machine_id"]))
     explicit_dual_input = "finished_product_spec" in input_data
@@ -654,6 +665,142 @@ def compare_case(case_dir: Path) -> dict[str, Any]:
             differences,
         )
     if not (case_dir / "actual_preview.png").exists() or (case_dir / "actual_preview.png").stat().st_size == 0:
+        differences.append("actual_preview.png was not generated or is empty.")
+    return {"ok": not differences, "differences": differences}
+
+
+def rule_migration_payload(case_dir: Path, prefix: str) -> dict[str, Any]:
+    """Read live artifacts; DXF entity order is stable when dimension text changes.
+
+    The old audit sorts dimensions by their text, which can exchange unrelated
+    rows when 12.70 becomes 11.93. Preserve every dimension and definition point
+    while matching the original modelspace order instead.
+    """
+    import ezdxf
+
+    report = read_json(case_dir / f"{prefix}_report.json")
+    audit = read_json(case_dir / f"{prefix}_audit.json")
+    summaries = {}
+    for mode in ("release", "debug"):
+        path = case_dir / f"{prefix}_{mode}.dxf"
+        summary = summarize_dxf(path)
+        summary.pop("path")
+        doc = ezdxf.readfile(path)
+        summary["dimension_measurements"] = dimension_measurements(doc, entity_order=True)
+        summaries[mode] = summary
+    template = copy.deepcopy(audit["template_geometry_summary"])
+    template.pop("template_files", None)
+    payload = {
+        "report": extract_key_values(report, release_dxf=case_dir / f"{prefix}_release.dxf"),
+        "summaries": summaries,
+        "safety_rules": audit["safety_rules"],
+        "template_geometry": template,
+    }
+    if "finished_product_spec" in read_json(case_dir / "input.json"):
+        dimension_path = case_dir / f"{prefix}_dimension_definition_point_audit.json"
+        dimension = read_json(dimension_path)
+        payload["dimension_audit"] = {
+            "required_roles": dimension["required_roles"],
+            "release_allowed": dimension["release_allowed"],
+        }
+    return payload
+
+
+def apply_exact_rule_migration(payload: dict[str, Any], changes: list[dict[str, Any]]) -> dict[str, Any]:
+    """Apply individually reviewed old/new leaves, never ignore changed fields."""
+    result = copy.deepcopy(payload)
+    for change in changes:
+        cursor = result
+        for part in change["path"][:-1]:
+            cursor = cursor[part]
+        key = change["path"][-1]
+        if change.get("added", False):
+            if key in cursor:
+                raise ValueError(f"Migration expected a missing key: {change['path']}")
+        elif cursor[key] != change["before"]:
+            raise ValueError(f"Migration source value changed: {change['path']}")
+        cursor[key] = copy.deepcopy(change["after"])
+    return result
+
+
+def independently_audit_rule_migration(case_dir: Path) -> list[str]:
+    """Re-read real DXFs: persisted reports cannot waive physical release gates."""
+    import ezdxf
+
+    data = read_json(case_dir / "input.json")
+    machine = load_machine_config(data["machine_id"])
+    if machine.guide_sections == 2:
+        engine = DualGuideTemplateEngine(machine)
+        if "finished_product_spec" in data:
+            _, _, profile, _ = build_dual_guide_profile_from_input(data, machine)
+        else:
+            profile = build_block_guide_section(
+                build_block_spec_for_input(data),
+                relief=parse_relief_spec(data.get("relief", "4-1")),
+                slot_reference=data.get("slot_reference", "length"),
+                slot_clearance=float(data.get("block_slot_clearance", 0.05)),
+                outer_width=machine.block_outer_width,
+                center_opening=machine.section_center_opening,
+                thickness_clearance_mid=(
+                    BLOCK_THICKNESS_CLEARANCE
+                    if optional_thickness_clearance(data) is None
+                    else optional_thickness_clearance(data)
+                ),
+            )
+    elif "finished_product_spec" in data:
+        _, _, profile, _ = build_single_guide_profile_from_input(data, machine)
+    else:
+        _, profile = _build_profile(
+            data["spec"], tolerance=parse_optional_tolerance(data.get("width_tolerance")),
+            relief=parse_relief_spec(data.get("relief", "4-1")),
+            slot_reference=data.get("slot_reference", "length"),
+            block_slot_clearance=float(data.get("block_slot_clearance", 0.05)),
+            machine=machine, block_outer_width=machine.block_outer_width,
+            default_block_thickness_clearance=BLOCK_THICKNESS_CLEARANCE,
+            thickness_clearance_mid=optional_thickness_clearance(data),
+            preform_spec=data.get("preform_spec"),
+        )
+    errors = []
+    for mode in ("release", "debug"):
+        path = case_dir / f"actual_{mode}.dxf"
+        doc = ezdxf.readfile(path)
+        if doc.audit().errors:
+            errors.append(f"{mode}: DXF audit failed")
+        dimensions = build_dimension_definition_point_audit(path, profile, machine)
+        closure = build_section_contour_closure_audit(path, expected_sections=machine.guide_sections)
+        if not dimensions["release_allowed"]:
+            errors.append(f"{mode}: live dimension definition-point audit failed")
+        if not closure["release_allowed"]:
+            errors.append(f"{mode}: live section contour audit failed")
+        if machine.guide_sections == 2:
+            wheels = engine._audit_wheel_notch_geometry(doc.modelspace(), profile)
+            if not wheels["release_allowed"]:
+                errors.append(f"{mode}: live wheel projection/cut-in audit failed")
+        else:
+            wheels = audit_upper_wheel_projection_openings(doc, profile, machine)
+            if len(wheels) != machine.wheel_positions.count("上") or any(
+                not wheel["release_allowed"] for wheel in wheels
+            ):
+                errors.append(f"{mode}: live upper wheel projection audit failed")
+            if mode == "release" and not inspect_release_dxf(profile, machine, path)["release_allowed"]:
+                errors.append(f"{mode}: live release inspection failed")
+    return errors
+
+
+def compare_rule_migration(case_dir: Path, migration: dict[str, Any]) -> dict[str, Any]:
+    differences = []
+    for name, digest in migration["frozen_sha256"].items():
+        if hashlib.sha256((case_dir / name).read_bytes()).hexdigest() != digest:
+            differences.append(f"Rule migration source hash changed: {name}")
+    if differences:
+        return {"ok": False, "differences": differences}
+    try:
+        expected = apply_exact_rule_migration(rule_migration_payload(case_dir, "expected"), migration["changes"])
+        compare_values(expected, rule_migration_payload(case_dir, "actual"), "rule_migration", differences)
+        differences.extend(independently_audit_rule_migration(case_dir))
+    except (ValueError, KeyError, OSError) as exc:
+        differences.append(f"Rule migration validation failed: {exc}")
+    if not (case_dir / "actual_preview.png").stat().st_size:
         differences.append("actual_preview.png was not generated or is empty.")
     return {"ok": not differences, "differences": differences}
 

@@ -36,7 +36,7 @@ class MachineConfig:
     block_outer_width: float = 35.0
     section_style: str = "standard"
     section_outer_width: float = 33.0
-    section_center_opening: float = 1.5
+    section_center_opening: float = 1.5  # Per-machine upper limit; actual opening scales with slot width.
     section_slot_base_height: float = 12.0
     section_profile: SectionProfileConfig = SectionProfileConfig()
     supported_section_profiles: tuple[str, ...] = ("rectangular_block",)

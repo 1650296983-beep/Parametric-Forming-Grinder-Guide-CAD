@@ -48,24 +48,24 @@ def test_bed_618_release_uses_fixed_20p9_slot_base_and_single_upper_wheel(tmp_pa
     measurements = _dimension_measurements_by_text(doc)
 
     assert profile.guide_spec.outer_width == pytest.approx(40.0)
-    assert profile.guide_spec.center_opening == pytest.approx(2.0)
+    assert profile.guide_spec.center_opening == pytest.approx(1.86)
     assert profile.guide_spec.slot_base_height == pytest.approx(20.9)
     assert profile.guide_spec.guide_thickness == pytest.approx(1.83)
     assert side.derived.side_projected_slot_height == pytest.approx(20.9)
-    assert side.derived.side_clearance_height == pytest.approx(4.405254962)
+    assert side.derived.side_clearance_height == pytest.approx(4.127689268)
 
     assert measurements["20.90"][0] == pytest.approx(20.9)
     assert measurements["20.90"][0] == pytest.approx(20.9)
-    assert measurements["2.00"][0] == pytest.approx(2.0)
+    assert measurements["1.86"][0] == pytest.approx(1.86)
     assert measurements["40.00"][0] == pytest.approx(40.0)
     assert measurements["1.83"][0] == pytest.approx(1.83)
-    assert measurements["4.41"][0] == pytest.approx(4.405254962)
-    side_clearance_dim = _dimension_by_text(doc, "4.41")
+    assert measurements["4.13"][0] == pytest.approx(4.127689268)
+    side_clearance_dim = _dimension_by_text(doc, "4.13")
     assert side_clearance_dim.dxf.defpoint.x > machine.side_layout.right_x
     assert side_clearance_dim.dxf.defpoint2.x == pytest.approx(machine.side_layout.right_x)
     assert side_clearance_dim.dxf.defpoint3.x == pytest.approx(machine.side_layout.right_x)
-    assert abs(side_clearance_dim.dxf.defpoint2.y - side_clearance_dim.dxf.defpoint3.y) == pytest.approx(4.405254962)
-    for label in {"27.00", "2.00", "40.00", "20.90", "1.83", "6.21±0.01", "R17.45"}:
+    assert abs(side_clearance_dim.dxf.defpoint2.y - side_clearance_dim.dxf.defpoint3.y) == pytest.approx(4.127689268)
+    for label in {"27.00", "1.86", "40.00", "20.90", "1.83", "6.21±0.01", "R17.45"}:
         assert _dimension_by_text(doc, label).dxf.dimstyle == "TH_GBDIM"
     secondary_relief_dim = _dimension_by_text(doc, "2-R0.50")
     assert secondary_relief_dim.dxf.dimstyle == "TH_GBDIM"

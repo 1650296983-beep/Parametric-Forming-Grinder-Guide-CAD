@@ -9,7 +9,7 @@ section_template: section_template.dxf
 side_template: side_template.dxf
 section_style: triple_single_down_up_flat_arc
 section_outer_width: 40.0
-section_center_opening: 2.0
+section_center_opening: 2.0  # Original machine opening, now the cap for the shared 30% rule.
 section_slot_base_height: 12.0
 template_coordinate_system: section_xy_y_up
 template_axis_rotation_deg: 0.0

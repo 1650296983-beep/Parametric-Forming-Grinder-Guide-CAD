@@ -23,7 +23,7 @@ from .dimension_writer import (
 )
 from .dimension_precision import normalize_dimension_display_precision
 from .dimension_roles import SECTION_CENTER_OPENING, set_dimension_role
-from .block_geometry import BlockGuideSection
+from .block_geometry import BlockGuideSection, validate_block_relief_geometry
 from .geometry import Point
 from .geometry import ArcSegment, LineSegment, SectionProfile, TileSection
 from .machine_config import MachineConfig, load_machine_config
@@ -1085,6 +1085,7 @@ def _add_block_slot_entities(
     slot_base_y: float,
 ) -> SlotDimensionGeometry:
     guide = block_section.guide_spec
+    validate_block_relief_geometry(guide)
     relief_radius = guide.relief.relief_size / 2.0
     center_transition_radius = CENTER_TRANSITION_RADIUS
     half_slot = guide.guide_slot_width / 2.0
@@ -1098,11 +1099,6 @@ def _add_block_slot_entities(
     neck_right_x = center_x + neck_width / 2.0
     neck_bottom_y = top_y + center_transition_radius
     r = relief_radius
-
-    if top_y - bottom_y <= 2.0 * r:
-        raise ValueError("Block guide thickness is too small for relief geometry.")
-    if right_x - left_x <= neck_width + 4.0 * r:
-        raise ValueError("Block guide slot width is too small for relief geometry.")
 
     _add_line(modelspace, (neck_left_x, anchor.top), (neck_left_x, neck_bottom_y), "PARAM_SLOT")
     _add_line(modelspace, (neck_right_x, anchor.top), (neck_right_x, neck_bottom_y), "PARAM_SLOT")

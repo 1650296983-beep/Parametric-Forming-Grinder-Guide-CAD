@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from decimal import Decimal, ROUND_HALF_UP
 from math import isclose
 
-from .global_rules import format_dimension
+from .global_rules import format_dimension, section_center_opening
 
 
 THICKNESS_TOLERANCE = 0.001
@@ -132,7 +132,7 @@ class GuideSpec:
     outer_width: float = 33.0
     outer_height: float = 27.0
     slot_base_height: float = 12.0
-    center_offset: float = 1.5
+    center_offset: float = 1.5  # Historical fixed opening, now the machine-specific cap.
     slot_center_offset: float = 0.0
     tolerance_slot_clearance: float | None = None
     use_tolerance_based_slot_width: bool = False
@@ -216,7 +216,8 @@ class GuideSpec:
 
     @property
     def center_opening(self) -> float:
-        return self.center_offset
+        # Historical fixed template openings now serve as per-machine caps.
+        return section_center_opening(self.guide_slot_width, maximum=self.center_offset)
 
 
 @dataclass(frozen=True)

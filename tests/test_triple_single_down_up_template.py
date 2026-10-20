@@ -74,7 +74,7 @@ def test_triple_single_down_up_release_updates_native_dimensions(tmp_path):
     assert profile.forming_spec.R_form == pytest.approx(15.9)
     assert profile.guide_spec.guide_slot_width == pytest.approx(5.60)
     assert profile.guide_spec.guide_thickness == pytest.approx(2.08)
-    assert profile.guide_spec.center_opening == pytest.approx(2.0)
+    assert profile.guide_spec.center_opening == pytest.approx(1.68)
     assert profile.guide_spec.outer_width == pytest.approx(40.0)
     assert measurements["5.60±0.01"][0] == pytest.approx(5.60)
     assert measurements["2.08"][0] == pytest.approx(2.08)
@@ -397,7 +397,7 @@ def _assert_required_process_dimensions(doc, profile, machine) -> None:
     }
     derived = build_side_view_geometry(profile, layout=machine.side_layout).derived
     expected = {
-        SECTION_CENTER_OPENING: 2.0,
+        SECTION_CENTER_OPENING: profile.guide_spec.center_opening,
         LOWER_WHEEL_NOTCH_OPENING: derived.lower_cavity_notch_opening,
         LOWER_WHEEL_KEY_PROCESS_HEIGHT: derived.wheel_notch_depth,
         UPPER_WHEEL_KEY_PROCESS_HEIGHT: derived.side_clearance_height,
@@ -406,7 +406,7 @@ def _assert_required_process_dimensions(doc, profile, machine) -> None:
     assert set(dimensions) == set(REQUIRED_BLOCK_TO_TILE_DIMENSION_ROLES)
     for role, value in expected.items():
         assert dimensions[role].get_measurement() == pytest.approx(value)
-    assert dimensions[SECTION_CENTER_OPENING].dxf.text == "2.00"
+    assert dimensions[SECTION_CENTER_OPENING].dxf.text == f"{profile.guide_spec.center_opening:.2f}"
     for role, value in expected.items():
         assert dimensions[role].dxf.text == f"{value:.2f}"
 

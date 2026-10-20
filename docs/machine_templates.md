@@ -39,7 +39,7 @@
 - `wheel_positions = ["上"]`
 - 单导轨，单上砂轮
 - 截面外宽 `section_outer_width = 40.0`
-- 截面上口固定开口 `section_center_opening = 2.0`
+- 截面上口按公共 30% 比例缩小，上限 `section_center_opening = 2.0`
 - 导轨型腔下沿高度 `section_slot_base_height = 20.9` 为固定数值
 - 侧面投影保留面端 `R15` 上料缺口和一个上砂轮 `R80` 缺口
 - 618机型为磨较小产品，退刀槽按 `D0.5` 方式；默认避空仍按项目通用 `4-1`
@@ -66,7 +66,7 @@
 - `wheel_positions = ["下", "上"]`
 - 截面外宽 `section_outer_width = 40.0`
 - 该机型支持“瓦型成品 + 方块成型磨前产品”和“馒头形成品 + 方块成型磨前产品”；输入必须同时包含成品规格和成型磨前方块规格
-- 截面上口固定开口 `section_center_opening = 2.0`
+- 截面上口按公共 30% 比例缩小，上限 `section_center_opening = 2.0`
 - 型腔下沿高度 `section_slot_base_height = 12.0`
 - 五段瓦型规格走 `block_to_tile`：R 面与第一砂轮同侧，另一面为平面，R 取成品两个 R 中的较大值；本机第一砂轮在下，因此为下 R、上平面
 - 四段馒头形规格 `R*长度*宽度*厚度` 且磨前为方块时走 `block_to_bread_rectangular`：截面按磨前方块生成矩形槽；成品单 R 不进入导轨截面
@@ -77,7 +77,7 @@
 - 全部砂轮吃入使用公共规则 `preform_thickness_mid * 0.6`，机台模板不得以固定吃入量覆盖；R80 圆弧、型腔投影线断口和 R80 半径标注必须同步更新
 - 生成时删除旧槽口后按当前工艺重建同 R 双圆弧槽口、第一砂轮同侧的大 R 槽口或单 R 成品对应的矩形槽，并更新模板原有 `DIMENSION` 标注及真实定义点
 - 截面避空拓扑必须继承归档标准图的 `4-1 + 2-0.5`：四处侧部过渡加两处中心上口固定 R0.5 过渡，不得只生成随槽宽外移的四个槽角
-- `block_to_tile` 与 `block_to_bread_rectangular` 的中心两处 R0.5 的 X 位置只由 `section_center_opening` 与固定 R0.5 决定，不得随槽宽变化
+- `block_to_tile` 与 `block_to_bread_rectangular` 的中心两处 R0.5 的 X 位置由当前实际开口与固定 R0.5 决定，不能按槽边位置外移
 - 方块磨前的侧视图必须使用该机台 `config.yaml` 的 `block_side_mode`；禁止依赖跨机型默认投影高度。三头机单导轨（下上）的方块单 R 分支固定以 `section_slot_base_height = 12.0` 为槽底基准。
 - release 必须包含五个参数化尺寸角色：`section_center_opening`、`lower_wheel_notch_opening`、`lower_wheel_key_process_height`、`upper_wheel_key_process_height`、`upper_wheel_local_cut_in_depth`
 - 五个尺寸必须按当前最终几何重算，不得照抄标准样本中的 `13.8`、`12.6`、`13.5`、`1.26`
@@ -90,10 +90,10 @@
 三头机双导轨使用 `DualGuideTemplateEngine` 生成，`dual_section_mode = synchronized`，不得在两节导轨之间使用不同的产品参数或截面参数。
 
 - `triple_double_down_up_up` 使用 `guide_length = 590.0`，`wheel_positions = ["下", "上", "上"]`，`guide_sections = 2`
-- `triple_double_down_up_up` 的截面中心上口固定为 `2.00 mm`，与其干净模板一致。
+- `triple_double_down_up_up` 的截面中心上口上限为 `2.00 mm`，实际按最终槽宽的 30% 缩小并向下取两位小数。
 - `triple_double_down_up_up` 支持 `rectangular_block`、`bread_big_r_block_preform` 和 `same_r_tile` 三种截面。
 - `triple_double_up_up_up` 使用 `guide_length = 590.0`，`wheel_positions = ["上", "上", "上"]`，`guide_sections = 2`
-- `triple_double_up_up_up` 的截面中心上口固定为 `1.00 mm`，保持其干净模板原值，不复用下上上的 `2.00 mm`。
+- `triple_double_up_up_up` 的截面中心上口上限为 `1.00 mm`，实际按最终槽宽的 30% 缩小并向下取两位小数；上限保持原值，不复用下上上的 `2.00 mm`。
 - 两种双导轨机型的外轮廓均为白色实线，型腔投影线均为绿色虚线
 - `triple_double_up_up_up` 的 R80 圆弧端点必须连接外轮廓，冠点按有效吃入量进入型腔，不得把型腔虚线误作圆弧端点
 - 两种双导轨机型的 R80 半径标注必须以圆心和真实弧顶为定义点；关键高度与吃入量标注必须以真实弧顶和同 X 基准点为定义点

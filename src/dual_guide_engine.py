@@ -10,6 +10,7 @@ from .block_geometry import BlockGuideSection
 from .cavity_projection import (
     derive_cavity_projection_profile,
     horizontal_arc_gap,
+    audit_wheel_projection_openings,
 )
 from .dimension_writer import (
     DIMENSION_LAYER,
@@ -261,6 +262,7 @@ class DualGuideTemplateEngine:
             and release_result["release_side_dimensions_match_report"]
             and self._lower_wheel_release_allowed(profile)
             and self._upper_wheel_release_allowed(profile)
+            and release_result["wheel_notch_geometry_audit"]["release_allowed"]
             and release_result["synchronized"]
         )
         if release_gate:
@@ -325,6 +327,7 @@ class DualGuideTemplateEngine:
             modelspace,
             profile,
         )
+        wheel_notch_geometry_audit = self._audit_wheel_notch_geometry(modelspace, profile)
         removed_side_cavity_duplicates = _deduplicate_exact_side_cavity_lines(
             modelspace
         )
@@ -382,6 +385,7 @@ class DualGuideTemplateEngine:
             and release_side_dimensions_match_report
             and self._lower_wheel_release_allowed(profile)
             and self._upper_wheel_release_allowed(profile)
+            and wheel_notch_geometry_audit["release_allowed"]
             and duplicate_entity_audit["release_allowed"]
             and dimension_precision_audit["release_allowed"]
             and all(item["release_allowed"] for item in outer_relief_arc_audit)
@@ -398,6 +402,7 @@ class DualGuideTemplateEngine:
             "side_view_dimension_audit": side_view_dimension_audit,
             "r80_radius_dimension_audit": r80_radius_dimension_audit,
             "cavity_projection_audit": cavity_projection_audit,
+            "wheel_notch_geometry_audit": wheel_notch_geometry_audit,
             "removed_side_cavity_duplicates": removed_side_cavity_duplicates,
             "parametric_duplicate_audit": duplicate_entity_audit,
             "dimension_precision_audit": dimension_precision_audit,
@@ -407,25 +412,13 @@ class DualGuideTemplateEngine:
             "synchronized": True,
         }
 
-    def _with_machine_center_opening(
-        self,
-        profile: DualGuideProfile,
-    ) -> DualGuideProfile:
-        """Keep geometry and display dimensions aligned with the machine template."""
-        if (
-            abs(
-                profile.guide_spec.center_opening
-                - self.machine.section_center_opening
-            )
-            <= 1e-9
-        ):
+    def _with_machine_center_opening(self, profile: DualGuideProfile) -> DualGuideProfile:
+        """Apply the machine's historical opening as a cap on the shared ratio."""
+        if abs(profile.guide_spec.center_offset - self.machine.section_center_opening) <= 1e-9:
             return profile
         return replace(
             profile,
-            guide_spec=replace(
-                profile.guide_spec,
-                center_offset=self.machine.section_center_opening,
-            ),
+            guide_spec=replace(profile.guide_spec, center_offset=self.machine.section_center_opening),
         )
 
     def _prepare_layers(self, doc: Any, output_mode: str) -> None:
@@ -859,6 +852,10 @@ class DualGuideTemplateEngine:
         x_min, x_max, bottom_y, top_y = bounds
         base_y = bottom_y + self.machine.section_slot_base_height
         slot_top_y = base_y + profile.guide_spec.guide_thickness
+        projection = derive_cavity_projection_profile(
+            profile, profile.guide_spec.guide_thickness,
+        )
+        upper_cavity_y = base_y + max(projection.offsets)
         old_internal_ys = _horizontal_internal_y_values(modelspace, x_min, x_max, bottom_y, top_y)
         old_base_y = _nearest_value(old_internal_ys, bottom_y + self.machine.section_slot_base_height)
         old_top_y = _nearest_value(old_internal_ys, bottom_y + self.machine.section_slot_base_height + 2.4)
@@ -901,15 +898,12 @@ class DualGuideTemplateEngine:
         for center_x, position in zip(center_x_values, wheel_positions):
             if position == "下":
                 self._update_lower_r80_arc(modelspace, center_x, bottom_y, profile)
-            else:
-                upper_arc = _find_r80_arc_for_center(
-                    modelspace,
-                    center_x,
-                    top_y,
-                    self.machine.wheel_radius,
-                )
-                if upper_arc is not None:
-                    upper_arc.dxf.layer = SIDE_TEMPLATE_LAYER
+        upper_centers = tuple(
+            center_x for center_x, position in zip(center_x_values, wheel_positions) if position == "上"
+        )
+        self._update_side_r80_arcs(
+            modelspace, upper_centers, top_y, top_y - upper_cavity_y, profile,
+        )
 
     def _lower_wheel_opening(self, profile: DualGuideProfile) -> float:
         radius = self.machine.wheel_radius
@@ -917,6 +911,88 @@ class DualGuideTemplateEngine:
         natural_opening = 2.0 * sqrt(max(0.0, radius * radius - (radius - natural_depth) ** 2))
         opening_limit = max(self._process_length(profile) - 0.2, 0.1)
         return min(natural_opening, opening_limit)
+
+    def _audit_wheel_notch_geometry(self, modelspace: Any, profile: DualGuideProfile) -> dict[str, Any]:
+        """Measure every wheel at its assigned station and actual cavity datum."""
+        template = self.build_template()
+        views = (
+            ("section_1", template.guide_section_1.side_bounds, template.guide_section_1.side_centerline_x_values, template.guide_section_1.wheel_positions),
+            ("section_2", template.guide_section_2.side_bounds, template.guide_section_2.side_centerline_x_values, template.guide_section_2.wheel_positions),
+            ("assembly", template.assembly_side_bounds, template.assembly_side_centerline_x_values, self.machine.wheel_positions),
+        )
+        projection = derive_cavity_projection_profile(profile, profile.guide_spec.guide_thickness)
+        entries = []
+        for view_id, bounds, centers, positions in views:
+            _, _, bottom_y, top_y = bounds
+            base_y = (
+                bottom_y + self.machine.section_slot_base_height
+                if self._uses_down_up_lower_wheel_rule
+                else top_y - self.machine.side_layout.block_fixed_top_gap - profile.guide_spec.guide_thickness
+            )
+            for station, (center_x, position) in enumerate(zip(centers, positions), start=1):
+                upper = position == "上"
+                safety = self._upper_wheel_safety_payload(profile) if upper else self._lower_wheel_safety_payload(profile)
+                # The up/up/up template locates its upper datum at fixed_top_gap.
+                if upper:
+                    offset = max(projection.offsets)
+                else:
+                    offset = min(projection.offsets)
+                datum_y = base_y + offset
+                arcs = [
+                    arc for arc in modelspace.query('ARC[layer=="SIDE_TEMPLATE"]')
+                    if abs(float(arc.dxf.center.x) - center_x) <= 0.001
+                    and (float(arc.dxf.center.y) > top_y if upper else float(arc.dxf.center.y) < bottom_y)
+                ]
+                arc = min(arcs, key=lambda item: abs(float(item.dxf.center.y) - datum_y)) if arcs else None
+                measured_depth = measured_opening = None
+                endpoints_connected = False
+                if arc is not None:
+                    radius = float(arc.dxf.radius)
+                    crown_y = float(arc.dxf.center.y) + (-radius if upper else radius)
+                    measured_depth = datum_y - crown_y if upper else crown_y - datum_y
+                    gap = horizontal_arc_gap(arc, datum_y)
+                    measured_opening = None if gap is None else gap[1] - gap[0]
+                    endpoints_connected = all(
+                        any(
+                            endpoint.distance(point) <= 0.001
+                            for line in modelspace.query('LINE[layer=="SIDE_TEMPLATE"]')
+                            for point in (line.dxf.start, line.dxf.end)
+                        )
+                        for endpoint in (arc.start_point, arc.end_point)
+                    )
+                projection_audit = audit_wheel_projection_openings(
+                    arc, tuple(base_y + value for value in projection.offsets), safety["opening_limit"],
+                )
+                allowed = (
+                    projection_audit["release_allowed"]
+                    and arc is not None
+                    and abs(float(arc.dxf.radius) - self.machine.wheel_radius) <= 0.001
+                    and measured_depth is not None
+                    and abs(measured_depth - safety["effective_cut_in_depth"]) <= 0.001
+                    and measured_opening is not None
+                    and abs(measured_opening - safety["cavity_notch_opening"]) <= 0.001
+                    and measured_opening <= safety["opening_limit"] + 0.001
+                    and endpoints_connected
+                )
+                entries.append({
+                    "view": view_id,
+                    "station": station,
+                    "wheel_position": position,
+                    "center_x": center_x,
+                    "cavity_datum_y": datum_y,
+                    "expected_cut_in_depth": safety["effective_cut_in_depth"],
+                    "measured_cut_in_depth": measured_depth,
+                    "expected_opening": safety["cavity_notch_opening"],
+                    "measured_opening": measured_opening,
+                    "opening_limit": safety["opening_limit"],
+                    "projection_opening_audit": projection_audit,
+                    "outer_endpoints_connected": endpoints_connected,
+                    "release_allowed": allowed,
+                })
+        return {
+            "wheels": entries,
+            "release_allowed": bool(entries) and all(item["release_allowed"] for item in entries),
+        }
 
     def _lower_wheel_safety_payload(self, profile: DualGuideProfile) -> dict[str, Any]:
         return self._wheel_notch_safety_payload(profile, wheel_side="lower")
@@ -1028,7 +1104,7 @@ class DualGuideTemplateEngine:
         if arc is None:
             return
         center_y = self._lower_wheel_center_y(profile, bottom_y)
-        half_chord = sqrt(max(0.0, arc.dxf.radius * arc.dxf.radius - (bottom_y - center_y) ** 2))
+        half_chord = sqrt(max(0.0, self.machine.wheel_radius ** 2 - (bottom_y - center_y) ** 2))
         arc.dxf.center = (center_x, center_y, arc.dxf.center.z)
         arc.dxf.radius = self.machine.wheel_radius
         arc.dxf.start_angle = _angle_deg(half_chord, bottom_y - center_y)
@@ -1049,7 +1125,10 @@ class DualGuideTemplateEngine:
         upper_cut_in = self._upper_wheel_safety_payload(profile)["effective_cut_in_depth"]
         return {
             "side_projected_slot_height": round(side_projected_slot_height, 6),
-            "side_clearance_height": round(fixed_top_gap, 6),
+            "side_clearance_height": round(
+                fixed_top_gap + profile.guide_spec.guide_thickness
+                - max(derive_cavity_projection_profile(profile, profile.guide_spec.guide_thickness).offsets), 6,
+            ),
             "working_depth": round(upper_cut_in, 6),
         }
 
@@ -1641,6 +1720,7 @@ class DualGuideTemplateEngine:
             "section_2_profile": release_sections[1]["section_profile"],
             "lower_wheel_notch_safety": lower_wheel_safety,
             "upper_wheel_notch_safety": upper_wheel_safety,
+            "wheel_notch_geometry_audit": release_result["wheel_notch_geometry_audit"],
             "fixed_template_geometry": asdict(template.fixed_geometry),
             "shared_parameters": {
                 "R_form": (
@@ -1649,6 +1729,9 @@ class DualGuideTemplateEngine:
                     else None
                 ),
                 "slot_width": profile.guide_spec.guide_slot_width,
+                "center_opening": profile.guide_spec.center_opening,
+                "center_opening_max": self.machine.section_center_opening,
+                "center_opening_rule": "floor(min(slot_width * 0.30, machine.section_center_opening), 0.01 mm)",
                 "guide_thickness": profile.guide_spec.guide_thickness,
                 "relief": profile.guide_spec.relief.relief_size,
                 "relief_size": profile.guide_spec.relief.relief_size,
@@ -1726,6 +1809,7 @@ class DualGuideTemplateEngine:
                 "no_legacy_4p29_dimension": release_cleanup["no_legacy_4p29_dimension"],
                 "no_unexplained_1p80_dimension": release_cleanup["no_unexplained_1p80_dimension"],
                 "release_side_dimensions_match_report": release_result["release_side_dimensions_match_report"],
+                "wheel_notches_match_actual_cavity_geometry": release_result["wheel_notch_geometry_audit"]["release_allowed"],
                 "lower_wheel_notch_opening <= product_length * 0.6": lower_wheel_safety[
                     "lower_cavity_notch_opening_within_limit"
                 ],

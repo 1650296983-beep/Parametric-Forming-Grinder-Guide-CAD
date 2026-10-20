@@ -91,7 +91,7 @@ def _add_triple_single_down_up_process_dimensions(modelspace, geometry: SideView
     layout = geometry.layout
     derived = geometry.derived
     base_y = layout.lower_y + derived.slot_base_height
-    slot_top_y = base_y + derived.guide_thickness
+    slot_top_y = base_y + derived.guide_thickness + derived.upper_cavity_sagitta
     lower_opening = derived.lower_cavity_notch_opening
     lower_left = layout.center_a_x - lower_opening / 2.0
     lower_right = layout.center_a_x + lower_opening / 2.0
@@ -987,7 +987,7 @@ def _update_derived_dimension(entity, geometry: SideViewGeometry, side_style: st
         entity.dxf.text = f"{derived.side_clearance_height:.2f}"
         return True
     elif (
-        geometry.layout.block_side_mode == "fixed_projected_height"
+        geometry.layout.block_side_mode in {"fixed_projected_height", "fixed_top_gap"}
         or derived.side_projected_slot_height >= 18.0
     ) and 2.0 <= measurement <= 8.0:
         _set_block_side_clearance_dimension_points(entity, geometry)
@@ -1205,7 +1205,7 @@ def _add_side_derived_entities(modelspace, geometry: SideViewGeometry, output_mo
             modelspace,
             (
                 f"{derived.guide_outer_height:.1f}-{derived.slot_base_height:.1f}-"
-                f"{derived.guide_thickness:.2f}+{derived.wheel_cut_allowance:.2f}="
+                f"{derived.guide_thickness:.2f}-{derived.upper_cavity_sagitta:.2f}+{derived.wheel_cut_allowance:.2f}="
                 f"{derived.side_clearance_height:.2f}"
             ),
             (x0 + 8.0, clearance_y - 5.0),

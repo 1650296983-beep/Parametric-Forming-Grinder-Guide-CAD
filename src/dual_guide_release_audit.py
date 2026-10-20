@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .block_geometry import BlockGuideSection
+from .cavity_projection import derive_cavity_projection_profile
 from .dimension_roles import get_dimension_role
 from .geometry import TileSection
 from .global_rules import (
@@ -384,7 +385,7 @@ def _dimension_role(
         return "guide_thickness"
     if _close(measurement, _lower_wheel_crown_depth(profile, machine)):
         return "lower_wheel_crown_depth"
-    if _close(measurement, 12.70):
+    if machine.machine_id == "triple_double_down_up_up" and _close(measurement, _upper_wheel_crown_depth(profile, machine)):
         return "upper_wheel_related"
     opening = min(
         _natural_opening(
@@ -438,7 +439,7 @@ def _required_role_audit(
         requirements.update(
             {
                 "section_center_opening": (
-                    machine.section_center_opening,
+                    profile.guide_spec.center_opening,
                     machine.guide_sections,
                 ),
                 "relief": (
@@ -453,7 +454,7 @@ def _required_role_audit(
             _lower_wheel_crown_depth(profile, machine),
             2,
         ),
-        "upper_wheel_related": (12.70, 4),
+        "upper_wheel_related": (_upper_wheel_crown_depth(profile, machine), 4),
         "lower_cavity_notch_opening": (
             min(
                 _natural_opening(
@@ -818,6 +819,20 @@ def _lower_wheel_crown_depth(
         max(0.0, radius * radius - (opening / 2.0) ** 2)
     )
     return machine.section_slot_base_height + effective_depth
+
+
+def _upper_wheel_crown_depth(
+    profile: TileSection | BlockGuideSection,
+    machine: MachineConfig,
+) -> float:
+    projection = derive_cavity_projection_profile(profile, profile.guide_spec.guide_thickness)
+    effective_depth = _lower_wheel_crown_depth(profile, machine) - machine.section_slot_base_height
+    return (
+        profile.guide_spec.outer_height
+        - machine.section_slot_base_height
+        - max(projection.offsets)
+        + effective_depth
+    )
 
 
 def _close(

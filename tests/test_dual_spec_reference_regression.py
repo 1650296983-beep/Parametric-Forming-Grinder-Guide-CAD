@@ -33,7 +33,7 @@ ROOT = Path(__file__).resolve().parents[1]
             2.35,
             "flat_arc_groove",
             (14.3, 16.3),
-            {"guide_thickness"},
+            {"guide_thickness", "center_opening"},
         ),
         (
             2,
@@ -136,7 +136,8 @@ def test_three_dual_spec_examples_generate_valid_release_and_compare_to_archived
                 "outer_width": machine.section_outer_width,
                 "outer_height": profile.guide_spec.outer_height,
                 "slot_base_height": machine.section_slot_base_height,
-                "center_opening": machine.section_center_opening,
+                "center_opening": profile.guide_spec.center_opening,
+                "center_opening_max": machine.section_center_opening,
             }
         },
         "release_allowed": dimension_audit["release_allowed"],
@@ -148,3 +149,7 @@ def test_three_dual_spec_examples_generate_valid_release_and_compare_to_archived
     assert comparison["unresolved_rule_conflicts"] == []
     assert set(comparison["approved_rule_overrides"]) == expected_approved_overrides
     assert comparison["checks"]["product_drawing_radius_evidence"]["status"] == "PASS"
+    if case_number == 1:
+        generated_report["fixed_template_dimensions"]["section"]["center_opening"] = 1.75
+        invalid = compare_reference_to_generated(reference, generated_report)
+        assert "center_opening" in invalid["unresolved_rule_conflicts"]

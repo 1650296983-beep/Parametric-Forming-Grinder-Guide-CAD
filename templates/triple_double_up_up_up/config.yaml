@@ -10,7 +10,7 @@ section_template: full_template.dxf
 side_template: full_template.dxf
 block_outer_width: 40.0
 section_outer_width: 40.0
-section_center_opening: 1.0
+section_center_opening: 1.0  # Original machine opening, now the cap for the shared 30% rule.
 supported_section_profiles: ["rectangular_block", "bread_big_r_block_preform", "same_r_tile"]
 layout:
   left_x: 3377.937725016495

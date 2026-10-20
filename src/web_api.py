@@ -46,7 +46,7 @@ from .dwg_converter import (
 )
 from .geometry import TileSection
 from .groove_profile import determine_groove_profile, normalize_shape
-from .global_rules import DEFAULT_WHEEL_RADIUS
+from .global_rules import DEFAULT_WHEEL_RADIUS, SECTION_OPENING_RATIO
 from .guide_design_input import build_single_guide_profile_from_input, machine_template_rules
 from .machine_config import MachineConfig, load_machine_config
 from .output_naming import build_profile_output_stem
@@ -659,6 +659,8 @@ def _machine_payload(machine: MachineConfig) -> dict[str, Any]:
         "wheel_positions": list(machine.wheel_positions),
         "section_outer_width": machine.section_outer_width,
         "section_center_opening": machine.section_center_opening,
+        "section_center_opening_ratio": SECTION_OPENING_RATIO,
+        "section_center_opening_max": machine.section_center_opening,
         "section_slot_base_height": machine.section_slot_base_height,
         "wheel_radius": machine.wheel_radius,
         "template_coordinate_system": machine.template_coordinate_system,

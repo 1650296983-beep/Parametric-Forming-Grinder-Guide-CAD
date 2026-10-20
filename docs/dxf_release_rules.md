@@ -122,3 +122,8 @@ release 模式禁止：
 不得只改文字。
 
 `triple_double_down_up_up` 每次生成必须写出 `dimension_definition_point_audit.json`，覆盖槽宽、R_form、导轨厚度、上下砂轮关键尺寸、下砂轮缺口开口以及 `590/99/90/180/131` 固定尺寸。任一角色缺失或未绑定真实几何时，不得晋级 `release.dxf`。
+
+双导轨还必须在报告中记录 `wheel_notch_geometry_audit`，实测两节及总装图各砂轮
+相对当前型腔的吃入量和缺口宽度，并检查圆弧端点连接外轮廓。不得仅因尺寸已绑定
+模板旧圆弧而放行。截面开口按最终槽宽 30% 向下取两位小数，并限制在各机台
+原 `section_center_opening` 上限内；显示值、定义点及开口真实几何必须一致。

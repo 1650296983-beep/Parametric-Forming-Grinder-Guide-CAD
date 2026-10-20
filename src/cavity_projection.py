@@ -118,3 +118,30 @@ def angle_is_on_arc(angle: float, start: float, end: float) -> bool:
     if start <= end:
         return start - 0.001 <= angle <= end + 0.001
     return angle >= start - 0.001 or angle <= end + 0.001
+
+
+def audit_wheel_projection_openings(
+    arc: Any,
+    projection_levels: tuple[float, ...],
+    opening_limit: float,
+) -> dict[str, Any]:
+    """Measure the actual arc on every cavity projection, including arc crowns.
+
+    A wheel may stop before an inner projection; that level has no opening.
+    The controlling outer projection must be checked separately for cut-in.
+    """
+    levels = []
+    for y in projection_levels:
+        gap = None if arc is None else horizontal_arc_gap(arc, y)
+        opening = None if gap is None else gap[1] - gap[0]
+        levels.append({
+            "cavity_y": round(y, 6),
+            "opening": None if opening is None else round(opening, 6),
+            "intersects": gap is not None,
+            "within_limit": opening is None or opening <= opening_limit + 0.001,
+        })
+    return {
+        "projection_levels": levels,
+        "opening_limit": round(opening_limit, 6),
+        "release_allowed": arc is not None and all(level["within_limit"] for level in levels),
+    }

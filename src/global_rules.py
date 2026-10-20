@@ -1,12 +1,15 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+from decimal import Decimal, ROUND_DOWN
 
 
 WHEEL_CUT_IN_RATIO = 0.6
 WHEEL_NOTCH_OPENING_RATIO = 0.6
 DEFAULT_WHEEL_RADIUS = 80.0
 CENTER_TRANSITION_RADIUS = 0.5
+SECTION_OPENING_RATIO = 0.30
+SECTION_OPENING_MAX = 2.0
 DIMENSION_DECIMAL_PLACES = 2
 
 ENDPOINT_TOLERANCE = 0.001
@@ -80,6 +83,21 @@ def default_thickness_clearance(pre_grinding_shape: str, width: float) -> float:
 
 def format_dimension(value: float) -> str:
     return f"{value:.{DIMENSION_DECIMAL_PLACES}f}"
+
+
+def section_center_opening(slot_width: float, maximum: float = SECTION_OPENING_MAX) -> float:
+    """Scale the wire-entry opening from the final slot width for every machine."""
+    width = Decimal(str(slot_width))
+    if not width.is_finite() or width <= 0:
+        raise ValueError("槽宽必须为有限正数。")
+    cap = Decimal(str(maximum))
+    if not cap.is_finite() or cap <= 0:
+        raise ValueError("机台中心开口上限必须为有限正数。")
+    opening = min(width * Decimal(str(SECTION_OPENING_RATIO)), cap)
+    opening = opening.quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+    if opening <= 0:
+        raise ValueError("槽宽过小，按 30% 计算的中心开口不足 0.01 mm。")
+    return float(opening)
 
 
 def wheel_notch_opening_limit(product_length: float) -> float:

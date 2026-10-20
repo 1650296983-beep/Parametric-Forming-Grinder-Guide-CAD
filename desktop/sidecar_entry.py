@@ -67,11 +67,12 @@ def main() -> int:
                 stream.reconfigure(encoding="utf-8", errors="backslashreplace")
         # Frozen child-process dispatch for the existing isolated generator.
         from src.generate_machine import ReleaseValidationError, main as generate_machine_main
+        from src.block_geometry import BlockReliefGeometryError
 
         sys.argv = [sys.argv[0], *sys.argv[2:]]
         try:
             return generate_machine_main()
-        except ReleaseValidationError as error:
+        except (ReleaseValidationError, BlockReliefGeometryError) as error:
             if sys.stderr is not None:
                 print(str(error), file=sys.stderr)
             return 1

@@ -390,7 +390,7 @@ function Workspace(props: {
                   <span className="machine-kind">{selectedMachine.guide_sections === 2 ? "双导轨" : "单导轨"}</span>
                   <strong>{selectedMachine.guide_length} mm</strong>
                   <span>砂轮：{selectedMachine.wheel_positions.join(" / ")}</span>
-                  <span>上口 {selectedMachine.section_center_opening} mm · 下沿 {selectedMachine.section_slot_base_height} mm</span>
+                  <span>上口为槽宽的 {selectedMachine.section_center_opening_ratio * 100}%，最大 {selectedMachine.section_center_opening_max} mm · 下沿 {selectedMachine.section_slot_base_height} mm</span>
                 </div>}
               </div>
             </section>
