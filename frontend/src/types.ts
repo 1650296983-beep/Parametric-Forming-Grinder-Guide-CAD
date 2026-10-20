@@ -41,6 +41,8 @@ export interface DesignInput {
 }
 
 export interface ValidationResult {
+  scene: DrawingScene;
+  parsed?: Record<string, Record<string, unknown>>;
   machine: Machine;
   decision: {
     groove_profile: string;
@@ -68,6 +70,11 @@ export interface ValidationResult {
     relief_label: string;
     outer_width: number;
     outer_height: number;
+    opening_max: number;
+    relief_diameter: number;
+    relief_radius: number;
+    center_transition_radius: number;
+    center_transition_count: number;
   };
   message: string;
 }
@@ -175,4 +182,59 @@ export interface TaskDetail extends TaskSummary {
     dimension_points_passed: boolean;
     workflow: string[];
   };
+}
+
+export interface DrawingScene {
+  source: "parametric_preview" | "debug_dxf" | "release_dxf";
+  units: "mm";
+  coordinate_system: "svg_y_down";
+  views: DrawingView[];
+}
+export interface DrawingView {
+  id: string;
+  label: string;
+  bounds: [number, number, number, number];
+  primitives: DrawingPrimitive[];
+}
+export type DrawingPrimitive = {
+  id: string;
+  group: "outline" | "cavity" | "dimensions" | "center";
+  color: string;
+  dash?: boolean;
+} & (
+  | { kind: "polyline"; points: [number, number][] }
+  | {
+      kind: "text";
+      position: [number, number];
+      text: string;
+      height: number;
+      rotation?: number;
+    }
+);
+export type GenerationStage =
+  | "queued"
+  | "preparing"
+  | "outline"
+  | "cavity"
+  | "dimensions"
+  | "candidate"
+  | "preview"
+  | "validation"
+  | "promotion"
+  | "complete";
+export interface ProgressEvent {
+  stage: GenerationStage;
+  status: "running" | "completed" | "failed";
+  at: string;
+  message: string;
+}
+export interface GenerationProgress {
+  task_id: string;
+  status: "running" | "passed" | "failed";
+  stage: GenerationStage;
+  events: ProgressEvent[];
+  message: string;
+  error: string | null;
+  scene: DrawingScene | null;
+  result: GenerationResult | null;
 }

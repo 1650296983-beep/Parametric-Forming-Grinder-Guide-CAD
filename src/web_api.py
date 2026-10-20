@@ -12,6 +12,9 @@ from datetime import datetime
 from pathlib import Path
 from typing import Any
 from uuid import uuid4
+from contextlib import asynccontextmanager
+from concurrent.futures import ThreadPoolExecutor
+from threading import Lock, BoundedSemaphore
 import json
 import os
 import subprocess
@@ -22,6 +25,8 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
+from .drawing_scene import preview_scene, parsed_values, scene_from_dxf
+from .generation_progress import FILENAME as PROGRESS_FILENAME, progress_context, emit, fail, read_progress
 from .block_geometry import BlockGuideSection
 from .auth import (
     AuthenticatedUser,
@@ -46,7 +51,7 @@ from .dwg_converter import (
 )
 from .geometry import TileSection
 from .groove_profile import determine_groove_profile, normalize_shape
-from .global_rules import DEFAULT_WHEEL_RADIUS, SECTION_OPENING_RATIO
+from .global_rules import DEFAULT_WHEEL_RADIUS, SECTION_OPENING_RATIO, CENTER_TRANSITION_RADIUS
 from .guide_design_input import build_single_guide_profile_from_input, machine_template_rules
 from .machine_config import MachineConfig, load_machine_config
 from .output_naming import build_profile_output_stem
@@ -59,6 +64,12 @@ from .web_task_repository import StoredWebTask, WebTaskRepository
 PROJECT_ROOT = resource_root()
 TEMPLATE_ROOT = PROJECT_ROOT / "templates"
 WEB_OUTPUT_ROOT = get_runtime_paths().tasks
+_GENERATION_WORKER = ThreadPoolExecutor(max_workers=1, thread_name_prefix="cad-generator")
+_ACTIVE_JOBS: set[tuple[str, str]] = set()
+_JOBS_LOCK = Lock()
+# One executing task and up to eight pending immutable drafts.
+_JOB_CAPACITY = 9
+_JOB_SLOTS: dict[str, BoundedSemaphore] = {}
 
 
 class DesignInput(BaseModel):
@@ -97,7 +108,13 @@ class DesktopSettingsUpdate(BaseModel):
     autocad_core_console: str | None = Field(default=None, max_length=4096)
 
 
-app = FastAPI(title="Forming Grinder Guide CAD API", version="1.0.0")
+@asynccontextmanager
+async def _application_lifespan(application: FastAPI):
+    recover_interrupted_jobs()
+    yield
+
+
+app = FastAPI(title="Forming Grinder Guide CAD API", version="1.0.0", lifespan=_application_lifespan)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -111,6 +128,22 @@ app.add_middleware(
     allow_methods=["GET", "POST", "PUT", "DELETE"],
     allow_headers=["Content-Type"],
 )
+
+
+def recover_interrupted_jobs() -> None:
+    """A previous server cannot still own an in-process queued worker."""
+    repository = WebTaskRepository(WEB_OUTPUT_ROOT)
+    for record in repository.list():
+        payload = read_progress(record.task_dir)
+        if record.status == "running" and payload is not None and payload.get("status") == "running":
+            key = (str(record.task_dir.parent.resolve()), record.task_id)
+            with _JOBS_LOCK:
+                active = key in _ACTIVE_JOBS
+            if not active:
+                message = "生成服务已重启，任务已中断；输入已保留，可重新生成。"
+                with progress_context(record.task_dir):
+                    fail(message)
+                repository.finish(record.task_dir, status="failed", error=message)
 
 
 @app.get("/api/health")
@@ -174,7 +207,8 @@ def validate_design(design: DesignInput) -> dict[str, Any]:
     """Parse and calculate a design without writing any DXF artifacts."""
     machine = _load_matching_machine(design)
     try:
-        _, _, profile, decision = _build_profile_for_design(design, machine)
+        finished, preform, profile, decision = _build_profile_for_design(design, machine)
+        scene = preview_scene(profile, machine)
     except (TypeError, ValueError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
@@ -189,10 +223,17 @@ def validate_design(design: DesignInput) -> dict[str, Any]:
             "guide_thickness": guide.guide_thickness,
             "thickness_clearance_mid": guide.thickness_clearance_mid_value,
             "center_opening": guide.center_opening,
+            "opening_max": machine.section_center_opening,
+            "relief_diameter": guide.relief.relief_size,
+            "relief_radius": guide.relief.relief_size / 2,
+            "center_transition_radius": CENTER_TRANSITION_RADIUS,
+            "center_transition_count": 2,
             "relief_label": guide.relief.relief_label,
             "outer_width": guide.outer_width,
             "outer_height": guide.outer_height,
         },
+        "scene": scene,
+        "parsed": {"finished": parsed_values(finished), "preform": parsed_values(preform)},
         "release_ready": False,
         "message": "参数解析与计算成功；正式 release 仍需通过完整 DXF 校验。",
     }
@@ -204,6 +245,95 @@ def generate_design_endpoint(
     user: AuthenticatedUser = Depends(require_user),
 ) -> dict[str, Any]:
     return generate_design(request, user)
+
+
+@app.post("/api/designs/jobs", status_code=202)
+def create_generation_job(request: GenerationRequest, user: AuthenticatedUser = Depends(require_user)) -> dict[str, str]:
+    """Copy the validated draft into one history task before queueing."""
+    output_root = WEB_OUTPUT_ROOT.resolve()
+    with _JOBS_LOCK:
+        slots = _JOB_SLOTS.setdefault(str(output_root), BoundedSemaphore(_JOB_CAPACITY))
+    if not slots.acquire(blocking=False):
+        raise HTTPException(status_code=503, detail="生成队列已满，请等待已有任务完成。")
+    initialized = None
+    key = None
+    try:
+        snapshot = GenerationRequest(design=DesignInput(**request.design.model_dump()))
+        validate_design(snapshot.design)
+        initialized = _initialize_task(snapshot.design, user, output_root=output_root)
+        task_id, task_dir, _ = initialized
+        key = (str(task_dir.parent.resolve()), task_id)
+        with _JOBS_LOCK:
+            _ACTIVE_JOBS.add(key)
+        with progress_context(task_dir):
+            emit("queued")
+        _GENERATION_WORKER.submit(_run_generation_job, snapshot, user, initialized, key, slots)
+        return {"task_id": task_id}
+    except Exception as error:
+        if key is not None:
+            with _JOBS_LOCK:
+                _ACTIVE_JOBS.discard(key)
+        try:
+            if initialized is not None:
+                message = f"生成任务启动失败：{error}"
+                with progress_context(initialized[1]):
+                    fail(message)
+                WebTaskRepository(initialized[1].parent).finish(initialized[1], status="failed", error=message)
+        finally:
+            slots.release()
+        if isinstance(error, HTTPException):
+            raise
+        raise HTTPException(status_code=503, detail="生成任务无法启动，请稍后重试。") from error
+
+
+def _run_generation_job(request: GenerationRequest, user: AuthenticatedUser, initialized: tuple[str, Path, Path], key: tuple[str, str], slots: BoundedSemaphore) -> None:
+    task_id, task_dir, _ = initialized
+    try:
+        with progress_context(task_dir):
+            emit("preparing")
+            try:
+                result = {**generate_design(request, user, initialized_task=initialized), "task_id": task_id}
+                if result.get("ok") and result.get("release_allowed"):
+                    paths = result.get("report", {}).get("paths", {})
+                    release_path = Path(paths.get("release_dxf", ""))
+                    if not release_path.is_file() or not release_path.resolve().is_relative_to(task_dir.resolve()):
+                        raise ValueError("通过校验的正式图纸不存在。")
+                    scene = scene_from_dxf(release_path, _load_matching_machine(request.design), source="release_dxf")
+                    emit("complete", scene=scene, result=result, complete=True)
+                else:
+                    message = result.get("stderr") or "生成校验未通过。"
+                    result = {**result, "ok": False, "release_allowed": False}
+                    WebTaskRepository(task_dir.parent).finish(task_dir, status="failed", error=message)
+                    fail(message, result=result)
+            except Exception as error:
+                message = str(error.detail) if isinstance(error, HTTPException) else str(error)
+                WebTaskRepository(task_dir.parent).finish(task_dir, status="failed", error=message)
+                fail(message, result={"task_id": task_id, "ok": False, "release_allowed": False, "stderr": message})
+    finally:
+        with _JOBS_LOCK:
+            _ACTIVE_JOBS.discard(key)
+        slots.release()
+
+
+@app.get("/api/tasks/{task_id}/progress")
+def get_generation_progress(task_id: str, user: AuthenticatedUser = Depends(require_user)) -> dict[str, Any]:
+    repository = WebTaskRepository(WEB_OUTPUT_ROOT)
+    record = repository.get(task_id)
+    if record is None:
+        raise HTTPException(status_code=404, detail="任务不存在。")
+    payload = read_progress(record.task_dir)
+    if payload is None:
+        raise HTTPException(status_code=404, detail="该历史任务没有逐步生成记录。")
+    key = (str(record.task_dir.parent.resolve()), task_id)
+    with _JOBS_LOCK:
+        active = key in _ACTIVE_JOBS
+    if payload["status"] == "running" and not active:
+        message = "生成服务已重启，任务已中断；输入已保留，可重新生成。"
+        with progress_context(record.task_dir):
+            fail(message)
+        repository.finish(record.task_dir, status="failed", error=message)
+        payload = read_progress(record.task_dir)
+    return payload
 
 
 @app.get("/api/tasks")
@@ -295,16 +425,19 @@ def bulk_delete_tasks(
 def generate_design(
     request: GenerationRequest,
     user: AuthenticatedUser | None = None,
+    *,
+    initialized_task: tuple[str, Path, Path] | None = None,
 ) -> dict[str, Any]:
     """Run the existing release-gated generator in an isolated task directory."""
     machine = _load_matching_machine(request.design)
     if machine.guide_sections == 2:
-        return _generate_dual_guide_design(request.design, machine, user=user)
+        return _generate_dual_guide_design(request.design, machine, user=user, initialized_task=initialized_task)
 
     # Validate before starting a generator subprocess so malformed data never
     # produces an output directory that looks like a legitimate task.
-    validate_design(request.design)
-    task_id, task_dir, input_path = _initialize_task(request.design, user)
+    if initialized_task is None:
+        validate_design(request.design)
+    task_id, task_dir, input_path = initialized_task or _initialize_task(request.design, user)
     command = [sys.executable]
     if getattr(sys, "frozen", False):
         command.append("generate-machine")
@@ -326,12 +459,12 @@ def generate_design(
             text=True,
             encoding="utf-8",
             errors="replace",
-            env={**os.environ, "PYTHONIOENCODING": "utf-8"},
+            env={**os.environ, "PYTHONIOENCODING": "utf-8", **({"CAD_GENERATION_PROGRESS_FILE": str(task_dir / PROGRESS_FILENAME)} if initialized_task is not None else {})},
             check=False,
         )
     except OSError as error:
         message = f"生成进程启动失败：{error}"
-        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=message)
+        WebTaskRepository(task_dir.parent).finish(task_dir, status="failed", error=message)
         return {
             "task_id": task_id,
             "task_directory": str(task_dir),
@@ -357,7 +490,7 @@ def generate_design(
                 pass
         if failure_report is not None and failure_report.get("release_allowed") is False:
             message = validation_failure_message(failure_report)
-        WebTaskRepository(WEB_OUTPUT_ROOT).finish(
+        WebTaskRepository(task_dir.parent).finish(
             task_dir,
             status="failed",
             error=message,
@@ -367,19 +500,19 @@ def generate_design(
     report_path = next((task_dir / "artifacts").glob("**/*_report.json"), None)
     if report_path is None:
         message = "生成未写出 report.json。"
-        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=message)
+        WebTaskRepository(task_dir.parent).finish(task_dir, status="failed", error=message)
         return {**result, "ok": False, "stderr": message}
     try:
         report = json.loads(report_path.read_text(encoding="utf-8"))
     except (OSError, json.JSONDecodeError) as error:
         message = f"report.json 读取失败：{error}"
-        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=message)
+        WebTaskRepository(task_dir.parent).finish(task_dir, status="failed", error=message)
         return {**result, "ok": False, "stderr": message}
     release_allowed = bool(report.get("release_allowed"))
     if release_allowed:
         _add_autocad_2007_dwg_export(report)
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
-    WebTaskRepository(WEB_OUTPUT_ROOT).finish(
+    WebTaskRepository(task_dir.parent).finish(
         task_dir,
         status="passed" if release_allowed else "failed",
         error=None if release_allowed else "完整 DXF 校验未通过，release.dxf 未输出。",
@@ -432,10 +565,19 @@ def open_task_file(
 def _resolve_task_file(task_id: str, relative_path: str) -> Path:
     if not task_id.isalnum() or len(task_id) != 12:
         raise HTTPException(status_code=404, detail="任务不存在。")
-    task_dir = (WEB_OUTPUT_ROOT / task_id).resolve()
+    unresolved_task_dir = WEB_OUTPUT_ROOT / task_id
+    if unresolved_task_dir.is_symlink():
+        raise HTTPException(status_code=404, detail="任务不存在。")
+    task_dir = unresolved_task_dir.resolve()
     requested = (task_dir / relative_path).resolve()
     if not requested.is_relative_to(task_dir) or not requested.is_file():
         raise HTTPException(status_code=404, detail="生成文件不存在。")
+    record = WebTaskRepository(WEB_OUTPUT_ROOT).get(task_id)
+    is_debug = "调试" in requested.name or requested.stem.lower() in {"debug", "debug_dxf"} or requested.stem.lower().endswith("_debug")
+    if record is not None and record.status != "passed" and requested.suffix.lower() in {".dxf", ".dwg"} and not is_debug:
+        raise HTTPException(status_code=404, detail="正式图纸尚未通过校验。")
+    if "正式候选" in requested.name or "candidate" in requested.stem.lower():
+        raise HTTPException(status_code=404, detail="候选图纸不可下载。")
     return requested
 
 
@@ -561,6 +703,8 @@ def _generate_dual_guide_design(
     design: DesignInput,
     machine: MachineConfig,
     user: AuthenticatedUser | None = None,
+    *,
+    initialized_task: tuple[str, Path, Path] | None = None,
 ) -> dict[str, Any]:
     """Generate dual guides through DualGuideTemplateEngine and preserve its gate."""
     try:
@@ -568,12 +712,20 @@ def _generate_dual_guide_design(
     except (TypeError, ValueError) as error:
         raise HTTPException(status_code=422, detail=str(error)) from error
 
-    task_id, task_dir, _ = _initialize_task(design, user)
+    task_id, task_dir, _ = initialized_task or _initialize_task(design, user)
     artifact_stem = build_profile_output_stem(
         design.finished_spec,
         profile,
         machine.machine_name,
     )
+    preview_path = task_dir / "artifacts" / f"{artifact_stem}.png"
+
+    def write_preview() -> None:
+        if isinstance(profile, TileSection):
+            write_png_preview(profile, preview_path, side_layout=machine.side_layout, machine_name=f"{machine.machine_id} {machine.guide_length:.0f}mm")
+        else:
+            write_block_png_preview(profile, machine, preview_path)
+
     try:
         result = DualGuideTemplateEngine(machine).write_debug_release_and_report(
             profile,
@@ -581,9 +733,10 @@ def _generate_dual_guide_design(
             task_dir / "artifacts",
             input_rule=input_rule,
             artifact_stem=artifact_stem,
+            **({"preview_callback": write_preview} if initialized_task is not None else {}),
         )
     except (OSError, TypeError, ValueError) as error:
-        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=str(error))
+        WebTaskRepository(task_dir.parent).finish(task_dir, status="failed", error=str(error))
         return {
             "task_id": task_id,
             "task_directory": str(task_dir),
@@ -593,16 +746,8 @@ def _generate_dual_guide_design(
         }
 
     try:
-        preview_path = task_dir / "artifacts" / f"{artifact_stem}.png"
-        if isinstance(profile, TileSection):
-            write_png_preview(
-                profile,
-                preview_path,
-                side_layout=machine.side_layout,
-                machine_name=f"{machine.machine_id} {machine.guide_length:.0f}mm",
-            )
-        else:
-            write_block_png_preview(profile, machine, preview_path)
+        if initialized_task is None:
+            write_preview()
         report = result["report"]
         report["paths"] = {
             "debug_dxf": str(result["debug_dxf"]),
@@ -615,7 +760,7 @@ def _generate_dual_guide_design(
         report_path.write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     except (OSError, TypeError, ValueError) as error:
         message = f"任务输出整理失败：{error}"
-        WebTaskRepository(WEB_OUTPUT_ROOT).finish(task_dir, status="failed", error=message)
+        WebTaskRepository(task_dir.parent).finish(task_dir, status="failed", error=message)
         return {
             "task_id": task_id,
             "task_directory": str(task_dir),
@@ -624,7 +769,7 @@ def _generate_dual_guide_design(
             "stderr": message,
         }
     release_allowed = bool(report.get("release_allowed"))
-    WebTaskRepository(WEB_OUTPUT_ROOT).finish(
+    WebTaskRepository(task_dir.parent).finish(
         task_dir,
         status="passed" if release_allowed else "failed",
         error=None if release_allowed else "双导轨 release 校验未通过。",
@@ -671,19 +816,22 @@ def _machine_payload(machine: MachineConfig) -> dict[str, Any]:
 def _initialize_task(
     design: DesignInput,
     user: AuthenticatedUser | None,
+    *,
+    output_root: Path | None = None,
 ) -> tuple[str, Path, Path]:
+    output_root = output_root or WEB_OUTPUT_ROOT
     retention_days = _task_retention_days()
     if retention_days > 0:
-        WebTaskRepository(WEB_OUTPUT_ROOT).delete_expired(retention_days)
+        WebTaskRepository(output_root).delete_expired(retention_days)
     task_id = uuid4().hex[:12]
-    task_dir = WEB_OUTPUT_ROOT / task_id
+    task_dir = output_root / task_id
     task_dir.mkdir(parents=True, exist_ok=False)
     input_path = task_dir / "input.json"
     input_path.write_text(
         json.dumps(design.model_dump(), ensure_ascii=False, indent=2),
         encoding="utf-8",
     )
-    WebTaskRepository(WEB_OUTPUT_ROOT).initialize(
+    WebTaskRepository(output_root).initialize(
         task_dir,
         task_id=task_id,
         created_by=user.username if user is not None else None,

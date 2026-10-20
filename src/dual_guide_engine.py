@@ -6,6 +6,7 @@ from math import atan2, cos, degrees, hypot, radians, sin, sqrt
 from pathlib import Path
 from typing import Any, Union
 
+from .generation_progress import emit, geometry_ready
 from .block_geometry import BlockGuideSection
 from .cavity_projection import (
     derive_cavity_projection_profile,
@@ -224,6 +225,7 @@ class DualGuideTemplateEngine:
         output_dir: Path,
         input_rule: dict[str, Any] | None = None,
         artifact_stem: str | None = None,
+        preview_callback: Any | None = None,
     ) -> dict[str, Any]:
         profile = self._with_machine_center_opening(profile)
         output_dir.mkdir(parents=True, exist_ok=True)
@@ -236,7 +238,13 @@ class DualGuideTemplateEngine:
         release_path.unlink(missing_ok=True)
         release_candidate_path.unlink(missing_ok=True)
         debug_result = self.write_dxf(profile, debug_path, output_mode="debug")
+        geometry_ready(debug_path, self.machine)
+        emit("candidate")
         release_result = self.write_dxf(profile, release_candidate_path, output_mode="release")
+        if preview_callback is not None:
+            emit("preview")
+            preview_callback()
+        emit("validation")
         dimension_audit = write_dimension_definition_point_audit(
             release_candidate_path,
             profile,
@@ -266,6 +274,7 @@ class DualGuideTemplateEngine:
             and release_result["synchronized"]
         )
         if release_gate:
+            emit("promotion")
             release_candidate_path.replace(release_path)
         else:
             release_candidate_path.unlink(missing_ok=True)

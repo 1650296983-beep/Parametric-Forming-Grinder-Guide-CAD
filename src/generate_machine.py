@@ -10,6 +10,7 @@ import ezdxf
 
 from .block_geometry import BlockGuideSection, build_block_guide_section
 from .dxf_writer import write_dxf
+from .generation_progress import emit, geometry_ready
 from .dual_guide_release_audit import write_dimension_definition_point_audit
 from .guide_design_input import build_single_guide_profile_from_input
 from .global_rules import BLOCK_THICKNESS_CLEARANCE
@@ -66,6 +67,7 @@ def main() -> int:
     if bool(args.spec) == bool(args.input_json):
         parser.error("provide exactly one of --spec or --input-json")
 
+    emit("preparing")
     machine = load_machine_config(args.machine_id)
     tolerance = _parse_width_tolerance(args.width_tolerance)
     relief = parse_relief_spec(args.relief)
@@ -132,6 +134,8 @@ def main() -> int:
         machine_id=args.machine_id,
         machine_config_override=machine,
     )
+    geometry_ready(debug_dxf, machine)
+    emit("candidate")
     if release_dxf.exists():
         release_dxf.unlink()
     if release_candidate_dxf.exists():
@@ -143,12 +147,7 @@ def main() -> int:
         machine_id=args.machine_id,
         machine_config_override=machine,
     )
-    dimension_audit = write_dimension_definition_point_audit(
-        release_candidate_dxf,
-        profile,
-        machine,
-        dimension_audit_json,
-    )
+    emit("preview")
     if isinstance(profile, TileSection):
         write_png_preview(
             profile,
@@ -158,6 +157,13 @@ def main() -> int:
         )
     else:
         write_block_png_preview(profile, machine, png_path)
+    emit("validation")
+    dimension_audit = write_dimension_definition_point_audit(
+        release_candidate_dxf,
+        profile,
+        machine,
+        dimension_audit_json,
+    )
     report = write_validation_report_json(
         profile,
         parsed_spec,
@@ -171,6 +177,7 @@ def main() -> int:
         dimension_definition_point_audit=dimension_audit,
     )
     if report["release_allowed"]:
+        emit("promotion")
         release_candidate_dxf.replace(release_dxf)
         write_validation_report_json(
             profile,

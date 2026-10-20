@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
@@ -7,11 +7,21 @@ import { writeFile } from "@tauri-apps/plugin-fs";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
 import { api } from "./api";
+import { Workbench } from "./Workbench";
+import { useDesignJob } from "./useDesignJob";
 import { resetApiBaseUrl } from "./api";
-import type { DesignInput, DesktopSettings, GeneratedFile, GenerationResult, Machine, TaskDetail, TaskHistoryResult, TaskStatus, TaskSummary, ValidationResult } from "./types";
+import type {
+  DesignInput,
+  DesktopSettings,
+  GeneratedFile,
+  Machine,
+  TaskDetail,
+  TaskHistoryResult,
+  TaskStatus,
+  TaskSummary,
+} from "./types";
 
 type Page = "workspace" | "history" | "templates" | "rules" | "settings";
-type Step = 1 | 2 | 3;
 
 const initialDesign: DesignInput = {
   machine_type: "triple_single_down_up",
@@ -43,30 +53,11 @@ const machineFirstSide = (machine: Machine) =>
     machine.wheel_positions[0]
   ] ?? "lower";
 
-const formatProfile = (profile: string) =>
-  ({
-    rectangular_groove: "矩形槽",
-    flat_arc_groove: "平面 + 圆弧槽",
-    same_r_tile_groove: "上下同 R 型腔",
-  })[profile] ?? profile;
-
-const formatSectionProfile = (profile: string) =>
-  ({
-    rectangular_block_preform: "方块磨前矩形槽",
-    block_to_tile: "方块磨前平面 + 圆弧槽",
-    same_r_tile_preform: "同 R 瓦型磨前型腔",
-  })[profile] ?? formatProfile(profile);
-
-const formatRFormSource = (source: string) =>
-  ({
-    finished_product_target_only_not_guide_profile: "成品仅作磨后目标，不参与导轨型腔",
-    finished_product_max_radius: "取成品双 R 中的较大值",
-    pre_grinding_spec: "取成型磨前规格",
-  })[source] ?? source;
-
 const isTauri = () => "__TAURI_INTERNALS__" in window;
 
-const saveGeneratedFile = async (file: GeneratedFile): Promise<string | null> => {
+const saveGeneratedFile = async (
+  file: GeneratedFile,
+): Promise<string | null> => {
   if (!isTauri()) {
     const anchor = document.createElement("a");
     anchor.href = file.url;
@@ -79,507 +70,276 @@ const saveGeneratedFile = async (file: GeneratedFile): Promise<string | null> =>
   }
 
   const source = new URL(file.url);
-  if (source.protocol !== "http:" || !["127.0.0.1", "localhost"].includes(source.hostname)) {
+  if (
+    source.protocol !== "http:" ||
+    !["127.0.0.1", "localhost"].includes(source.hostname)
+  ) {
     throw new Error("只允许保存本地 CAD 引擎生成的文件。");
   }
 
   const safeName = file.name.replace(/[<>:"/\\|?*\u0000-\u001F]/g, "_");
-  const extension = safeName.includes(".") ? safeName.split(".").pop()?.toLowerCase() : undefined;
+  const extension = safeName.includes(".")
+    ? safeName.split(".").pop()?.toLowerCase()
+    : undefined;
   const target = await save({
     defaultPath: safeName,
-    filters: extension ? [{ name: file.label, extensions: [extension] }] : undefined,
+    filters: extension
+      ? [{ name: file.label, extensions: [extension] }]
+      : undefined,
   });
   if (!target) return null;
 
   const response = await fetch(source);
-  if (!response.ok) throw new Error(`本地文件读取失败（HTTP ${response.status}）。`);
+  if (!response.ok)
+    throw new Error(`本地文件读取失败（HTTP ${response.status}）。`);
   const content = new Uint8Array(await response.arrayBuffer());
   if (content.byteLength === 0) throw new Error("生成文件为空，未执行保存。");
   await writeFile(target, content);
   return target;
 };
 
+function NavIcon({ kind }: { kind: Page }) {
+  const paths: Record<Page, string> = {
+    workspace: "M12 2 3 7v10l9 5 9-5V7ZM3 7l9 5 9-5M12 12v10",
+    history: "M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Zm0 4v6l4 2",
+    templates: "M6 2h8l4 4v16H6ZM14 2v5h4M9 11h6M9 15h6M9 18h5",
+    rules:
+      "M12 5C8 2 3 3 2 4v16c3-2 7-1 10 1 3-2 7-3 10-1V4c-3-2-7-1-10 1Zm0 0v16",
+    settings:
+      "m10 2-1 3-3 1-3-1-2 4 2 2v3l-2 2 2 4 3-1 3 1 1 3h4l1-3 3-1 3 1 2-4-2-2v-3l2-2-2-4-3 1-3-1-1-3ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
+  };
+  return (
+    <svg
+      width="20"
+      height="20"
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.6"
+      strokeLinejoin="round"
+      strokeLinecap="round"
+      aria-hidden="true"
+    >
+      <path d={paths[kind]} />
+    </svg>
+  );
+}
+
 export default function App() {
   const [page, setPage] = useState<Page>("workspace");
-  const [isNewTask, setIsNewTask] = useState(false);
-  const [step, setStep] = useState<Step>(1);
   const [machines, setMachines] = useState<Machine[]>([]);
   const [design, setDesign] = useState<DesignInput>(initialDesign);
-  const [validation, setValidation] = useState<ValidationResult | null>(null);
-  const [apiError, setApiError] = useState<string | null>(null);
   const [isServiceOnline, setIsServiceOnline] = useState(false);
-  const [isValidating, setIsValidating] = useState(false);
-  const [isGenerating, setIsGenerating] = useState(false);
-  const [generationState, setGenerationState] = useState<"idle" | "passed" | "failed">("idle");
-  const [generationResult, setGenerationResult] = useState<GenerationResult | null>(null);
-  const [taskHistory, setTaskHistory] = useState<TaskHistoryResult | null>(null);
+  const [taskHistory, setTaskHistory] = useState<TaskHistoryResult | null>(
+    null,
+  );
   const [isTasksLoading, setIsTasksLoading] = useState(false);
   const [taskHistoryError, setTaskHistoryError] = useState<string | null>(null);
-  const [selectedHistoryTaskId, setSelectedHistoryTaskId] = useState<string | null>(null);
+  const refresh = () =>
+    refreshTaskHistory(setTaskHistory, setIsTasksLoading, setTaskHistoryError);
+  const job = useDesignJob(() => void refresh(), setIsServiceOnline);
 
   useEffect(() => {
-    void api.health()
-      .then(() => { setIsServiceOnline(true); return loadMachines(setMachines, setDesign); })
-      .catch(() => setIsServiceOnline(false));
-  }, []);
-
-  useEffect(() => {
-    void refreshTaskHistory(setTaskHistory, setIsTasksLoading, setTaskHistoryError);
-  }, []);
-
-  useEffect(() => {
+    let active = true;
+    void api
+      .health()
+      .then(() => {
+        if (active) setIsServiceOnline(true);
+        return api.machines();
+      })
+      .then((items) => {
+        if (!active) return;
+        setMachines(items);
+        setDesign((previous) => {
+          const machine =
+            items.find((item) => item.id === previous.machine_type) ?? items[0];
+          return machine
+            ? {
+                ...previous,
+                machine_type: machine.id,
+                guide_rail_type: machine.guide_type,
+                wheel_sequence: machine.wheel_positions,
+                first_wheel_side: machineFirstSide(machine),
+                template_coordinate_system: machine.template_coordinate_system,
+              }
+            : previous;
+        });
+      })
+      .catch(() => {
+        if (active) setIsServiceOnline(false);
+      });
+    void refresh();
     if ("__TAURI_INTERNALS__" in window) void check().catch(() => undefined);
+    return () => {
+      active = false;
+    };
   }, []);
 
-  const returnToDashboard = () => {
-    resetWorkspace(setDesign, setStep, setValidation, setGenerationState, setApiError);
-    setGenerationResult(null);
-    setPage("workspace");
-    setIsNewTask(false);
-  };
-
+  useEffect(() => {
+    const release = () =>
+      document
+        .querySelectorAll("button.pointer-pressed")
+        .forEach((button) => button.classList.remove("pointer-pressed"));
+    window.addEventListener("pointerup", release);
+    window.addEventListener("pointercancel", release);
+    window.addEventListener("blur", release);
+    return () => {
+      window.removeEventListener("pointerup", release);
+      window.removeEventListener("pointercancel", release);
+      window.removeEventListener("blur", release);
+    };
+  }, []);
   const selectedMachine = useMemo(
-    () => machines.find((machine) => machine.id === design.machine_type) ?? null,
+    () =>
+      machines.find((machine) => machine.id === design.machine_type) ?? null,
     [design.machine_type, machines],
   );
-
-  const selectMachine = (machineId: string) => {
-    const machine = machines.find((item) => item.id === machineId);
-    if (!machine) return;
-    applyMachine(machine, setDesign);
-    setValidation(null);
-    setGenerationState("idle");
-    setGenerationResult(null);
-    setApiError(null);
+  const newTask = () => {
+    job.invalidate();
+    setDesign({ ...initialDesign });
+    setPage("workspace");
   };
-
-  const update = <Key extends keyof DesignInput>(key: Key, value: DesignInput[Key]) => {
+  const update = <K extends keyof DesignInput>(
+    key: K,
+    value: DesignInput[K],
+  ) => {
+    job.invalidate();
     setDesign((previous) => ({ ...previous, [key]: value }));
-    setValidation(null);
-    setGenerationState("idle");
-    setGenerationResult(null);
-    setApiError(null);
   };
-
-  const validate = async () => {
-    setApiError(null);
-    setIsValidating(true);
-    try {
-      const result = await api.validate(design);
-      setValidation(result);
-      setStep(2);
-    } catch (error) {
-      setApiError(error instanceof Error ? error.message : "规格校验失败。");
-      setStep(1);
-    } finally {
-      setIsValidating(false);
-    }
+  const selectMachine = (id: string) => {
+    const machine = machines.find((item) => item.id === id);
+    if (!machine) return;
+    job.invalidate();
+    applyMachine(machine, setDesign);
   };
-
-  const generate = async () => {
-    if (!validation) return;
-    setApiError(null);
-    setIsGenerating(true);
-    setStep(3);
-    try {
-      const result = await api.generate(design);
-      setGenerationResult(result);
-      setGenerationState(result.ok && result.release_allowed ? "passed" : "failed");
-      if (!result.ok || !result.release_allowed) {
-        setApiError(result.stderr || "完整 DXF 校验未通过，release.dxf 未输出。");
-      }
-    } catch (error) {
-      setGenerationState("failed");
-      setApiError(error instanceof Error ? error.message : "生成任务失败。");
-    } finally {
-      setIsGenerating(false);
-      void refreshTaskHistory(setTaskHistory, setIsTasksLoading, setTaskHistoryError);
-    }
+  const copyTask = (input: DesignInput) => {
+    job.invalidate();
+    setDesign(JSON.parse(JSON.stringify(input)));
+    setPage("workspace");
   };
-
   return (
-    <div className="app-shell">
+    <div
+      className="app-shell"
+      onPointerDownCapture={(event) => {
+        if (event.pointerType === "mouse" && event.button === 0)
+          (event.target as HTMLElement)
+            .closest("button:not(:disabled)")
+            ?.classList.add("pointer-pressed");
+      }}
+    >
       <aside className="sidebar">
-        <div className="brand-mark">CAD</div>
-        <button className="brand-text" onClick={returnToDashboard} aria-label="返回导轨工作台首页">
-          <strong>成型磨导轨</strong>
-          <span>参数化生成器</span>
+        <button
+          className="brand-text"
+          onClick={() => setPage("workspace")}
+          aria-label="返回导轨工作台"
+        >
+          <span className="brand-glyph">
+            <NavIcon kind="workspace" />
+          </span>
+          <span>
+            <strong>成型磨导轨</strong>
+            <small>参数化生成器</small>
+          </span>
         </button>
         <nav>
           {navItems.map((item) => (
             <button
               className={`nav-item ${page === item.id ? "active" : ""}`}
               key={item.id}
-              onClick={() => {
-                setPage(item.id);
-                if (item.id === "history") setSelectedHistoryTaskId(null);
-              }}
+              aria-label={item.label}
+              aria-current={page === item.id ? "page" : undefined}
+              onClick={() => setPage(item.id)}
             >
-              <span>{item.icon}</span>{item.label}
+              <NavIcon kind={item.id} />
+              <span>{item.label}</span>
             </button>
           ))}
         </nav>
-        <div className="sidebar-bottom">
-          <span className="connection-dot" />本地生成服务
-          <small>{isServiceOnline ? "已连接" : "连接异常"}</small>
+        <div
+          className={`sidebar-bottom ${isServiceOnline && !job.connectionError ? "" : "offline"}`}
+        >
+          <span className="connection-dot" />
+          {job.connectionError
+            ? "进度连接中断"
+            : isServiceOnline
+              ? "本地引擎已连接"
+              : "本地引擎未连接"}
         </div>
       </aside>
       <main className="main-content">
         <header className="topbar">
           <div>
-            <p className="eyebrow">工艺工程 / 本地任务</p>
             <h1>{pageTitle(page)}</h1>
+            <p>依据磨前规格，生成可复核的加工图纸</p>
           </div>
           <div className="topbar-actions">
-            <span className={`status-pill ${isServiceOnline ? "" : "offline"}`}><i />{isServiceOnline ? "服务已连接" : "服务未连接"}</span>
-            <span className="account-pill administrator"><b>本地</b>管理员</span>
-            {page === "workspace" && <button className="button primary" onClick={() => { resetWorkspace(setDesign, setStep, setValidation, setGenerationState, setApiError); setGenerationResult(null); setIsNewTask(true); }}>＋ 新建导轨任务</button>}
+            <span className="local-task-label">本地任务</span>
+            <button className="button primary" onClick={newTask}>
+              新建任务
+            </button>
           </div>
         </header>
-        {page === "workspace" && !isNewTask && <Dashboard
-          history={taskHistory}
-          isLoading={isTasksLoading}
-          error={taskHistoryError}
-          onCreate={() => setIsNewTask(true)}
-          onViewTask={(taskId) => { setSelectedHistoryTaskId(taskId); setPage("history"); }}
-        />}
-        {page === "workspace" && isNewTask && (
-          <Workspace
+        {page === "workspace" && (
+          <Workbench
             design={design}
             machines={machines}
             selectedMachine={selectedMachine}
-            validation={validation}
-            error={apiError}
-            step={step}
-            isValidating={isValidating}
-            isGenerating={isGenerating}
-            generationState={generationState}
-            generationResult={generationResult}
-            onSelectMachine={selectMachine}
+            job={job}
+            onMachine={selectMachine}
             onUpdate={update}
-            onValidate={validate}
-            onGenerate={generate}
-            onBack={() => setStep(1)}
+            onNew={newTask}
+            artifactActions={(file) => (
+              <ArtifactActions
+                key={`${file.task_id}-${file.name}`}
+                file={file}
+              />
+            )}
           />
         )}
-        {page === "history" && <History
-          history={taskHistory}
-          isLoading={isTasksLoading}
-          error={taskHistoryError}
-          initialTaskId={selectedHistoryTaskId}
-          onRefresh={() => refreshTaskHistory(setTaskHistory, setIsTasksLoading, setTaskHistoryError)}
-        />}
+        {page === "history" && (
+          <History
+            history={taskHistory}
+            isLoading={isTasksLoading}
+            error={taskHistoryError}
+            initialTaskId={null}
+            onRefresh={refresh}
+            onCopy={copyTask}
+          />
+        )}
         {page === "templates" && <Templates machines={machines} />}
         {page === "rules" && <Rules />}
-        {page === "settings" && <DesktopSettingsPage onEngineState={setIsServiceOnline} />}
+        {page === "settings" && (
+          <DesktopSettingsPage onEngineState={setIsServiceOnline} />
+        )}
       </main>
     </div>
   );
 }
 
-async function loadMachines(
-  setMachines: Dispatch<SetStateAction<Machine[]>>,
-  setDesign: Dispatch<SetStateAction<DesignInput>>,
-) {
-  const items = await api.machines();
-  setMachines(items);
-  const preferred = items.find((item) => item.id === initialDesign.machine_type) ?? items[0];
-  if (preferred) applyMachine(preferred, setDesign);
-}
-
-function Dashboard({ history, isLoading, error, onCreate, onViewTask }: {
-  history: TaskHistoryResult | null;
-  isLoading: boolean;
-  error: string | null;
-  onCreate: () => void;
-  onViewTask: (taskId: string) => void;
+function PanelTitle({
+  number,
+  title,
+  subtitle,
+}: {
+  number: string;
+  title: string;
+  subtitle: string;
 }) {
-  const metrics = history?.metrics;
-  const recentTasks = history?.items.slice(0, 5) ?? [];
-  return <section className="dashboard">
-    <div className="metrics">
-      <Metric label="今日任务" value={metricValue(metrics?.today, isLoading)} note="按本地任务创建时间统计" />
-      <Metric label="已通过 RELEASE" value={metricValue(metrics?.passed, isLoading)} note="正式图纸以校验报告为准" tone="success" />
-      <Metric label="待处理失败" value={metricValue(metrics?.failed, isLoading)} note="缺少报告或校验阻断的任务" tone="error" />
-      <Metric label="全部任务" value={metricValue(metrics?.total, isLoading)} note={metrics?.running ? `${metrics.running} 个任务仍在执行` : "已读取本地任务记录"} />
-    </div>
-    <div className="dashboard-grid">
-      <section className="panel recent-panel">
-        <div className="section-heading"><div><p className="eyebrow">本地任务</p><h2>最近任务列表</h2></div><button className="button secondary mini" onClick={onCreate}>新建任务</button></div>
-        <div className="table-head"><span>任务名称</span><span>机台</span><span>成品形态</span><span>磨前形态</span><span>状态</span><span>操作</span></div>
-        {error && <div className="table-message error">{error}</div>}
-        {!error && isLoading && <div className="table-message">正在读取本地任务记录…</div>}
-        {!error && !isLoading && recentTasks.length > 0 && <TaskRows tasks={recentTasks} onView={onViewTask} />}
-        {!error && !isLoading && recentTasks.length === 0 && <TaskEmpty />}
-      </section>
-      <aside className="dashboard-aside">
-        <section className="reminder-card">
-          <div className="reminder-header">ⓘ 规则提醒</div>
-          <RuleReminder number="01" title="INPUT LOGIC / 规格输入逻辑" text="成品规格与成型磨前规格必须独立输入；槽宽和导轨厚度以磨前规格为准。" />
-          <RuleReminder number="02" title="RELEASE GATE / 正式图纸门禁" text="候选 DXF 未通过几何、图层、旧图元与尺寸定义点审计时，release.dxf 不会输出。" />
-          <div className="block-reminder"><strong>BLOCKING / 校验阻断逻辑</strong><p>规格解析失败、关键尺寸不一致或定义点未绑定真实几何时，系统将阻断正式图纸。</p></div>
-        </section>
-        <section className="preview-placeholder"><span>◇</span><h3>参数化生成预览</h3><p>创建任务并完成计算后显示带尺寸标注的导轨截面。</p><button className="button inverse" onClick={onCreate}>进入生成工作区</button></section>
-      </aside>
-    </div>
-  </section>;
-}
-
-function metricValue(value: number | undefined, isLoading: boolean) {
-  if (isLoading) return "…";
-  return value === undefined ? "—" : String(value);
-}
-
-function Metric({ label, value, note, tone }: { label: string; value: string; note: string; tone?: "success" | "error" }) {
-  return <article className={`metric ${tone ?? ""}`}><p>{label}</p><strong>{value}</strong><small>{note}</small></article>;
-}
-
-function RuleReminder({ number, title, text }: { number: string; title: string; text: string }) {
-  return <article className="rule-reminder"><span>{number}</span><div><h3>{title}</h3><p>{text}</p></div></article>;
-}
-
-function Workspace(props: {
-  design: DesignInput;
-  machines: Machine[];
-  selectedMachine: Machine | null;
-  validation: ValidationResult | null;
-  error: string | null;
-  step: Step;
-  isValidating: boolean;
-  isGenerating: boolean;
-  generationState: "idle" | "passed" | "failed";
-  generationResult: GenerationResult | null;
-  onSelectMachine: (id: string) => void;
-  onUpdate: <Key extends keyof DesignInput>(key: Key, value: DesignInput[Key]) => void;
-  onValidate: () => void;
-  onGenerate: () => void;
-  onBack: () => void;
-}) {
-  const { design, selectedMachine, validation } = props;
-  const finishedGuidance = getFinishedSpecGuidance(design);
-  const preGrindingGuidance = getPreGrindingSpecGuidance(design);
-  const missingInputs = [
-    !selectedMachine && "选择机台",
-    !design.finished_spec.trim() && "填写成品规格",
-    !design.pre_grinding_spec.trim() && "填写成型磨前规格",
-  ].filter(Boolean) as string[];
-  const canValidate = !props.isValidating && missingInputs.length === 0;
-
   return (
-    <section className="workspace">
-      <Stepper active={props.step} />
-      {props.error && <div className="alert error" role="alert"><strong>需要处理：</strong>{props.error}</div>}
-      {props.step === 1 && (
-        <div className="input-layout">
-          <div className="form-stack">
-            <section className="panel">
-              <PanelTitle number="01" title="选择机台" subtitle="机台结构参数取自模板配置，任务中不可改写。" />
-              <div className="machine-selector">
-                <label>
-                  <span>当前机台</span>
-                  <select value={design.machine_type} onChange={(event) => props.onSelectMachine(event.target.value)} disabled={props.machines.length === 0}>
-                    {props.machines.length === 0 && <option>正在读取机台配置…</option>}
-                    {props.machines.map((machine) => (
-                      <option key={machine.id} value={machine.id} disabled={!machine.supported_by_web_generation}>
-                        {machine.name}{machine.supported_by_web_generation ? "" : "（待接入）"}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                {selectedMachine && <div className="machine-summary-card">
-                  <span className="machine-kind">{selectedMachine.guide_sections === 2 ? "双导轨" : "单导轨"}</span>
-                  <strong>{selectedMachine.guide_length} mm</strong>
-                  <span>砂轮：{selectedMachine.wheel_positions.join(" / ")}</span>
-                  <span>上口为槽宽的 {selectedMachine.section_center_opening_ratio * 100}%，最大 {selectedMachine.section_center_opening_max} mm · 下沿 {selectedMachine.section_slot_base_height} mm</span>
-                </div>}
-              </div>
-            </section>
-            <section className="panel form-panel">
-              <PanelTitle number="02" title="输入产品参数" subtitle="成品与成型磨前规格分开填写；计算规则只在本地 CAD 引擎执行。" />
-              <div className="spec-grid">
-              <div className="spec-group finished">
-                <GroupTitle badge="成品" title="成品规格" hint="用于确定最终形态与 R_form 来源。" />
-                <div className="field-row">
-                  <label>成品形态
-                    <select value={design.product_shape_after} onChange={(event) => props.onUpdate("product_shape_after", event.target.value as DesignInput["product_shape_after"])}>
-                      <option value="tile_shape">瓦型（双 R）</option>
-                      <option value="bread_shape">馒头型（单 R）</option>
-                    </select>
-                  </label>
-                  <div className="format-field">
-                    <span className="field-label">规格格式</span>
-                    <output className="format-hint">{design.product_shape_after === "tile_shape" ? "R外*R内*弦宽*长度*厚度" : "R*宽度*长度*厚度"}</output>
-                  </div>
-                </div>
-                <label>成品规格
-                  <input aria-describedby="finished-spec-guidance" value={design.finished_spec} placeholder={design.product_shape_after === "tile_shape" ? "例如：R30*R28*17.4*23.5*3.95" : "例如：R9.6*8.6*42.6*2.1"} onChange={(event) => props.onUpdate("finished_spec", event.target.value)} spellCheck={false} />
-                </label>
-                <SpecGuidance id="finished-spec-guidance" guidance={finishedGuidance} />
-              </div>
-              <div className="spec-group preform">
-                <GroupTitle badge="磨前" title="成型磨前规格" hint="槽宽、宽度公差及导轨厚度均以此参数为准。" />
-                <div className="field-row">
-                  <label>磨前形态
-                    <select value={design.product_shape_before} onChange={(event) => props.onUpdate("product_shape_before", event.target.value as DesignInput["product_shape_before"])}>
-                      <option value="rectangular_block">方块</option>
-                      <option value="same_r_tile">同 R 瓦型</option>
-                    </select>
-                  </label>
-                  <label>避空
-                    <input value={design.relief} onChange={(event) => props.onUpdate("relief", event.target.value)} />
-                  </label>
-                </div>
-                <label>成型磨前规格
-                  <input aria-describedby="pre-grinding-spec-guidance" value={design.pre_grinding_spec} placeholder="例如：42.6*8.6(-0.07/-0.09)*2.1(+0.01/-0.01)" onChange={(event) => props.onUpdate("pre_grinding_spec", event.target.value)} spellCheck={false} />
-                </label>
-                <SpecGuidance id="pre-grinding-spec-guidance" guidance={preGrindingGuidance} />
-              </div>
-              </div>
-              <div className="process-section">
-                <div><h3>工艺选项</h3><p>仅在明确要求时勾选；默认规则由后端统一执行。</p></div>
-                <div className="process-options">
-                  <label className="check-option">
-                    <input type="checkbox" checked={design.single_side_or_high_requirement} onChange={(event) => props.onUpdate("single_side_or_high_requirement", event.target.checked)} />
-                    <span>磨单边 / 高要求<small>厚度间隙固定为 0.09 mm</small></span>
-                  </label>
-                  <label className="check-option">
-                    <input type="checkbox" checked={design.high_symmetry_requirement} disabled={design.large_tile_clearance} onChange={(event) => props.onUpdate("high_symmetry_requirement", event.target.checked)} />
-                    <span>高对称度槽宽<small>显式采用 0.03 mm 槽宽间隙</small></span>
-                  </label>
-                  <label className="check-option">
-                    <input type="checkbox" checked={design.large_tile_clearance} disabled={design.high_symmetry_requirement} onChange={(event) => props.onUpdate("large_tile_clearance", event.target.checked)} />
-                    <span>大瓦放宽槽宽<small>显式采用 0.08 mm 槽宽间隙</small></span>
-                  </label>
-                  <label>砂轮半径（默认 R80）
-                    <input type="number" min="1" step="0.01" value={design.wheel_radius} onChange={(event) => props.onUpdate("wheel_radius", Number(event.target.value))} />
-                  </label>
-                </div>
-              </div>
-              <div className="form-actions">
-                <span>所有尺寸单位：mm · 最终有效性以 CAD 引擎解析为准</span>
-                <button className="button primary" onClick={props.onValidate} disabled={!canValidate}>
-                  {props.isValidating ? "正在解析…" : "确认计算"} <b>→</b>
-                </button>
-              </div>
-            </section>
-          </div>
-          <InputReadiness missingInputs={missingInputs} finishedGuidance={finishedGuidance} preGrindingGuidance={preGrindingGuidance} />
-        </div>
-      )}
-      {props.step === 2 && validation && (
-        <Review validation={validation} machine={selectedMachine} onBack={props.onBack} onGenerate={props.onGenerate} />
-      )}
-      {props.step === 3 && <Generation isGenerating={props.isGenerating} state={props.generationState} error={props.error} validation={validation} result={props.generationResult} />}
-    </section>
+    <div className="panel-title">
+      <span>{number}</span>
+      <div>
+        <h2>{title}</h2>
+        <p>{subtitle}</p>
+      </div>
+    </div>
   );
 }
 
-function Stepper({ active }: { active: Step }) {
-  return <ol className="stepper">{["输入参数", "确认计算", "生成结果"].map((label, index) => {
-    const step = (index + 1) as Step;
-    return <li key={label} className={active === step ? "current" : active > step ? "done" : ""}><span>{active > step ? "✓" : index + 1}</span>{label}</li>;
-  })}</ol>;
-}
-
-function PanelTitle({ number, title, subtitle }: { number: string; title: string; subtitle: string }) {
-  return <div className="panel-title"><span>{number}</span><div><h2>{title}</h2><p>{subtitle}</p></div></div>;
-}
-
-function GroupTitle({ badge, title, hint }: { badge: string; title: string; hint: string }) {
-  return <div className="group-title"><span>{badge}</span><div><h3>{title}</h3><p>{hint}</p></div></div>;
-}
-
-type SpecGuidanceState = "neutral" | "ready" | "attention";
-
-interface SpecGuidanceContent {
-  state: SpecGuidanceState;
-  message: string;
-}
-
-function getFinishedSpecGuidance(design: DesignInput): SpecGuidanceContent {
-  const value = design.finished_spec.trim();
-  if (!value) return { state: "neutral", message: "请使用 * 分隔各字段；CAD 引擎会在下一步执行完整解析。" };
-  const expectedParts = design.product_shape_after === "tile_shape" ? 5 : 4;
-  const parts = value.split("*").filter(Boolean).length;
-  if (parts !== expectedParts) return { state: "attention", message: `当前识别到 ${parts} 段；此形态通常需要 ${expectedParts} 段。仍以 CAD 引擎解析结果为准。` };
-  return { state: "ready", message: `已检测到 ${parts} 个规格字段，下一步将由 CAD 引擎校验数值与形态规则。` };
-}
-
-function getPreGrindingSpecGuidance(design: DesignInput): SpecGuidanceContent {
-  const value = design.pre_grinding_spec.trim();
-  if (!value) return { state: "neutral", message: "磨前规格决定槽宽与导轨厚度，请完整输入尺寸及公差。" };
-  const expectedParts = design.product_shape_before === "rectangular_block" ? 3 : 5;
-  const parts = value.split("*").filter(Boolean).length;
-  if (parts !== expectedParts) return { state: "attention", message: `当前识别到 ${parts} 段；此磨前形态通常需要 ${expectedParts} 段。仍以 CAD 引擎解析结果为准。` };
-  if (design.product_shape_before === "rectangular_block" && !/[()]/.test(value)) return { state: "attention", message: "尚未识别到方块规格中的公差括号；槽宽与厚度计算需要磨前公差。" };
-  return { state: "ready", message: "规格结构已具备，下一步将由 CAD 引擎验证尺寸、公差与机台规则。" };
-}
-
-function SpecGuidance({ id, guidance }: { id: string; guidance: SpecGuidanceContent }) {
-  return <p id={id} className={`spec-guidance ${guidance.state}`} aria-live="polite">{guidance.state === "ready" ? "✓" : guidance.state === "attention" ? "!" : "i"} {guidance.message}</p>;
-}
-
-function InputReadiness({ missingInputs, finishedGuidance, preGrindingGuidance }: {
-  missingInputs: string[];
-  finishedGuidance: SpecGuidanceContent;
-  preGrindingGuidance: SpecGuidanceContent;
-}) {
-  const attentionItems = [
-    finishedGuidance.state === "attention" && "检查成品规格字段数",
-    preGrindingGuidance.state === "attention" && "检查磨前规格字段数或公差",
-  ].filter(Boolean) as string[];
-  const isReady = missingInputs.length === 0 && attentionItems.length === 0;
-
-  return <aside className="input-readiness panel" aria-live="polite">
-    <p className="eyebrow">任务就绪度</p>
-    <h2>{isReady ? "可提交计算" : missingInputs.length ? "还需补充信息" : "建议先检查格式"}</h2>
-    <p>{isReady ? "已完成基础输入。确认计算后，CAD 引擎会执行唯一的工艺解析与规则校验。" : "这里仅做输入提示，不替代后端的规格与工艺判定。"}</p>
-    <ul>
-      {missingInputs.map((item) => <li className="blocking" key={item}><span>!</span>{item}</li>)}
-      {attentionItems.map((item) => <li className="attention" key={item}><span>!</span>{item}</li>)}
-      {isReady && <li className="ready"><span>✓</span>基础输入已齐全</li>}
-    </ul>
-    <div className="readiness-note"><strong>Release 门禁</strong><span>通过本页计算不代表 release 可输出；正式图纸仍需通过 DXF、图层与尺寸定义点审计。</span></div>
-  </aside>;
-}
-
-function Review({ validation, machine, onBack, onGenerate }: { validation: ValidationResult; machine: Machine | null; onBack: () => void; onGenerate: () => void }) {
-  const rows = [
-    ["槽宽", `${validation.derived.slot_width.toFixed(2)} ±${validation.derived.slot_width_tolerance.toFixed(2)} mm`, "磨前宽度及公差"],
-    ["导轨厚度", `${validation.derived.guide_thickness.toFixed(2)} mm`, "磨前厚度中值 + 机台间隙"],
-    ["R_form", validation.decision.arc_radius ? `R${validation.decision.arc_radius.toFixed(2)} mm` : "不适用（矩形槽）", formatRFormSource(validation.decision.R_form_source)],
-    ["避空", validation.derived.relief_label, "工艺规则"],
-    ["砂轮半径", `R${validation.decision.process_options.wheel_radius.toFixed(2)} mm`, "任务显式参数（默认 R80）"],
-  ];
-  return <div className="review-layout">
-    <section className="panel calculation-panel">
-      <PanelTitle number="02" title="确认计算结果" subtitle="以下参数均来自既有 Python 工艺计算，不可直接改写。" />
-      <div className="calculation-table">
-        {rows.map(([label, value, source]) => <div key={label}><span>{label}</span><strong>{value}</strong><small>{source}</small></div>)}
-      </div>
-      <div className="machine-summary">{machine?.name} · {machine?.guide_length} mm · {formatSectionProfile(validation.decision.final_section_profile_type)}</div>
-    </section>
-    <section className="panel preview-panel">
-      <div className="preview-header"><div><p className="eyebrow">计算关系示意</p><h2>{formatProfile(validation.decision.groove_profile)}</h2></div><span className="preview-tag">非真实比例</span></div>
-      <SectionRelationshipDiagram profile={validation.decision.groove_profile} />
-      <p className="preview-caption">这里仅说明型腔关系，不代表最终几何。真实尺寸图会在候选 DXF 通过审计后由 CAD 引擎生成。</p>
-    </section>
-    <section className="panel audit-panel">
-      <p className="eyebrow">规则审查</p>
-      <h2>输入计算已通过</h2>
-      {["成品与磨前规格独立", "槽宽取磨前规格与公差", "导轨厚度取磨前厚度中值", "型腔方向与第一砂轮一致"].map((item) => <div className="check-row" key={item}><span>✓</span>{item}</div>)}
-      <div className="audit-warning">下一步将执行 DXF 几何、图层、旧图元和尺寸定义点完整审计。</div>
-      <div className="review-actions"><button className="button secondary" onClick={onBack}>返回修改</button><button className="button primary" onClick={onGenerate}>校验并生成图纸 <b>→</b></button></div>
-    </section>
-  </div>;
-}
-
-function SectionRelationshipDiagram({ profile }: { profile: string }) {
-  return <div className="drawing-canvas"><div className="axis horizontal" /><div className="axis vertical" /><div className={`slot-figure ${profile}`}><span className="slot-label">型腔</span><i /><b /><em /></div><div className="dimension-line width"><span>槽宽</span></div><div className="dimension-line height"><span>导轨厚度</span></div></div>;
-}
-
 function ArtifactSaveButton({ file }: { file: GeneratedFile }) {
-  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">("idle");
+  const [state, setState] = useState<"idle" | "saving" | "saved" | "error">(
+    "idle",
+  );
   const [message, setMessage] = useState<string | null>(null);
 
   const saveFile = async () => {
@@ -595,20 +355,40 @@ function ArtifactSaveButton({ file }: { file: GeneratedFile }) {
       setMessage(`已保存到：${target}`);
     } catch (error) {
       setState("error");
-      setMessage(error instanceof Error ? `保存失败：${error.message}` : "保存失败，请重新选择保存位置。");
+      setMessage(
+        error instanceof Error
+          ? `保存失败：${error.message}`
+          : "保存失败，请重新选择保存位置。",
+      );
     }
   };
 
-  return <div className={`artifact-save ${state}`}>
-    <button type="button" onClick={() => void saveFile()} disabled={state === "saving"}>
-      {state === "saving" ? "保存中…" : state === "saved" ? "再次另存副本" : "另存副本"}
-    </button>
-    {message && <small role="status" title={message}>{message}</small>}
-  </div>;
+  return (
+    <div className={`artifact-save ${state}`}>
+      <button
+        type="button"
+        onClick={() => void saveFile()}
+        disabled={state === "saving"}
+      >
+        {state === "saving"
+          ? "保存中…"
+          : state === "saved"
+            ? "再次另存副本"
+            : "另存副本"}
+      </button>
+      {message && (
+        <small role="status" title={message}>
+          {message}
+        </small>
+      )}
+    </div>
+  );
 }
 
 function ArtifactOpenButton({ file }: { file: GeneratedFile }) {
-  const [state, setState] = useState<"idle" | "opening" | "opened" | "error">("idle");
+  const [state, setState] = useState<"idle" | "opening" | "opened" | "error">(
+    "idle",
+  );
   const [message, setMessage] = useState<string | null>(null);
   const isDrawing = /\.(dxf|dwg)$/i.test(file.name);
   const canOpen = Boolean(file.can_open && file.task_id && file.relative_path);
@@ -624,93 +404,123 @@ function ArtifactOpenButton({ file }: { file: GeneratedFile }) {
       setMessage("已交给本机默认程序打开。");
     } catch (openError) {
       setState("error");
-      setMessage(openError instanceof Error ? openError.message : "文件打开失败。");
+      setMessage(
+        openError instanceof Error ? openError.message : "文件打开失败。",
+      );
     }
   };
 
-  return <div className={`artifact-open ${state}`}>
-    <button type="button" onClick={() => void openFile()} disabled={state === "opening"}>
-      {state === "opening" ? "正在打开…" : isDrawing ? "打开图纸" : "打开文件"}
-    </button>
-    {message && <small role="status" title={message}>{message}</small>}
-  </div>;
+  return (
+    <div className={`artifact-open ${state}`}>
+      <button
+        type="button"
+        onClick={() => void openFile()}
+        disabled={state === "opening"}
+      >
+        {state === "opening"
+          ? "正在打开…"
+          : isDrawing
+            ? "打开图纸"
+            : "打开文件"}
+      </button>
+      {message && (
+        <small role="status" title={message}>
+          {message}
+        </small>
+      )}
+    </div>
+  );
 }
 
 function ArtifactActions({ file }: { file: GeneratedFile }) {
-  return <div className="artifact-actions">
-    <ArtifactOpenButton file={file} />
-    <ArtifactSaveButton file={file} />
-  </div>;
+  return (
+    <div className="artifact-actions">
+      <ArtifactOpenButton file={file} />
+      <ArtifactSaveButton file={file} />
+    </div>
+  );
 }
 
-function Generation({ isGenerating, state, error, validation, result }: { isGenerating: boolean; state: "idle" | "passed" | "failed"; error: string | null; validation: ValidationResult | null; result: GenerationResult | null }) {
-  const stages = ["读取机台配置", "解析产品规格", "重建参数化槽口", "生成候选 release DXF", "运行完整校验", "晋级正式 release"];
-  const passed = state === "passed";
-  const files = result?.files ?? {};
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
-
-  useEffect(() => {
-    if (!isGenerating) {
-      setElapsedSeconds(0);
-      return;
-    }
-    const startedAt = Date.now();
-    const timer = window.setInterval(
-      () => setElapsedSeconds(Math.floor((Date.now() - startedAt) / 1000)),
-      1000,
-    );
-    return () => window.clearInterval(timer);
-  }, [isGenerating]);
-
-  return <section className={`generation-view panel ${passed ? "result-passed" : ""}`} aria-live="polite"><div className={`result-icon ${passed ? "success" : state === "failed" ? "failure" : "running"}`}>{passed ? "✓" : state === "failed" ? "!" : "…"}</div><p className="eyebrow">生成任务</p><h2>{isGenerating ? "正在重建图纸与校验" : passed ? "正式图纸已通过校验" : "正式 release 未输出"}</h2><p>{isGenerating ? "候选图纸正在后台生成；只有完整校验结束后，步骤才会变为完成。" : passed ? "release.dxf 已由候选文件晋级。" : error ?? "任务结束。"}</p>{isGenerating && <div className="generation-activity" role="status"><div className="generation-scan" aria-hidden="true"><i /><b /><span /></div><div><strong>CAD 引擎工作中</strong><small>已运行 {elapsedSeconds} 秒 · 正在等待真实校验结果</small></div></div>}{passed && result?.preview && <div className="output-preview"><img src={result.preview.url} alt="带尺寸标注的导轨截面预览" /></div>}<ol className="generation-steps">{stages.map((label, index) => {
-    const isFailurePoint = state === "failed" && index === stages.length - 1;
-    const className = passed ? "ok" : isFailurePoint ? "bad" : "waiting";
-    return <li key={label} className={className}><span>{passed ? "✓" : isFailurePoint ? "!" : index + 1}</span>{label}</li>;
-  })}</ol>{validation && <div className="result-summary"><strong>{formatProfile(validation.decision.groove_profile)}</strong><span>槽宽 {validation.derived.slot_width.toFixed(2)} mm</span><span>导轨厚度 {validation.derived.guide_thickness.toFixed(2)} mm</span></div>}{passed && <div className="output-files"><h3>本地图纸库</h3><p className="artifact-library-note">文件已保存在该历史任务中。直接打开不会复制文件；“另存副本”才会在所选位置生成第二份。</p>{Object.entries(files).map(([key, file]) => <div className="output-file-row" key={key}><span>▧</span><div><strong>{file.label}</strong><small>{file.name}</small></div><ArtifactActions file={file} /></div>)}</div>}</section>;
-}
-
-function History({ history, isLoading, error, initialTaskId, onRefresh }: {
+function History({
+  history,
+  isLoading,
+  error,
+  initialTaskId,
+  onRefresh,
+  onCopy,
+}: {
   history: TaskHistoryResult | null;
   isLoading: boolean;
   error: string | null;
   initialTaskId: string | null;
   onRefresh: () => Promise<void>;
+  onCopy: (input: DesignInput) => void;
 }) {
   const [query, setQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<TaskStatus | "all">("all");
-  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(initialTaskId);
+  const [selectedTaskId, setSelectedTaskId] = useState<string | null>(
+    initialTaskId,
+  );
   const [detail, setDetail] = useState<TaskDetail | null>(null);
   const [detailError, setDetailError] = useState<string | null>(null);
   const [isDetailLoading, setIsDetailLoading] = useState(false);
   const [deletingTaskId, setDeletingTaskId] = useState<string | null>(null);
-  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(new Set());
+  const [selectedTaskIds, setSelectedTaskIds] = useState<Set<string>>(
+    new Set(),
+  );
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
 
   useEffect(() => {
+    setDetail(null);
+    setDetailError(null);
     if (!selectedTaskId) {
-      setDetail(null);
+      setIsDetailLoading(false);
       return;
     }
+    const controller = new AbortController();
+    let active = true;
     setIsDetailLoading(true);
-    setDetailError(null);
-    void api.task(selectedTaskId)
-      .then(setDetail)
-      .catch((loadError) => setDetailError(loadError instanceof Error ? loadError.message : "任务详情读取失败。"))
-      .finally(() => setIsDetailLoading(false));
+    void api
+      .task(selectedTaskId, controller.signal)
+      .then((result) => {
+        if (active && result.task_id === selectedTaskId) setDetail(result);
+      })
+      .catch((loadError) => {
+        if (active && !controller.signal.aborted)
+          setDetailError(
+            loadError instanceof Error
+              ? loadError.message
+              : "任务详情读取失败。",
+          );
+      })
+      .finally(() => {
+        if (active) setIsDetailLoading(false);
+      });
+    return () => {
+      active = false;
+      controller.abort();
+    };
   }, [selectedTaskId]);
 
   const normalizedQuery = query.trim().toLowerCase();
   const tasks = (history?.items ?? []).filter((task) => {
     if (statusFilter !== "all" && task.status !== statusFilter) return false;
     if (!normalizedQuery) return true;
-    return [task.task_id, task.finished_spec, task.pre_grinding_spec, task.machine_name]
-      .some((value) => value.toLowerCase().includes(normalizedQuery));
+    return [
+      task.task_id,
+      task.finished_spec,
+      task.pre_grinding_spec,
+      task.machine_name,
+    ].some((value) => value.toLowerCase().includes(normalizedQuery));
   });
-  const selectableTaskIds = tasks.filter((task) => task.can_delete).map((task) => task.task_id);
-  const allSelectableTasksSelected = selectableTaskIds.length > 0
-    && selectableTaskIds.every((taskId) => selectedTaskIds.has(taskId));
+  const selectableTaskIds = tasks
+    .filter((task) => task.can_delete)
+    .map((task) => task.task_id);
+  const allSelectableTasksSelected =
+    selectableTaskIds.length > 0 &&
+    selectableTaskIds.every((taskId) => selectedTaskIds.has(taskId));
 
   const toggleTaskSelection = (taskId: string, checked: boolean) => {
     setSelectedTaskIds((previous) => {
@@ -733,7 +543,9 @@ function History({ history, isLoading, error, initialTaskId, onRefresh }: {
   };
 
   const deleteHistoryTask = async (task: TaskSummary) => {
-    const confirmed = window.confirm(`确认删除任务 ${task.finished_spec || task.task_id}？\n删除后 DXF、DWG、预览和报告均无法恢复。`);
+    const confirmed = window.confirm(
+      `确认删除任务 ${task.finished_spec || task.task_id}？\n删除后 DXF、DWG、预览和报告均无法恢复。`,
+    );
     if (!confirmed) return;
     setDeletingTaskId(task.task_id);
     setDeleteError(null);
@@ -749,7 +561,11 @@ function History({ history, isLoading, error, initialTaskId, onRefresh }: {
       setDeleteMessage("任务已删除。");
       await onRefresh();
     } catch (deleteTaskError) {
-      setDeleteError(deleteTaskError instanceof Error ? deleteTaskError.message : "历史任务删除失败。");
+      setDeleteError(
+        deleteTaskError instanceof Error
+          ? deleteTaskError.message
+          : "历史任务删除失败。",
+      );
     } finally {
       setDeletingTaskId(null);
     }
@@ -758,7 +574,9 @@ function History({ history, isLoading, error, initialTaskId, onRefresh }: {
   const deleteSelectedTasks = async () => {
     const taskIds = Array.from(selectedTaskIds);
     if (taskIds.length === 0) return;
-    const confirmed = window.confirm(`确认批量删除已选择的 ${taskIds.length} 个任务？\n删除后 DXF、DWG、预览和报告均无法恢复。`);
+    const confirmed = window.confirm(
+      `确认批量删除已选择的 ${taskIds.length} 个任务？\n删除后 DXF、DWG、预览和报告均无法恢复。`,
+    );
     if (!confirmed) return;
     setIsBulkDeleting(true);
     setDeleteError(null);
@@ -766,96 +584,481 @@ function History({ history, isLoading, error, initialTaskId, onRefresh }: {
     try {
       const result = await api.deleteTasks(taskIds);
       const deleted = new Set(result.deleted);
-      setSelectedTaskIds((previous) => new Set(Array.from(previous).filter((taskId) => !deleted.has(taskId))));
-      if (selectedTaskId && deleted.has(selectedTaskId)) setSelectedTaskId(null);
-      const skippedSummary = result.skipped.length > 0
-        ? `，跳过 ${result.skipped.length} 项：${result.skipped.map((item) => `${item.task_id} ${item.reason}`).join("；")}`
-        : "";
-      setDeleteMessage(`已删除 ${result.deleted.length} 个任务${skippedSummary}`);
+      setSelectedTaskIds(
+        (previous) =>
+          new Set(
+            Array.from(previous).filter((taskId) => !deleted.has(taskId)),
+          ),
+      );
+      if (selectedTaskId && deleted.has(selectedTaskId))
+        setSelectedTaskId(null);
+      const skippedSummary =
+        result.skipped.length > 0
+          ? `，跳过 ${result.skipped.length} 项：${result.skipped.map((item) => `${item.task_id} ${item.reason}`).join("；")}`
+          : "";
+      setDeleteMessage(
+        `已删除 ${result.deleted.length} 个任务${skippedSummary}`,
+      );
       await onRefresh();
     } catch (bulkDeleteError) {
-      setDeleteError(bulkDeleteError instanceof Error ? bulkDeleteError.message : "批量删除失败。");
+      setDeleteError(
+        bulkDeleteError instanceof Error
+          ? bulkDeleteError.message
+          : "批量删除失败。",
+      );
     } finally {
       setIsBulkDeleting(false);
     }
   };
 
-  return <section className="history-page">
-    <section className="panel history-list-panel">
-      <div className="history-heading">
-        <PanelTitle number="任务" title="历史任务" subtitle={`直接读取本地任务输入、校验结果与授权文件；${history?.retention_days === 0 ? "桌面任务长期保留。" : `完成任务自动保留 ${history?.retention_days ?? 30} 天。`}`} />
-        <button className="button secondary mini" onClick={onRefresh} disabled={isLoading}>刷新记录</button>
-      </div>
-      <div className="history-filters">
-        <input aria-label="搜索历史任务" placeholder="搜索规格、机台或任务 ID" value={query} onChange={(event) => { setQuery(event.target.value); setSelectedTaskIds(new Set()); }} />
-        <select aria-label="筛选任务状态" value={statusFilter} onChange={(event) => { setStatusFilter(event.target.value as TaskStatus | "all"); setSelectedTaskIds(new Set()); }}>
-          <option value="all">全部状态</option>
-          <option value="passed">已通过</option>
-          <option value="failed">失败 / 阻断</option>
-          <option value="running">执行中</option>
-        </select>
-        <span>共 {tasks.length} 条</span>
-      </div>
-      <div className="history-bulk-actions"><span>已选择 <strong>{selectedTaskIds.size}</strong> 项</span><button className="button danger mini" disabled={selectedTaskIds.size === 0 || isBulkDeleting} onClick={() => void deleteSelectedTasks()}>{isBulkDeleting ? "批量删除中…" : "批量删除"}</button><small>执行中任务不可删除。</small></div>
-      <div className="table-head selectable"><label className="task-selector"><input type="checkbox" aria-label="全选当前可删除任务" checked={allSelectableTasksSelected} disabled={selectableTaskIds.length === 0} onChange={(event) => toggleAllVisibleTasks(event.target.checked)} /></label><span>任务名称</span><span>机台</span><span>成品形态</span><span>磨前形态</span><span>状态</span><span>操作</span></div>
-      {error && <div className="table-message error">{error}</div>}
-      {deleteError && <div className="history-action-error">{deleteError}</div>}
-      {deleteMessage && <div className="history-action-message">{deleteMessage}</div>}
-      {!error && isLoading && <div className="table-message">正在读取本地任务记录…</div>}
-      {!error && !isLoading && tasks.length > 0 && <TaskRows tasks={tasks} selectedTaskId={selectedTaskId} selectedTaskIds={selectedTaskIds} deletingTaskId={deletingTaskId} onView={setSelectedTaskId} onToggleSelection={toggleTaskSelection} onDelete={(task) => void deleteHistoryTask(task)} />}
-      {!error && !isLoading && tasks.length === 0 && <TaskEmpty filtered={Boolean(query || statusFilter !== "all")} />}
+  return (
+    <section className="history-page">
+      <section className="panel history-list-panel">
+        <div className="history-heading">
+          <PanelTitle
+            number="任务"
+            title="历史任务"
+            subtitle={`直接读取本地任务输入、校验结果与授权文件；${history?.retention_days === 0 ? "桌面任务长期保留。" : `完成任务自动保留 ${history?.retention_days ?? 30} 天。`}`}
+          />
+          <button
+            className="button secondary mini"
+            onClick={onRefresh}
+            disabled={isLoading}
+          >
+            刷新记录
+          </button>
+        </div>
+        <div className="history-filters">
+          <input
+            aria-label="搜索历史任务"
+            placeholder="搜索规格、机台或任务 ID"
+            value={query}
+            onChange={(event) => {
+              setQuery(event.target.value);
+              setSelectedTaskIds(new Set());
+            }}
+          />
+          <select
+            aria-label="筛选任务状态"
+            value={statusFilter}
+            onChange={(event) => {
+              setStatusFilter(event.target.value as TaskStatus | "all");
+              setSelectedTaskIds(new Set());
+            }}
+          >
+            <option value="all">全部状态</option>
+            <option value="passed">已通过</option>
+            <option value="failed">失败 / 阻断</option>
+            <option value="running">执行中</option>
+          </select>
+          <span>共 {tasks.length} 条</span>
+        </div>
+        <div className="history-bulk-actions">
+          <span>
+            已选择 <strong>{selectedTaskIds.size}</strong> 项
+          </span>
+          <button
+            className="button danger mini"
+            disabled={selectedTaskIds.size === 0 || isBulkDeleting}
+            onClick={() => void deleteSelectedTasks()}
+          >
+            {isBulkDeleting ? "批量删除中…" : "批量删除"}
+          </button>
+          <small>执行中任务不可删除。</small>
+        </div>
+        <div className="table-head selectable">
+          <label className="task-selector">
+            <input
+              type="checkbox"
+              aria-label="全选当前可删除任务"
+              checked={allSelectableTasksSelected}
+              disabled={selectableTaskIds.length === 0}
+              onChange={(event) => toggleAllVisibleTasks(event.target.checked)}
+            />
+          </label>
+          <span>任务名称</span>
+          <span>机台</span>
+          <span>成品形态</span>
+          <span>磨前形态</span>
+          <span>状态</span>
+          <span>操作</span>
+        </div>
+        {error && <div className="table-message error">{error}</div>}
+        {deleteError && (
+          <div className="history-action-error">{deleteError}</div>
+        )}
+        {deleteMessage && (
+          <div className="history-action-message">{deleteMessage}</div>
+        )}
+        {!error && isLoading && (
+          <div className="table-message">正在读取本地任务记录…</div>
+        )}
+        {!error && !isLoading && tasks.length > 0 && (
+          <TaskRows
+            tasks={tasks}
+            selectedTaskId={selectedTaskId}
+            selectedTaskIds={selectedTaskIds}
+            deletingTaskId={deletingTaskId}
+            onView={setSelectedTaskId}
+            onToggleSelection={toggleTaskSelection}
+            onDelete={(task) => void deleteHistoryTask(task)}
+          />
+        )}
+        {!error && !isLoading && tasks.length === 0 && (
+          <TaskEmpty filtered={Boolean(query || statusFilter !== "all")} />
+        )}
+      </section>
+      <TaskDetailDrawer
+        open={Boolean(selectedTaskId)}
+        detail={detail?.task_id === selectedTaskId ? detail : null}
+        isLoading={
+          isDetailLoading ||
+          Boolean(
+            selectedTaskId &&
+              detail?.task_id !== selectedTaskId &&
+              !detailError,
+          )
+        }
+        error={detailError}
+        onClose={() => setSelectedTaskId(null)}
+        onCopy={onCopy}
+      />
     </section>
-    {(selectedTaskId || isDetailLoading || detailError) && <TaskDetailDrawer detail={detail} isLoading={isDetailLoading} error={detailError} onClose={() => setSelectedTaskId(null)} />}
-  </section>;
+  );
 }
 
-function TaskRows({ tasks, selectedTaskId, selectedTaskIds, deletingTaskId = null, onView, onToggleSelection, onDelete }: { tasks: TaskSummary[]; selectedTaskId?: string | null; selectedTaskIds?: ReadonlySet<string>; deletingTaskId?: string | null; onView: (taskId: string) => void; onToggleSelection?: (taskId: string, checked: boolean) => void; onDelete?: (task: TaskSummary) => void }) {
+function TaskRows({
+  tasks,
+  selectedTaskId,
+  selectedTaskIds,
+  deletingTaskId = null,
+  onView,
+  onToggleSelection,
+  onDelete,
+}: {
+  tasks: TaskSummary[];
+  selectedTaskId?: string | null;
+  selectedTaskIds?: ReadonlySet<string>;
+  deletingTaskId?: string | null;
+  onView: (taskId: string) => void;
+  onToggleSelection?: (taskId: string, checked: boolean) => void;
+  onDelete?: (task: TaskSummary) => void;
+}) {
   const selectable = Boolean(onToggleSelection);
-  return <div className="task-rows">{tasks.map((task) => <div className={`task-row ${selectable ? "selectable" : ""} ${selectedTaskId === task.task_id ? "selected" : ""}`} key={task.task_id}>
-    {selectable && <label className="task-selector"><input type="checkbox" aria-label={`选择任务 ${task.finished_spec || task.task_id}`} checked={selectedTaskIds?.has(task.task_id) ?? false} disabled={!task.can_delete} onChange={(event) => onToggleSelection?.(task.task_id, event.target.checked)} /></label>}
-    <div className="task-name"><strong>{task.finished_spec || task.task_id}</strong><small>{formatTaskTime(task.created_at)} · {task.task_id}</small></div>
-    <span>{task.machine_name}</span>
-    <span>{shapeLabel(task.finished_shape)}</span>
-    <span>{shapeLabel(task.pre_grinding_shape)}</span>
-    <span><TaskStatusBadge status={task.status} /></span>
-    <div className="task-actions"><button className="link-button" onClick={() => onView(task.task_id)}>查看</button>{task.can_delete && onDelete && <button className="link-button danger" disabled={deletingTaskId === task.task_id} onClick={() => onDelete(task)}>{deletingTaskId === task.task_id ? "删除中" : "删除"}</button>}</div>
-  </div>)}</div>;
+  return (
+    <div className="task-rows">
+      {tasks.map((task) => (
+        <div
+          className={`task-row ${selectable ? "selectable" : ""} ${selectedTaskId === task.task_id ? "selected" : ""}`}
+          key={task.task_id}
+        >
+          {selectable && (
+            <label className="task-selector">
+              <input
+                type="checkbox"
+                aria-label={`选择任务 ${task.finished_spec || task.task_id}`}
+                checked={selectedTaskIds?.has(task.task_id) ?? false}
+                disabled={!task.can_delete}
+                onChange={(event) =>
+                  onToggleSelection?.(task.task_id, event.target.checked)
+                }
+              />
+            </label>
+          )}
+          <div className="task-name">
+            <strong>{task.finished_spec || task.task_id}</strong>
+            <small>
+              {formatTaskTime(task.created_at)} · {task.task_id}
+            </small>
+          </div>
+          <span>{task.machine_name}</span>
+          <span>{shapeLabel(task.finished_shape)}</span>
+          <span>{shapeLabel(task.pre_grinding_shape)}</span>
+          <span>
+            <TaskStatusBadge status={task.status} />
+          </span>
+          <div className="task-actions">
+            <button
+              className="link-button"
+              onClick={() => onView(task.task_id)}
+            >
+              查看
+            </button>
+            {task.can_delete && onDelete && (
+              <button
+                className="link-button danger"
+                disabled={deletingTaskId === task.task_id}
+                onClick={() => onDelete(task)}
+              >
+                {deletingTaskId === task.task_id ? "删除中" : "删除"}
+              </button>
+            )}
+          </div>
+        </div>
+      ))}
+    </div>
+  );
 }
 
 function TaskEmpty({ filtered = false }: { filtered?: boolean }) {
-  return <div className="empty-table"><span>◷</span><div><strong>{filtered ? "没有符合条件的任务" : "暂无任务记录"}</strong><p>{filtered ? "请调整搜索词或状态筛选。" : "新建任务后，这里会显示输入快照、生成状态和 report.json 摘要。"}</p></div></div>;
+  return (
+    <div className="empty-table">
+      <span>◷</span>
+      <div>
+        <strong>{filtered ? "没有符合条件的任务" : "暂无任务记录"}</strong>
+        <p>
+          {filtered
+            ? "请调整搜索词或状态筛选。"
+            : "新建任务后，这里会显示输入快照、生成状态和 report.json 摘要。"}
+        </p>
+      </div>
+    </div>
+  );
 }
 
 function TaskStatusBadge({ status }: { status: TaskStatus }) {
-  const labels: Record<TaskStatus, string> = { running: "执行中", passed: "已通过", failed: "失败 / 阻断" };
+  const labels: Record<TaskStatus, string> = {
+    running: "执行中",
+    passed: "已通过",
+    failed: "失败 / 阻断",
+  };
   return <span className={`task-status ${status}`}>{labels[status]}</span>;
 }
 
-function TaskDetailDrawer({ detail, isLoading, error, onClose }: { detail: TaskDetail | null; isLoading: boolean; error: string | null; onClose: () => void }) {
-  return <div className="task-detail-layer"><button className="task-detail-backdrop" aria-label="关闭任务详情" onClick={onClose} /><aside className="task-detail-drawer" role="dialog" aria-modal="true" aria-label="任务详情"><div className="task-detail-toolbar"><strong>任务详情</strong><button aria-label="关闭任务详情" onClick={onClose}>×</button></div>{isLoading ? <div className="table-message">正在读取任务详情…</div> : error ? <div className="table-message error">{error}</div> : detail ? <TaskDetailContent detail={detail} /> : null}</aside></div>;
+function TaskDetailDrawer({
+  open,
+  detail,
+  isLoading,
+  error,
+  onClose,
+  onCopy,
+}: {
+  open: boolean;
+  detail: TaskDetail | null;
+  isLoading: boolean;
+  error: string | null;
+  onClose: () => void;
+  onCopy: (input: DesignInput) => void;
+}) {
+  const [mounted, setMounted] = useState(open);
+  const [visible, setVisible] = useState(false);
+  const panel = useRef<HTMLElement>(null);
+  const lastDetail = useRef<TaskDetail | null>(null);
+  if (detail) lastDetail.current = detail;
+  useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    let frame: number | undefined;
+    if (open) {
+      setMounted(true);
+      frame = requestAnimationFrame(() => setVisible(true));
+    } else {
+      setVisible(false);
+      timer = setTimeout(() => setMounted(false), 170);
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+      if (frame) cancelAnimationFrame(frame);
+    };
+  }, [open]);
+  useEffect(() => {
+    if (!open || !mounted) return;
+    const origin = document.activeElement as HTMLElement | null;
+    const frame = requestAnimationFrame(() =>
+      panel.current?.querySelector<HTMLButtonElement>("button")?.focus(),
+    );
+    const keydown = (event: KeyboardEvent) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        onClose();
+      }
+      if (event.key !== "Tab") return;
+      const elements = Array.from(
+        panel.current?.querySelectorAll<HTMLElement>(
+          "button:not(:disabled), a[href], input, select, textarea, summary, [tabindex='0']",
+        ) ?? [],
+      );
+      const first = elements[0],
+        last = elements[elements.length - 1];
+      if (
+        event.shiftKey &&
+        (document.activeElement === first ||
+          !panel.current?.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        last?.focus();
+      } else if (
+        !event.shiftKey &&
+        (document.activeElement === last ||
+          !panel.current?.contains(document.activeElement))
+      ) {
+        event.preventDefault();
+        first?.focus();
+      }
+    };
+    document.addEventListener("keydown", keydown);
+    return () => {
+      cancelAnimationFrame(frame);
+      document.removeEventListener("keydown", keydown);
+      if (origin?.isConnected) origin.focus();
+    };
+  }, [open, mounted]);
+  if (!mounted) return null;
+  const shownDetail = open ? detail : lastDetail.current;
+  return (
+    <div
+      className={`task-detail-layer ${visible ? "is-visible" : "is-closing"}`}
+      aria-hidden={!open}
+    >
+      <button
+        className="task-detail-backdrop"
+        aria-label="关闭任务详情"
+        tabIndex={-1}
+        onClick={onClose}
+      />
+      <aside
+        ref={panel}
+        className="task-detail-drawer"
+        role="dialog"
+        aria-modal="true"
+        aria-label="任务详情"
+      >
+        <div className="task-detail-toolbar">
+          <strong>任务详情</strong>
+          <button aria-label="关闭任务详情" onClick={onClose}>
+            ×
+          </button>
+        </div>
+        {isLoading ? (
+          <div className="table-message">正在读取任务详情…</div>
+        ) : error ? (
+          <div className="table-message error">{error}</div>
+        ) : shownDetail ? (
+          <>
+            <div className="drawer-copy">
+              <button
+                className="button primary"
+                onClick={() => onCopy(shownDetail.input)}
+              >
+                复制为新任务
+              </button>
+            </div>
+            <TaskDetailContent key={shownDetail.task_id} detail={shownDetail} />
+          </>
+        ) : null}
+      </aside>
+    </div>
+  );
 }
 
 function TaskDetailContent({ detail }: { detail: TaskDetail }) {
   const files = Object.entries(detail.files);
-  return <section className="task-detail">
-    <div className="task-detail-header"><div><p className="eyebrow">任务详情 / {detail.task_id}</p><h2>{detail.finished_spec}</h2><small>{formatTaskTime(detail.created_at)} · {detail.machine_name}</small></div><TaskStatusBadge status={detail.status} /></div>
-    {detail.error && <div className="task-error"><strong>失败原因</strong><span>{detail.error}</span></div>}
-    <div className="task-detail-grid">
-      <div><h3>输入快照</h3><dl><dt>成品规格</dt><dd>{detail.input.finished_spec}</dd><dt>磨前规格</dt><dd>{detail.input.pre_grinding_spec}</dd><dt>成品 / 磨前形态</dt><dd>{shapeLabel(detail.input.product_shape_after)} / {shapeLabel(detail.input.product_shape_before)}</dd><dt>避空 / 砂轮半径</dt><dd>{detail.input.relief} / R{detail.input.wheel_radius.toFixed(2)}</dd></dl></div>
-      <div><h3>计算与门禁</h3><dl><dt>槽宽</dt><dd>{formatMillimeter(detail.derived.slot_width)}</dd><dt>导轨厚度</dt><dd>{formatMillimeter(detail.derived.guide_thickness)}</dd><dt>DXF 几何检查</dt><dd>{auditLabel(detail.audit.inspection_passed)}</dd><dt>尺寸定义点</dt><dd>{auditLabel(detail.audit.dimension_points_passed)}</dd></dl></div>
-      {detail.preview && <div className="task-preview"><h3>截面预览</h3><a href={detail.preview.url} target="_blank" rel="noreferrer"><img src={detail.preview.url} alt={`${detail.finished_spec} 导轨截面预览`} /></a></div>}
-    </div>
-    <div className="task-files"><h3>任务图纸库</h3>{files.length === 0 ? <p>该任务没有可打开的授权文件。</p> : <><p className="artifact-library-note">直接打开任务内原文件；仅在需要交付副本时使用“另存副本”。</p>{files.map(([key, file]) => <div className="task-file-row" key={key}><span>{file.label}</span><small>{file.name}</small><ArtifactActions file={file} /></div>)}</>}</div>
-  </section>;
+  return (
+    <section className="task-detail">
+      <div className="task-detail-header">
+        <div>
+          <p className="eyebrow">任务详情 / {detail.task_id}</p>
+          <h2>{detail.finished_spec}</h2>
+          <small>
+            {formatTaskTime(detail.created_at)} · {detail.machine_name}
+          </small>
+        </div>
+        <TaskStatusBadge status={detail.status} />
+      </div>
+      {detail.error && (
+        <div className="task-error">
+          <strong>失败原因</strong>
+          <span>{detail.error}</span>
+        </div>
+      )}
+      <div className="task-detail-grid">
+        <div>
+          <h3>输入快照</h3>
+          <dl>
+            <dt>成品规格</dt>
+            <dd>{detail.input.finished_spec}</dd>
+            <dt>磨前规格</dt>
+            <dd>{detail.input.pre_grinding_spec}</dd>
+            <dt>成品 / 磨前形态</dt>
+            <dd>
+              {shapeLabel(detail.input.product_shape_after)} /{" "}
+              {shapeLabel(detail.input.product_shape_before)}
+            </dd>
+            <dt>避空 / 砂轮半径</dt>
+            <dd>
+              {detail.input.relief} / R{detail.input.wheel_radius.toFixed(2)}
+            </dd>
+          </dl>
+        </div>
+        <div>
+          <h3>计算与门禁</h3>
+          <dl>
+            <dt>槽宽</dt>
+            <dd>{formatMillimeter(detail.derived.slot_width)}</dd>
+            <dt>导轨厚度</dt>
+            <dd>{formatMillimeter(detail.derived.guide_thickness)}</dd>
+            <dt>DXF 几何检查</dt>
+            <dd>{auditLabel(detail.audit.inspection_passed)}</dd>
+            <dt>尺寸定义点</dt>
+            <dd>{auditLabel(detail.audit.dimension_points_passed)}</dd>
+          </dl>
+        </div>
+        {detail.preview && (
+          <div className="task-preview">
+            <h3>截面预览</h3>
+            <a href={detail.preview.url} target="_blank" rel="noreferrer">
+              <img
+                src={detail.preview.url}
+                alt={`${detail.finished_spec} 导轨截面预览`}
+              />
+            </a>
+          </div>
+        )}
+      </div>
+      <div className="task-files">
+        <h3>任务图纸库</h3>
+        {files.length === 0 ? (
+          <p>该任务没有可打开的授权文件。</p>
+        ) : (
+          <>
+            <p className="artifact-library-note">
+              直接打开任务内原文件；仅在需要交付副本时使用“另存副本”。
+            </p>
+            {files.map(([key, file]) => (
+              <div className="task-file-row" key={key}>
+                <span>{file.label}</span>
+                <small>{file.name}</small>
+                <ArtifactActions file={file} />
+              </div>
+            ))}
+          </>
+        )}
+      </div>
+    </section>
+  );
 }
 
 function formatTaskTime(value: string) {
   const date = new Date(value);
-  return Number.isNaN(date.getTime()) ? value : new Intl.DateTimeFormat("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false }).format(date);
+  return Number.isNaN(date.getTime())
+    ? value
+    : new Intl.DateTimeFormat("zh-CN", {
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        hour12: false,
+      }).format(date);
 }
 
 function shapeLabel(shape: string) {
-  return ({ tile_shape: "瓦型", bread_shape: "馒头型", rectangular_block: "方块", same_r_tile: "同 R 瓦型" })[shape] ?? shape;
+  return (
+    {
+      tile_shape: "瓦型",
+      bread_shape: "馒头型",
+      rectangular_block: "方块",
+      same_r_tile: "同 R 瓦型",
+    }[shape] ?? shape
+  );
 }
 
 function formatMillimeter(value: number | null) {
@@ -876,24 +1079,90 @@ async function refreshTaskHistory(
   try {
     setHistory(await api.tasks(200));
   } catch (loadError) {
-    setError(loadError instanceof Error ? loadError.message : "历史任务读取失败。");
+    setError(
+      loadError instanceof Error ? loadError.message : "历史任务读取失败。",
+    );
   } finally {
     setLoading(false);
   }
 }
 
 function Templates({ machines }: { machines: Machine[] }) {
-  return <section className="panel page-panel"><PanelTitle number="配置" title="机台模板" subtitle="来自 templates/&lt;machine_id&gt;/config.yaml，仅供查看。" /><div className="template-table"><div className="template-head"><span>机台</span><span>导轨结构</span><span>砂轮顺序</span><span>固定长度</span></div>{machines.map((machine) => <div className="template-row" key={machine.id}><strong>{machine.name}</strong><span>{machine.guide_sections} 段 / {machine.guide_type === "double_guide" ? "双导轨" : "单导轨"}</span><span>{machine.wheel_positions.join(" / ")}</span><span>{machine.guide_length} mm</span></div>)}</div></section>;
+  return (
+    <section className="panel page-panel">
+      <PanelTitle
+        number="配置"
+        title="机台模板"
+        subtitle="来自 templates/&lt;machine_id&gt;/config.yaml，仅供查看。"
+      />
+      <div className="template-table">
+        <div className="template-head">
+          <span>机台</span>
+          <span>导轨结构</span>
+          <span>砂轮顺序</span>
+          <span>固定长度</span>
+        </div>
+        {machines.map((machine) => (
+          <div className="template-row" key={machine.id}>
+            <strong>{machine.name}</strong>
+            <span>
+              {machine.guide_sections} 段 /{" "}
+              {machine.guide_type === "double_guide" ? "双导轨" : "单导轨"}
+            </span>
+            <span>{machine.wheel_positions.join(" / ")}</span>
+            <span>{machine.guide_length} mm</span>
+          </div>
+        ))}
+      </div>
+    </section>
+  );
 }
 
 function Rules() {
-  return <section className="panel page-panel"><PanelTitle number="规则" title="生成与 release 门禁" subtitle="规则源于项目文档并由 Python 校验器执行。" /><div className="rule-list">{[["规格来源", "成品规格与成型磨前规格必须独立；槽宽与导轨厚度取磨前数据。"], ["几何一致性", "相邻图元误差不大于 0.001 mm，闭合轮廓必须严格闭合。"], ["正式图纸", "release 只会在候选 DXF 通过图层、残留图元和尺寸定义点审计后输出。"], ["尺寸审计", "显示值、定义点与真实几何必须一致；双导轨定义点误差不大于 0.01 mm。"]].map(([title, detail]) => <article key={title}><span>✓</span><div><h3>{title}</h3><p>{detail}</p></div></article>)}</div></section>;
+  return (
+    <section className="panel page-panel">
+      <PanelTitle
+        number="规则"
+        title="生成与 release 门禁"
+        subtitle="规则源于项目文档并由 Python 校验器执行。"
+      />
+      <div className="rule-list">
+        {[
+          [
+            "规格来源",
+            "成品规格与成型磨前规格必须独立；槽宽与导轨厚度取磨前数据。",
+          ],
+          ["几何一致性", "相邻图元误差不大于 0.001 mm，闭合轮廓必须严格闭合。"],
+          [
+            "正式图纸",
+            "release 只会在候选 DXF 通过图层、残留图元和尺寸定义点审计后输出。",
+          ],
+          [
+            "尺寸审计",
+            "显示值、定义点与真实几何必须一致；双导轨定义点误差不大于 0.01 mm。",
+          ],
+        ].map(([title, detail]) => (
+          <article key={title}>
+            <span>✓</span>
+            <div>
+              <h3>{title}</h3>
+              <p>{detail}</p>
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
 }
 
-function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolean) => void }) {
+function DesktopSettingsPage({
+  onEngineState,
+}: {
+  onEngineState: (online: boolean) => void;
+}) {
   const [settings, setSettings] = useState<DesktopSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [version, setVersion] = useState("1.1.5");
+  const [version, setVersion] = useState("1.2.0-dev");
   const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
   const [updateMessage, setUpdateMessage] = useState("尚未检查更新。");
   const [checking, setChecking] = useState(false);
@@ -903,8 +1172,13 @@ function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolea
 
   const loadSettings = async () => {
     setSettingsError(null);
-    try { setSettings(await api.settings()); }
-    catch (error) { setSettingsError(error instanceof Error ? error.message : "设置读取失败。"); }
+    try {
+      setSettings(await api.settings());
+    } catch (error) {
+      setSettingsError(
+        error instanceof Error ? error.message : "设置读取失败。",
+      );
+    }
   };
 
   const checkForUpdate = async (quiet = false) => {
@@ -917,7 +1191,9 @@ function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolea
     try {
       const found = await check();
       setAvailableUpdate(found);
-      setUpdateMessage(found ? `发现新版本 ${found.version}` : "当前已是最新版本。");
+      setUpdateMessage(
+        found ? `发现新版本 ${found.version}` : "当前已是最新版本。",
+      );
     } catch {
       setUpdateMessage("无法访问更新服务；离线 CAD 功能不受影响。");
     } finally {
@@ -928,20 +1204,34 @@ function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolea
   useEffect(() => {
     void loadSettings();
     if (tauri) {
-      void getVersion().then(setVersion).catch(() => undefined);
+      void getVersion()
+        .then(setVersion)
+        .catch(() => undefined);
       void checkForUpdate(true);
     }
   }, []);
 
   const chooseAutoCad = async () => {
     if (!tauri) {
-      setSettingsError("浏览器开发模式不能读取本机文件路径，请设置 CAD_AUTOCAD_CORE_CONSOLE。");
+      setSettingsError(
+        "浏览器开发模式不能读取本机文件路径，请设置 CAD_AUTOCAD_CORE_CONSOLE。",
+      );
       return;
     }
-    const selected = await open({ multiple: false, directory: false, title: "选择 AcCoreConsole" });
+    const selected = await open({
+      multiple: false,
+      directory: false,
+      title: "选择 AcCoreConsole",
+    });
     if (typeof selected !== "string") return;
-    try { setSettings(await api.updateSettings(selected)); setSettingsError(null); }
-    catch (error) { setSettingsError(error instanceof Error ? error.message : "AutoCAD 路径保存失败。"); }
+    try {
+      setSettings(await api.updateSettings(selected));
+      setSettingsError(null);
+    } catch (error) {
+      setSettingsError(
+        error instanceof Error ? error.message : "AutoCAD 路径保存失败。",
+      );
+    }
   };
 
   const installUpdate = async () => {
@@ -954,14 +1244,20 @@ function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolea
     let engineStopped = false;
     try {
       setUpdateMessage(`正在下载并验证版本 ${availableUpdate.version}…`);
-      await availableUpdate.download((event) => {
-        if (event.event === "Started") total = event.data.contentLength ?? 0;
-        if (event.event === "Progress") {
-          downloaded += event.data.chunkLength;
-          if (total > 0) setDownloadProgress(Math.min(100, Math.round((downloaded / total) * 100)));
-        }
-        if (event.event === "Finished") setDownloadProgress(100);
-      }, { timeout: 10 * 60 * 1000 });
+      await availableUpdate.download(
+        (event) => {
+          if (event.event === "Started") total = event.data.contentLength ?? 0;
+          if (event.event === "Progress") {
+            downloaded += event.data.chunkLength;
+            if (total > 0)
+              setDownloadProgress(
+                Math.min(100, Math.round((downloaded / total) * 100)),
+              );
+          }
+          if (event.event === "Finished") setDownloadProgress(100);
+        },
+        { timeout: 10 * 60 * 1000 },
+      );
       setUpdateMessage("下载和签名验证已通过，正在关闭本地引擎并安装…");
       stage = "install";
       await invoke("prepare_for_update");
@@ -996,39 +1292,99 @@ function DesktopSettingsPage({ onEngineState }: { onEngineState: (online: boolea
       onEngineState(true);
       await loadSettings();
     } catch (error) {
-      setSettingsError(error instanceof Error ? error.message : "本地 CAD 引擎重启失败。");
+      setSettingsError(
+        error instanceof Error ? error.message : "本地 CAD 引擎重启失败。",
+      );
     }
   };
 
-  return <section className="settings-page">
-    <section className="panel page-panel">
-      <PanelTitle number="本机" title="AutoCAD 与数据目录" subtitle="DWG 只调用本机 AutoCAD；未安装时仍可正常生成 DXF。" />
-      {settingsError && <div className="alert error">{settingsError}</div>}
-      <dl className="settings-list">
-        <dt>应用数据目录</dt><dd>{settings?.app_data_root ?? "读取中…"}</dd>
-        <dt>AutoCAD 状态</dt><dd>{settings?.autocad.available ? `已检测到 AutoCAD ${settings.autocad.version ?? "未知版本"}` : "未检测到；仍可生成和下载 DXF"}</dd>
-        <dt>AcCoreConsole</dt><dd>{settings?.autocad.path ?? "未配置"}</dd>
-      </dl>
-      <div className="settings-actions">
-        <button className="button secondary" onClick={() => void chooseAutoCad()}>手动选择 AcCoreConsole</button>
-        <button className="button secondary" onClick={() => void api.updateSettings(null).then(setSettings)}>恢复自动检测</button>
-        <button className="button secondary" disabled={!tauri} onClick={() => void restartEngine()}>重启本地 CAD 引擎</button>
-      </div>
+  return (
+    <section className="settings-page">
+      <section className="panel page-panel">
+        <PanelTitle
+          number="本机"
+          title="AutoCAD 与数据目录"
+          subtitle="DWG 只调用本机 AutoCAD；未安装时仍可正常生成 DXF。"
+        />
+        {settingsError && <div className="alert error">{settingsError}</div>}
+        <dl className="settings-list">
+          <dt>应用数据目录</dt>
+          <dd>{settings?.app_data_root ?? "读取中…"}</dd>
+          <dt>AutoCAD 状态</dt>
+          <dd>
+            {settings?.autocad.available
+              ? `已检测到 AutoCAD ${settings.autocad.version ?? "未知版本"}`
+              : "未检测到；仍可生成和下载 DXF"}
+          </dd>
+          <dt>AcCoreConsole</dt>
+          <dd>{settings?.autocad.path ?? "未配置"}</dd>
+        </dl>
+        <div className="settings-actions">
+          <button
+            className="button secondary"
+            onClick={() => void chooseAutoCad()}
+          >
+            手动选择 AcCoreConsole
+          </button>
+          <button
+            className="button secondary"
+            onClick={() => void api.updateSettings(null).then(setSettings)}
+          >
+            恢复自动检测
+          </button>
+          <button
+            className="button secondary"
+            disabled={!tauri}
+            onClick={() => void restartEngine()}
+          >
+            重启本地 CAD 引擎
+          </button>
+        </div>
+      </section>
+      <section className="panel page-panel">
+        <PanelTitle
+          number="更新"
+          title={`Forming Grinder CAD ${version}`}
+          subtitle="更新包必须通过 Tauri 公钥签名验证，失败时保留当前版本。"
+        />
+        <p className="update-status">{updateMessage}</p>
+        {availableUpdate && (
+          <div className="update-detail">
+            <strong>版本 {availableUpdate.version}</strong>
+            <span>{availableUpdate.date ?? "发布时间未提供"}</span>
+            <p>{availableUpdate.body ?? "此版本未提供更新说明。"}</p>
+          </div>
+        )}
+        {installing && (
+          <progress value={downloadProgress} max="100">
+            {downloadProgress}%
+          </progress>
+        )}
+        <div className="settings-actions">
+          <button
+            className="button secondary"
+            disabled={checking || installing || !tauri}
+            onClick={() => void checkForUpdate()}
+          >
+            {checking ? "检查中…" : "检查更新"}
+          </button>
+          <button
+            className="button primary"
+            disabled={!availableUpdate || installing}
+            onClick={() => void installUpdate()}
+          >
+            {installing ? `下载与安装 ${downloadProgress}%` : "下载并安装"}
+          </button>
+        </div>
+      </section>
     </section>
-    <section className="panel page-panel">
-      <PanelTitle number="更新" title={`Forming Grinder CAD ${version}`} subtitle="更新包必须通过 Tauri 公钥签名验证，失败时保留当前版本。" />
-      <p className="update-status">{updateMessage}</p>
-      {availableUpdate && <div className="update-detail"><strong>版本 {availableUpdate.version}</strong><span>{availableUpdate.date ?? "发布时间未提供"}</span><p>{availableUpdate.body ?? "此版本未提供更新说明。"}</p></div>}
-      {installing && <progress value={downloadProgress} max="100">{downloadProgress}%</progress>}
-      <div className="settings-actions">
-        <button className="button secondary" disabled={checking || installing || !tauri} onClick={() => void checkForUpdate()}>{checking ? "检查中…" : "检查更新"}</button>
-        <button className="button primary" disabled={!availableUpdate || installing} onClick={() => void installUpdate()}>{installing ? `下载与安装 ${downloadProgress}%` : "下载并安装"}</button>
-      </div>
-    </section>
-  </section>;
+  );
 }
 
-function updateFailureMessage(stage: "download" | "install", error: unknown): string {
+function updateFailureMessage(
+  stage: "download" | "install",
+  error: unknown,
+): string {
   const detail = error instanceof Error ? error.message : String(error ?? "");
   if (/signature|public key|verify|verification/i.test(detail)) {
     return "更新包签名验证失败，已拒绝安装；当前版本已保留。";
@@ -1042,12 +1398,26 @@ function updateFailureMessage(stage: "download" | "install", error: unknown): st
   return "更新安装失败，本地 CAD 引擎已尝试恢复；当前版本已保留。";
 }
 
-function pageTitle(page: Page) { return ({ workspace: "导轨生成工作台", history: "历史任务", templates: "机台模板", rules: "规则与说明", settings: "设置与更新" })[page]; }
-
-function applyMachine(machine: Machine, setter: Dispatch<SetStateAction<DesignInput>>) {
-  setter((previous) => ({ ...previous, machine_type: machine.id, guide_rail_type: machine.guide_type, wheel_sequence: machine.wheel_positions, first_wheel_side: machineFirstSide(machine), template_coordinate_system: machine.template_coordinate_system }));
+function pageTitle(page: Page) {
+  return {
+    workspace: "导轨工作台",
+    history: "历史任务",
+    templates: "机台模板",
+    rules: "规则与说明",
+    settings: "设置与更新",
+  }[page];
 }
 
-function resetWorkspace(setter: Dispatch<SetStateAction<DesignInput>>, setStep: Dispatch<SetStateAction<Step>>, setValidation: Dispatch<SetStateAction<ValidationResult | null>>, setGenerationState: Dispatch<SetStateAction<"idle" | "passed" | "failed">>, setError: Dispatch<SetStateAction<string | null>>) {
-  setter(initialDesign); setStep(1); setValidation(null); setGenerationState("idle"); setError(null);
+function applyMachine(
+  machine: Machine,
+  setter: Dispatch<SetStateAction<DesignInput>>,
+) {
+  setter((previous) => ({
+    ...previous,
+    machine_type: machine.id,
+    guide_rail_type: machine.guide_type,
+    wheel_sequence: machine.wheel_positions,
+    first_wheel_side: machineFirstSide(machine),
+    template_coordinate_system: machine.template_coordinate_system,
+  }));
 }
