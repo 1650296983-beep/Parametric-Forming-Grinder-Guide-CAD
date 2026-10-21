@@ -1,13 +1,29 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import {
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
+import { Focus, Maximize2, ZoomIn, ZoomOut } from "lucide-react";
 import type { DrawingPrimitive, DrawingScene } from "./types";
 
 const finite = (values: number[]) => values.every(Number.isFinite);
+type Group = "outline" | "cavity" | "dimensions" | "center";
+const GROUP_LABELS: Array<[Group, string]> = [
+  ["outline", "轮廓"],
+  ["cavity", "型腔"],
+  ["dimensions", "尺寸"],
+  ["center", "中心线"],
+];
+
 function Primitive({ primitive }: { primitive: DrawingPrimitive }) {
   const color = {
-    outline: "#eef5fa",
-    cavity: "#40ce85",
-    dimensions: "#51e0e8",
-    center: "#f14b53",
+    outline: "var(--cad-outline)",
+    cavity: "var(--cad-cavity)",
+    dimensions: "var(--cad-dimensions)",
+    center: "var(--cad-center)",
   }[primitive.group];
   if (primitive.kind === "polyline") {
     if (!primitive.points.length || !primitive.points.every(finite))
@@ -32,6 +48,10 @@ function Primitive({ primitive }: { primitive: DrawingPrimitive }) {
       x={primitive.position[0]}
       y={primitive.position[1]}
       fill={color}
+      stroke="var(--cad-bg)"
+      strokeWidth={primitive.height * 0.16}
+      strokeLinejoin="round"
+      paintOrder="stroke"
       fontSize={primitive.height}
       transform={
         primitive.rotation
@@ -42,6 +62,14 @@ function Primitive({ primitive }: { primitive: DrawingPrimitive }) {
       {primitive.text}
     </text>
   );
+}
+
+function niceGridStep(width: number): number {
+  const raw = width / 8;
+  const power = 10 ** Math.floor(Math.log10(raw));
+  const normalized = raw / power;
+  const factor = normalized <= 1 ? 1 : normalized <= 2 ? 2 : normalized <= 5 ? 5 : 10;
+  return factor * power;
 }
 
 export function DrawingCanvas({
@@ -55,9 +83,17 @@ export function DrawingCanvas({
   const [camera, setCamera] = useState({ zoom: 1, x: 0, y: 0 });
   const cameraRef = useRef(camera);
   const [announcement, setAnnouncement] = useState("");
-  const [showDimensions, setShowDimensions] = useState(true);
+  const [layers, setLayers] = useState<Record<Group, boolean>>({
+    outline: true,
+    cavity: true,
+    dimensions: true,
+    center: true,
+  });
   const svg = useRef<SVGSVGElement>(null);
   const drag = useRef<{ id: number; x: number; y: number } | null>(null);
+  const space = useRef(false);
+  const coordinates = useRef<HTMLOutputElement>(null);
+  const gridId = useId().replace(/:/g, "");
   const view =
     scene?.views.find((item) => item.id === viewId) ?? scene?.views[0];
   const viewKey = view?.id ?? "";
@@ -65,7 +101,12 @@ export function DrawingCanvas({
     const next = { zoom: 1, x: 0, y: 0 };
     cameraRef.current = next;
     setCamera(next);
-    setShowDimensions(true);
+    setLayers({
+      outline: true,
+      cavity: true,
+      dimensions: true,
+      center: true,
+    });
   }, [viewKey, taskId]);
   const box = useMemo(() => {
     const b = view?.bounds;
@@ -85,21 +126,52 @@ export function DrawingCanvas({
     box[2] / camera.zoom,
     box[3] / camera.zoom,
   ];
-  const zoom = useCallback((factor: number) => {
-    const previous = cameraRef.current;
-    const next = {
-      ...previous,
-      zoom: Math.max(0.25, Math.min(12, previous.zoom * factor)),
-    };
-    cameraRef.current = next;
-    setCamera(next);
-    setAnnouncement(`缩放 ${Math.round(next.zoom * 100)}%`);
-  }, []);
+  const gridStep = useMemo(() => niceGridStep(visible[2]), [visible[2]]);
+  const zoomAt = useCallback(
+    (factor: number, clientX?: number, clientY?: number) => {
+      const previous = cameraRef.current;
+      const nextZoom = Math.max(
+        0.25,
+        Math.min(12, previous.zoom * factor),
+      );
+      let x = previous.x;
+      let y = previous.y;
+      if (clientX != null && clientY != null && svg.current) {
+        const matrix = svg.current.getScreenCTM();
+        if (matrix) {
+          const point = new DOMPoint(clientX, clientY).matrixTransform(
+            matrix.inverse(),
+          );
+          const centerX = box[0] + box[2] / 2 + previous.x;
+          const centerY = box[1] + box[3] / 2 + previous.y;
+          const width = box[2] / previous.zoom;
+          const height = box[3] / previous.zoom;
+          const fractionX = (point.x - (centerX - width / 2)) / width;
+          const fractionY = (point.y - (centerY - height / 2)) / height;
+          const nextWidth = box[2] / nextZoom;
+          const nextHeight = box[3] / nextZoom;
+          x =
+            point.x + (0.5 - fractionX) * nextWidth - (box[0] + box[2] / 2);
+          y =
+            point.y + (0.5 - fractionY) * nextHeight - (box[1] + box[3] / 2);
+        }
+      }
+      const next = { zoom: nextZoom, x, y };
+      cameraRef.current = next;
+      setCamera(next);
+      setAnnouncement(`缩放 ${Math.round(next.zoom * 100)}%`);
+    },
+    [box],
+  );
+  const zoom = useCallback(
+    (factor: number) => zoomAt(factor),
+    [zoomAt],
+  );
   const fit = () => {
     const next = { zoom: 1, x: 0, y: 0 };
     cameraRef.current = next;
     setCamera(next);
-    setShowDimensions(true);
+    setLayers((previous) => ({ ...previous, dimensions: true }));
     setAnnouncement("已适应画布，显示全部尺寸");
   };
   const fitCavity = () => {
@@ -140,7 +212,7 @@ export function DrawingCanvas({
     };
     cameraRef.current = next;
     setCamera(next);
-    setShowDimensions(false);
+    setLayers((previous) => ({ ...previous, dimensions: false }));
     setAnnouncement("已放大实际型腔与避空，尺寸标注已隐藏，可从图例恢复");
   };
   useEffect(() => {
@@ -148,12 +220,29 @@ export function DrawingCanvas({
     if (!node) return;
     const wheel = (event: WheelEvent) => {
       event.preventDefault();
-      zoom(event.deltaY < 0 ? 1.12 : 1 / 1.12);
+      const factor = Math.min(
+        2,
+        Math.max(
+          0.5,
+          Math.exp(-event.deltaY * (event.ctrlKey ? 0.01 : 0.0015)),
+        ),
+      );
+      zoomAt(factor, event.clientX, event.clientY);
     };
     node.addEventListener("wheel", wheel, { passive: false });
     return () => node.removeEventListener("wheel", wheel);
-  }, [viewKey, zoom]);
-  const groups = ["outline", "cavity", "dimensions", "center"] as const;
+  }, [viewKey, zoomAt]);
+  useEffect(() => {
+    const releaseSpace = (event: KeyboardEvent) => {
+      if (event.code === "Space") space.current = false;
+    };
+    window.addEventListener("keyup", releaseSpace);
+    return () => window.removeEventListener("keyup", releaseSpace);
+  }, []);
+  const toggleLayer = (group: Group) => {
+    setLayers((previous) => ({ ...previous, [group]: !previous[group] }));
+  };
+  const groups = GROUP_LABELS.map(([id]) => id);
   return (
     <section className="cad-panel" aria-label="实际导轨几何预览">
       <div className="cad-toolbar">
@@ -178,49 +267,37 @@ export function DrawingCanvas({
               title="放大型腔细节"
               onClick={fitCavity}
             >
-              <svg
-                width="17"
-                height="17"
-                viewBox="0 0 20 20"
-                aria-hidden="true"
-              >
-                <circle
-                  cx="10"
-                  cy="10"
-                  r="5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
-                <path
-                  d="M10 1v5m0 8v5M1 10h5m8 0h5"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="1.4"
-                />
-              </svg>
+              <Focus size={16} aria-hidden="true" />
             </button>
           )}
           <button
             aria-label="缩小"
+            title="缩小（-）"
             disabled={!view}
             onClick={() => zoom(1 / 1.25)}
           >
-            −
+            <ZoomOut size={16} aria-hidden="true" />
           </button>
           <output aria-label="当前缩放">
             {Math.round(camera.zoom * 100)}%
           </output>
-          <button aria-label="放大" disabled={!view} onClick={() => zoom(1.25)}>
-            ＋
+          <button
+            aria-label="放大"
+            title="放大（+）"
+            disabled={!view}
+            onClick={() => zoom(1.25)}
+          >
+            <ZoomIn size={16} aria-hidden="true" />
           </button>
           <button
             className="fit-button"
             disabled={!view}
             onClick={fit}
+            title="适应画布（0）"
             aria-label="适应画布"
           >
-            ⛶ <span>适应画布</span>
+            <Maximize2 size={15} aria-hidden="true" />
+            <span>适应画布</span>
           </button>
         </div>
       </div>
@@ -235,16 +312,25 @@ export function DrawingCanvas({
             : "等待当前输入计算"}
           {taskId && <small>任务 {taskId}</small>}
         </div>
+        {view && (
+          <div className="cad-readout" aria-hidden="true">
+            <output ref={coordinates}>—</output>
+            <span>视野 {visible[2].toFixed(2)} mm</span>
+          </div>
+        )}
         {view ? (
           <svg
             ref={svg}
             viewBox={visible.join(" ")}
             preserveAspectRatio="xMidYMid meet"
             role="img"
-            aria-label={`${view.label}，单位毫米，可拖动平移和滚轮缩放`}
+            aria-label={`${view.label}，单位毫米，可拖动平移、滚轮缩放，双击适应画布`}
             tabIndex={0}
             onKeyDown={(event) => {
-              if (event.key === "+" || event.key === "=") {
+              if (event.code === "Space") {
+                space.current = true;
+                event.preventDefault();
+              } else if (event.key === "+" || event.key === "=") {
                 event.preventDefault();
                 zoom(1.25);
               } else if (event.key === "-") {
@@ -255,8 +341,14 @@ export function DrawingCanvas({
                 fit();
               }
             }}
+            onKeyUp={(event) => {
+              if (event.code === "Space") space.current = false;
+            }}
+            onDoubleClick={fit}
             onPointerDown={(event) => {
-              if (drag.current || event.button !== 0) return;
+              if (drag.current) return;
+              if (event.button !== 0 && event.button !== 1) return;
+              if (event.button === 1) event.preventDefault();
               drag.current = {
                 id: event.pointerId,
                 x: event.clientX,
@@ -265,28 +357,34 @@ export function DrawingCanvas({
               event.currentTarget.setPointerCapture(event.pointerId);
             }}
             onPointerMove={(event) => {
-              const d = drag.current;
-              if (!d || d.id !== event.pointerId) return;
               const node = svg.current;
               if (!node) return;
               const matrix = node.getScreenCTM();
               if (!matrix) return;
               const inverse = matrix.inverse();
-              const before = new DOMPoint(d.x, d.y).matrixTransform(inverse);
-              const after = new DOMPoint(
+              const point = new DOMPoint(
                 event.clientX,
                 event.clientY,
               ).matrixTransform(inverse);
+              if (coordinates.current) {
+                coordinates.current.value = `X ${point.x.toFixed(2)}  Y ${point.y.toFixed(2)} mm`;
+              }
+              const d = drag.current;
+              if (!d || d.id !== event.pointerId) return;
+              const before = new DOMPoint(d.x, d.y).matrixTransform(inverse);
               const previous = cameraRef.current;
               const next = {
                 ...previous,
-                x: previous.x + before.x - after.x,
-                y: previous.y + before.y - after.y,
+                x: previous.x + before.x - point.x,
+                y: previous.y + before.y - point.y,
               };
               cameraRef.current = next;
               setCamera(next);
               d.x = event.clientX;
               d.y = event.clientY;
+            }}
+            onPointerLeave={() => {
+              if (coordinates.current) coordinates.current.value = "—";
             }}
             onPointerUp={(event) => {
               if (drag.current?.id === event.pointerId) {
@@ -306,10 +404,42 @@ export function DrawingCanvas({
               drag.current = null;
             }}
           >
+            <defs>
+              <pattern
+                id={gridId}
+                x={box[0]}
+                y={box[1]}
+                width={gridStep}
+                height={gridStep}
+                patternUnits="userSpaceOnUse"
+              >
+                <path
+                  d={`M ${gridStep} 0 L 0 0 0 ${gridStep}`}
+                  fill="none"
+                  stroke="var(--cad-grid)"
+                  strokeWidth="0.6"
+                  vectorEffect="non-scaling-stroke"
+                />
+              </pattern>
+            </defs>
+            <rect
+              x={visible[0]}
+              y={visible[1]}
+              width={visible[2]}
+              height={visible[3]}
+              fill={`url(#${gridId})`}
+              pointerEvents="none"
+            />
             {groups.map((group) => {
-              if (group === "dimensions" && !showDimensions) return null;
+              if (!layers[group]) return null;
               const primitives = view.primitives.filter(
-                (p) => p.group === group,
+                (primitive) =>
+                  primitive.group === group &&
+                  !(
+                    group === "dimensions" &&
+                    camera.zoom < 0.45 &&
+                    primitive.kind === "text"
+                  ),
               );
               // Reveal already-built groups briefly; final release never waits for a replay.
               const delay =
@@ -354,24 +484,19 @@ export function DrawingCanvas({
         )}
       </div>
       <footer className="cad-legend">
-        <span>
-          <i className="outline" />
-          轮廓
-        </span>
-        <button
-          className="legend-toggle"
-          aria-label={showDimensions ? "隐藏尺寸标注" : "显示尺寸标注"}
-          aria-pressed={showDimensions}
-          onClick={() => setShowDimensions((value) => !value)}
-        >
-          <i className="dimensions" />
-          尺寸
-        </button>
-        <span>
-          <i className="center" />
-          中心线
-        </span>
-        <small>拖动平移 · 滚轮缩放</small>
+        {GROUP_LABELS.map(([group, label]) => (
+          <button
+            key={group}
+            className="legend-toggle"
+            aria-label={`${layers[group] ? "隐藏" : "显示"}${label}`}
+            aria-pressed={layers[group]}
+            onClick={() => toggleLayer(group)}
+          >
+            <i className={group} />
+            {label}
+          </button>
+        ))}
+        <small>拖动平移 · 滚轮缩放 · 双击适应</small>
       </footer>
       <span className="sr-only" role="status">
         {announcement}

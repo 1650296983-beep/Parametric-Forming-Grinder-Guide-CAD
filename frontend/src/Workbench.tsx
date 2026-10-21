@@ -5,7 +5,29 @@ import {
   useState,
   type ReactNode,
 } from "react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Check,
+  Clipboard,
+  Loader2,
+  Plus,
+  RotateCcw,
+  Sparkles,
+  WifiOff,
+  X,
+} from "lucide-react";
 import { DrawingCanvas } from "./DrawingCanvas";
+import {
+  exampleSpec,
+  normalizeSpec,
+  parseRelief,
+  parseSpec,
+  specHint,
+  type SpecKind,
+  type SpecShape,
+} from "./spec";
+import { useToast } from "./Toast";
 import type {
   DesignInput,
   GeneratedFile,
@@ -81,11 +103,13 @@ function ProgressStages({ progress }: { progress: GenerationProgress | null }) {
         return (
           <li key={id} className={state}>
             <span>
-              {state === "completed"
-                ? "✓"
-                : state === "failed"
-                  ? "!"
-                  : index + 1}
+              {state === "completed" ? (
+                <Check size={12} aria-hidden="true" />
+              ) : state === "failed" ? (
+                <AlertTriangle size={12} aria-hidden="true" />
+              ) : (
+                index + 1
+              )}
             </span>
             <div>
               <strong>{label}</strong>
@@ -98,22 +122,134 @@ function ProgressStages({ progress }: { progress: GenerationProgress | null }) {
   );
 }
 
+function SpecField({
+  id,
+  label,
+  kind,
+  shape,
+  value,
+  onChange,
+}: {
+  id: string;
+  label: string;
+  kind: SpecKind;
+  shape: SpecShape;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  const preview = parseSpec(value, kind, shape);
+  const input = useRef<HTMLTextAreaElement>(null);
+  const helpId = `${id}-help`;
+  const errorId = `${id}-error`;
+
+  useLayoutEffect(() => {
+    const element = input.current;
+    if (!element) return;
+    element.style.height = "auto";
+    element.style.height = `${Math.max(element.scrollHeight, 42)}px`;
+  }, [value]);
+
+  return (
+    <div className="spec-field">
+      <div className="field-heading">
+        <label htmlFor={id}>{label}</label>
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => onChange(exampleSpec(kind, shape))}
+        >
+          <Sparkles size={13} aria-hidden="true" />
+          载入示例
+        </button>
+      </div>
+      <textarea
+        id={id}
+        ref={input}
+        className="spec-input"
+        rows={1}
+        value={value}
+        placeholder={exampleSpec(kind, shape)}
+        spellCheck={false}
+        aria-invalid={Boolean(preview.error)}
+        aria-describedby={preview.error ? `${helpId} ${errorId}` : helpId}
+        onChange={(event) => onChange(event.target.value)}
+        onBlur={() => {
+          if (preview.normalized && preview.normalized !== value) {
+            onChange(preview.normalized);
+          }
+        }}
+        onPaste={(event) => {
+          const text = event.clipboardData.getData("text");
+          const normalized = normalizeSpec(text);
+          if (normalized !== text) {
+            event.preventDefault();
+            onChange(normalized);
+          }
+        }}
+      />
+      <div className="spec-meta">
+        <small id={helpId}>{specHint(kind, shape)}</small>
+        {preview.normalized && preview.normalized !== value && (
+          <span className="spec-normalized">
+            将归一化为 {preview.normalized}
+          </span>
+        )}
+      </div>
+      {preview.tokens.length > 0 && !preview.error && (
+        <ul className="spec-tokens" aria-label={`${label}解析结果`}>
+          {preview.tokens.map((token, index) => (
+            <li key={`${token.label}-${index}`}>
+              <span>{token.label}</span>
+              <strong>
+                {token.radius ? "R" : ""}
+                {token.value ?? "—"}
+                {token.tolerance && <small> ({token.tolerance})</small>}
+              </strong>
+            </li>
+          ))}
+        </ul>
+      )}
+      {preview.error && (
+        <p className="field-error" id={errorId} role="alert">
+          <AlertTriangle size={13} aria-hidden="true" />
+          {preview.error}
+        </p>
+      )}
+      {!preview.error && preview.warning && (
+        <p className="field-warning">
+          <AlertTriangle size={13} aria-hidden="true" />
+          {preview.warning}
+        </p>
+      )}
+    </div>
+  );
+}
+
 function InputRail({
   design,
   machines,
+  machinesLoading,
+  machinesError,
   selectedMachine,
   onMachine,
   onUpdate,
+  onRetryMachines,
 }: {
   design: DesignInput;
   machines: Machine[];
+  machinesLoading: boolean;
+  machinesError: string | null;
   selectedMachine: Machine | null;
   onMachine: (id: string) => void;
   onUpdate: <K extends keyof DesignInput>(
     key: K,
     value: DesignInput[K],
   ) => void;
+  onRetryMachines: () => void;
 }) {
+  const relief = parseRelief(design.relief);
+  const wheelRadiusValid =
+    Number.isFinite(design.wheel_radius) && design.wheel_radius > 0;
   return (
     <>
       <div className="rail-heading">
@@ -121,14 +257,24 @@ function InputRail({
         <p>成品与磨前规格独立填写</p>
       </div>
       <div className="rail-form-section">
-        <label>
+        <label htmlFor="machine-select">
           机台
           <select
+            id="machine-select"
             value={design.machine_type}
             onChange={(event) => onMachine(event.target.value)}
             disabled={!machines.length}
+            aria-busy={machinesLoading}
           >
-            {!machines.length && <option>正在读取机台…</option>}
+            {!machines.length && (
+              <option value="">
+                {machinesLoading
+                  ? "正在读取机台…"
+                  : machinesError
+                    ? "机台配置读取失败"
+                    : "没有可用的机台"}
+              </option>
+            )}
             {machines.map((machine) => (
               <option
                 key={machine.id}
@@ -140,6 +286,25 @@ function InputRail({
             ))}
           </select>
         </label>
+        {machinesError && (
+          <div className="inline-error" role="alert">
+            <AlertTriangle size={14} aria-hidden="true" />
+            <span>{machinesError}</span>
+            <button
+              type="button"
+              className="link-button"
+              onClick={onRetryMachines}
+              disabled={machinesLoading}
+            >
+              {machinesLoading ? (
+                <Loader2 className="spin" size={13} aria-hidden="true" />
+              ) : (
+                <RotateCcw size={13} aria-hidden="true" />
+              )}
+              重试
+            </button>
+          </div>
+        )}
         {selectedMachine && (
           <small>
             {selectedMachine.guide_length} mm ·{" "}
@@ -147,11 +312,18 @@ function InputRail({
             {mm(selectedMachine.section_center_opening_max)} mm
           </small>
         )}
+        {selectedMachine && !selectedMachine.supported_by_web_generation && (
+          <p className="field-warning">
+            <AlertTriangle size={13} aria-hidden="true" />
+            该机台暂不支持网页端生成，请改用桌面引擎。
+          </p>
+        )}
       </div>
       <div className="rail-form-section">
-        <label>
+        <label htmlFor="finished-shape">
           成品形态
           <select
+            id="finished-shape"
             value={design.product_shape_after}
             onChange={(event) =>
               onUpdate(
@@ -164,31 +336,20 @@ function InputRail({
             <option value="tile_shape">瓦型（双 R）</option>
           </select>
         </label>
-        <label>
-          成品规格
-          <input
-            id="finished-spec"
-            aria-describedby="finished-help"
-            value={design.finished_spec}
-            placeholder={
-              design.product_shape_after === "tile_shape"
-                ? "R30*R28*17.4*23.5*3.95"
-                : "R9.6*8.6*42.6*2.1"
-            }
-            spellCheck={false}
-            onChange={(event) => onUpdate("finished_spec", event.target.value)}
-          />
-        </label>
-        <small id="finished-help">
-          {design.product_shape_after === "tile_shape"
-            ? "R外 * R内 * 弦宽 * 长度 * 厚度"
-            : "R * 宽度 * 长度 * 厚度"}
-        </small>
+        <SpecField
+          id="finished-spec"
+          label="成品规格"
+          kind="finished"
+          shape={design.product_shape_after}
+          value={design.finished_spec}
+          onChange={(value) => onUpdate("finished_spec", value)}
+        />
       </div>
       <div className="rail-form-section">
-        <label>
+        <label htmlFor="preform-shape">
           成型磨前形态
           <select
+            id="preform-shape"
             value={design.product_shape_before}
             onChange={(event) =>
               onUpdate(
@@ -201,29 +362,14 @@ function InputRail({
             <option value="same_r_tile">同 R 瓦型</option>
           </select>
         </label>
-        <label>
-          成型磨前规格
-          <textarea
-            id="preform-spec"
-            aria-describedby="preform-help"
-            rows={2}
-            value={design.pre_grinding_spec}
-            placeholder={
-              design.product_shape_before === "rectangular_block"
-                ? "42.6*8.6(-0.07/-0.09)*2.1(+0.01/-0.01)"
-                : "R30*R30*17.4(+0.02/-0.02)*23.5*3.95(+0.01/-0.01)"
-            }
-            spellCheck={false}
-            onChange={(event) =>
-              onUpdate("pre_grinding_spec", event.target.value)
-            }
-          />
-        </label>
-        <small id="preform-help">
-          {design.product_shape_before === "rectangular_block"
-            ? "长度 * 宽度(上公差/下公差) * 厚度(上公差/下公差)"
-            : "R * R * 弦宽(上公差/下公差) * 长度 * 厚度(上公差/下公差)"}
-        </small>
+        <SpecField
+          id="preform-spec"
+          label="成型磨前规格"
+          kind="preform"
+          shape={design.product_shape_before}
+          value={design.pre_grinding_spec}
+          onChange={(value) => onUpdate("pre_grinding_spec", value)}
+        />
       </div>
       <div className="rail-form-section">
         <div className="rail-field-pair">
@@ -232,7 +378,13 @@ function InputRail({
             <input
               id="relief-input"
               value={design.relief}
+              spellCheck={false}
+              aria-invalid={!relief && Boolean(design.relief)}
+              aria-describedby="relief-help"
               onChange={(event) => onUpdate("relief", event.target.value)}
+              onBlur={() =>
+                onUpdate("relief", normalizeSpec(design.relief))
+              }
             />
           </label>
           <label>
@@ -242,13 +394,30 @@ function InputRail({
               min="1"
               step="0.01"
               value={design.wheel_radius}
+              aria-invalid={!wheelRadiusValid}
               onChange={(event) =>
                 onUpdate("wheel_radius", Number(event.target.value))
               }
             />
           </label>
         </div>
-        <small>4-1 表示四处 Ø1.00 / R0.50；中心另有固定 2 × R0.50。</small>
+        <small id="relief-help">
+          {relief
+            ? `${relief.count} 处 Ø${relief.diameter.toFixed(2)} / R${relief.radius.toFixed(2)}；中心另有固定 2 × R0.50。`
+            : "4-1 表示四处 Ø1.00 / R0.50；中心另有固定 2 × R0.50。"}
+        </small>
+        {!relief && Boolean(design.relief) && (
+          <p className="field-error" role="alert">
+            <AlertTriangle size={13} aria-hidden="true" />
+            避空格式应为“数量-直径”，例如 4-1。
+          </p>
+        )}
+        {!wheelRadiusValid && (
+          <p className="field-error" role="alert">
+            <AlertTriangle size={13} aria-hidden="true" />
+            砂轮半径必须大于 0。
+          </p>
+        )}
       </div>
       <details className="process-details">
         <summary>工艺选项</summary>
@@ -287,6 +456,23 @@ function InputRail({
               </span>
             </label>
           ))}
+          <button
+            type="button"
+            className="link-button reset-options"
+            onClick={() => {
+              onUpdate("single_side_or_high_requirement", false);
+              onUpdate("high_symmetry_requirement", false);
+              onUpdate("large_tile_clearance", false);
+            }}
+            disabled={
+              !design.single_side_or_high_requirement &&
+              !design.high_symmetry_requirement &&
+              !design.large_tile_clearance
+            }
+          >
+            <RotateCcw size={13} aria-hidden="true" />
+            重置工艺选项
+          </button>
         </div>
       </details>
       <p className="rail-note">
@@ -393,15 +579,23 @@ function CalculationRows({ validation }: { validation: ValidationResult }) {
 export function Workbench({
   design,
   machines,
+  machinesLoading,
+  machinesError,
   selectedMachine,
   job,
   onMachine,
   onUpdate,
   onNew,
+  onRetryMachines,
+  draftRestored,
+  onDismissDraft,
+  onClearDraft,
   artifactActions,
 }: {
   design: DesignInput;
   machines: Machine[];
+  machinesLoading: boolean;
+  machinesError: string | null;
   selectedMachine: Machine | null;
   job: Job;
   onMachine: (id: string) => void;
@@ -410,9 +604,14 @@ export function Workbench({
     value: DesignInput[K],
   ) => void;
   onNew: () => void;
+  onRetryMachines: () => void;
+  draftRestored: boolean;
+  onDismissDraft: () => void;
+  onClearDraft: () => void;
   artifactActions: (file: GeneratedFile) => ReactNode;
 }) {
   const { validation, progress } = job;
+  const toast = useToast();
   const rail = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     if (rail.current) rail.current.scrollTop = 0;
@@ -457,8 +656,29 @@ export function Workbench({
         ?.focus(),
     );
   };
+  const copyJobId = async () => {
+    if (!job.jobId) return;
+    try {
+      await navigator.clipboard.writeText(job.jobId);
+      toast.success("任务 ID 已复制");
+    } catch {
+      toast.error("无法访问剪贴板，请手动复制任务 ID。");
+    }
+  };
   return (
-    <section className="workbench">
+    <section
+      className="workbench"
+      onKeyDown={(event) => {
+        if (!(event.metaKey || event.ctrlKey) || event.key !== "Enter") return;
+        if (job.step === 1 && canValidate) {
+          event.preventDefault();
+          void job.validate(design);
+        } else if (job.step === 2 && !job.starting) {
+          event.preventDefault();
+          void job.generate(design);
+        }
+      }}
+    >
       <ol className="workbench-steps">
         {["输入参数", "确认计算", "生成结果"].map((label, index) => (
           <li
@@ -478,6 +698,29 @@ export function Workbench({
       </ol>
       <div className="workbench-body">
         <aside ref={rail} className="parameter-rail">
+          {draftRestored && job.step === 1 && (
+            <div className="draft-notice" role="status">
+              <RotateCcw size={15} aria-hidden="true" />
+              <div>
+                <strong>已恢复上次草稿</strong>
+                <span>输入保存在本机，可直接继续修改。</span>
+              </div>
+              <button
+                type="button"
+                className="link-button"
+                onClick={onDismissDraft}
+              >
+                保留
+              </button>
+              <button
+                type="button"
+                className="link-button danger"
+                onClick={onClearDraft}
+              >
+                清除
+              </button>
+            </div>
+          )}
           {gateMismatch && (
             <div className="workbench-error" role="alert">
               任务状态与正式图纸门禁结果不一致，未允许打开或导出正式图纸。请查看校验报告并重新生成。
@@ -492,9 +735,12 @@ export function Workbench({
             <InputRail
               design={design}
               machines={machines}
+              machinesLoading={machinesLoading}
+              machinesError={machinesError}
               selectedMachine={selectedMachine}
               onMachine={onMachine}
               onUpdate={onUpdate}
+              onRetryMachines={onRetryMachines}
             />
           ) : job.step === 2 && validation ? (
             <>
@@ -566,12 +812,30 @@ export function Workbench({
               <div className="stage-announcement sr-only" role="status">
                 {progress?.stage} {progress?.message}
               </div>
-              {job.jobId && <p className="task-id">任务 {job.jobId}</p>}
+              {job.jobId && (
+                <p className="task-id">
+                  <span>任务</span>
+                  <code>{job.jobId}</code>
+                  <button
+                    type="button"
+                    className="icon-button mini"
+                    onClick={() => void copyJobId()}
+                    title="复制任务 ID"
+                    aria-label="复制任务 ID"
+                  >
+                    <Clipboard size={13} aria-hidden="true" />
+                  </button>
+                </p>
+              )}
               {job.connectionError && (
                 <div className="rail-warning" role="alert">
-                  <p>进度连接中断：{job.connectionError}</p>
+                  <p>
+                    <WifiOff size={14} aria-hidden="true" />
+                    进度连接中断：{job.connectionError}
+                  </p>
                   <p>后台任务可能仍在执行，重新连接将读取同一任务。</p>
                   <button className="button secondary" onClick={job.reconnect}>
+                    <RotateCcw size={14} aria-hidden="true" />
                     重新连接任务
                   </button>
                 </div>
@@ -619,7 +883,13 @@ export function Workbench({
           className={`action-state ${failed || inputError ? "failed" : job.step === 2 || passed ? "passed" : ""}`}
         >
           <span>
-            {failed || inputError ? "!" : job.step === 2 || passed ? "✓" : "○"}
+            {failed || inputError ? (
+              <AlertTriangle size={14} aria-hidden="true" />
+            ) : job.step === 2 || passed ? (
+              <Check size={14} aria-hidden="true" />
+            ) : (
+              "○"
+            )}
           </span>
           <p>
             {job.step === 1
@@ -665,7 +935,17 @@ export function Workbench({
               disabled={!canValidate}
               onClick={() => void job.validate(design)}
             >
-              {job.validating ? "正在解析…" : "确认计算 →"}
+              {job.validating ? (
+                <>
+                  <Loader2 className="spin" size={15} aria-hidden="true" />
+                  正在解析…
+                </>
+              ) : (
+                <>
+                  确认计算
+                  <ArrowRight size={15} aria-hidden="true" />
+                </>
+              )}
             </button>
           ) : job.step === 2 ? (
             <button
@@ -674,10 +954,12 @@ export function Workbench({
               disabled={job.starting}
               onClick={() => void job.generate(design)}
             >
-              生成并校验图纸 →
+              生成并校验图纸
+              <ArrowRight size={15} aria-hidden="true" />
             </button>
           ) : passed || failed ? (
             <button key="new-task" className="button primary" onClick={onNew}>
+              <Plus size={15} aria-hidden="true" />
               新建任务
             </button>
           ) : (

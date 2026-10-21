@@ -1,0 +1,4 @@
+Inter
+Copyright (c) 2016 The Inter Project Authors (https://github.com/rsms/inter)
+Licensed under the SIL Open Font License, Version 1.1 (see OFL-1.1.txt).
+The bundled Inter.woff2 is the unmodified font file shipped with Blender 5.1.

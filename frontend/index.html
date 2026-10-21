@@ -3,7 +3,31 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="color-scheme" content="light dark" />
+    <script>
+      (() => {
+        try {
+          const stored = localStorage.getItem("forming-grinder-cad:theme");
+          const mode = stored ? JSON.parse(stored) : "system";
+          const dark =
+            mode === "dark" ||
+            (mode === "system" &&
+              window.matchMedia("(prefers-color-scheme: dark)").matches);
+          document.documentElement.dataset.theme = dark ? "dark" : "light";
+          document.documentElement.style.colorScheme = dark ? "dark" : "light";
+        } catch {
+          /* First paint falls back to the CSS light tokens. */
+        }
+      })();
+    </script>
     <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <link
+      rel="preload"
+      href="/fonts/Inter.woff2"
+      as="font"
+      type="font/woff2"
+      crossorigin
+    />
     <title>成型磨导轨 CAD 参数化生成器</title>
   </head>
   <body>

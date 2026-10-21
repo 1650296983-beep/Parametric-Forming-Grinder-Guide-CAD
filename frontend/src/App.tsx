@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { Dispatch, SetStateAction } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getVersion } from "@tauri-apps/api/app";
@@ -6,10 +6,43 @@ import { open, save } from "@tauri-apps/plugin-dialog";
 import { writeFile } from "@tauri-apps/plugin-fs";
 import { relaunch } from "@tauri-apps/plugin-process";
 import { check, type Update } from "@tauri-apps/plugin-updater";
+import {
+  AlertTriangle,
+  BookOpen,
+  Boxes,
+  Check,
+  CheckCircle2,
+  Clock,
+  Copy,
+  FileText,
+  HardDrive,
+  History as HistoryIcon,
+  Loader2,
+  Monitor,
+  Moon,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings as SettingsIcon,
+  Sun,
+  Trash2,
+  WifiOff,
+  X,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { api } from "./api";
 import { Workbench } from "./Workbench";
 import { useDesignJob } from "./useDesignJob";
 import { resetApiBaseUrl } from "./api";
+import { CommandPalette, type Command } from "./CommandPalette";
+import { ConfirmDialog } from "./ConfirmDialog";
+import { useToast } from "./Toast";
+import {
+  readStoredString,
+  usePersistentState,
+  writeStoredString,
+} from "./usePersistentState";
+import { exampleSpec } from "./spec";
 import type {
   DesignInput,
   DesktopSettings,
@@ -22,6 +55,38 @@ import type {
 } from "./types";
 
 type Page = "workspace" | "history" | "templates" | "rules" | "settings";
+type ThemeMode = "system" | "light" | "dark";
+
+const PAGES: Page[] = [
+  "workspace",
+  "history",
+  "templates",
+  "rules",
+  "settings",
+];
+
+const PAGE_COPY: Record<Page, { title: string; subtitle: string }> = {
+  workspace: {
+    title: "导轨工作台",
+    subtitle: "依据磨前规格，生成可复核的加工图纸",
+  },
+  history: {
+    title: "历史任务",
+    subtitle: "本地任务输入、校验结果与交付文件",
+  },
+  templates: {
+    title: "机台模板",
+    subtitle: "固定结构参数只读视图",
+  },
+  rules: {
+    title: "规则与说明",
+    subtitle: "生成、几何校验与 release 门禁",
+  },
+  settings: {
+    title: "设置与更新",
+    subtitle: "本机引擎、界面外观与签名更新",
+  },
+};
 
 const initialDesign: DesignInput = {
   machine_type: "triple_single_down_up",
@@ -40,12 +105,12 @@ const initialDesign: DesignInput = {
   wheel_radius: 80,
 };
 
-const navItems: Array<{ id: Page; icon: string; label: string }> = [
-  { id: "workspace", icon: "▣", label: "导轨工作台" },
-  { id: "history", icon: "◷", label: "历史任务" },
-  { id: "templates", icon: "◇", label: "机台模板" },
-  { id: "rules", icon: "≡", label: "规则与说明" },
-  { id: "settings", icon: "⚙", label: "设置与更新" },
+const navItems: Array<{ id: Page; icon: LucideIcon; label: string }> = [
+  { id: "workspace", icon: Boxes, label: "导轨工作台" },
+  { id: "history", icon: HistoryIcon, label: "历史任务" },
+  { id: "templates", icon: FileText, label: "机台模板" },
+  { id: "rules", icon: BookOpen, label: "规则与说明" },
+  { id: "settings", icon: SettingsIcon, label: "设置与更新" },
 ];
 
 const machineFirstSide = (machine: Machine) =>
@@ -98,82 +163,145 @@ const saveGeneratedFile = async (
   return target;
 };
 
-function NavIcon({ kind }: { kind: Page }) {
-  const paths: Record<Page, string> = {
-    workspace: "M12 2 3 7v10l9 5 9-5V7ZM3 7l9 5 9-5M12 12v10",
-    history: "M12 3a9 9 0 1 0 9 9 9 9 0 0 0-9-9Zm0 4v6l4 2",
-    templates: "M6 2h8l4 4v16H6ZM14 2v5h4M9 11h6M9 15h6M9 18h5",
-    rules:
-      "M12 5C8 2 3 3 2 4v16c3-2 7-1 10 1 3-2 7-3 10-1V4c-3-2-7-1-10 1Zm0 0v16",
-    settings:
-      "m10 2-1 3-3 1-3-1-2 4 2 2v3l-2 2 2 4 3-1 3 1 1 3h4l1-3 3-1 3 1 2-4-2-2v-3l2-2-2-4-3 1-3-1-1-3ZM12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8Z",
-  };
-  return (
-    <svg
-      width="20"
-      height="20"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="1.6"
-      strokeLinejoin="round"
-      strokeLinecap="round"
-      aria-hidden="true"
-    >
-      <path d={paths[kind]} />
-    </svg>
-  );
-}
+const designForMachine = (
+  machine: Machine,
+  design: DesignInput,
+): DesignInput => ({
+  ...design,
+  machine_type: machine.id,
+  guide_rail_type: machine.guide_type,
+  wheel_sequence: machine.wheel_positions,
+  first_wheel_side: machineFirstSide(machine),
+  template_coordinate_system: machine.template_coordinate_system,
+});
+
+const isPage = (value: string | null): value is Page =>
+  value != null && PAGES.includes(value as Page);
+
+const initialPage = (): Page => {
+  const hash = window.location.hash.replace(/^#\/?/, "");
+  if (isPage(hash)) return hash;
+  const stored = readStoredString("page");
+  return isPage(stored) ? stored : "workspace";
+};
+
+const THEME_MODES: Array<{
+  id: ThemeMode;
+  label: string;
+  icon: LucideIcon;
+}> = [
+  { id: "system", label: "跟随系统", icon: Monitor },
+  { id: "light", label: "浅色", icon: Sun },
+  { id: "dark", label: "深色", icon: Moon },
+];
 
 export default function App() {
-  const [page, setPage] = useState<Page>("workspace");
+  const toast = useToast();
+  const [page, setPage] = useState<Page>(initialPage);
+  const themeState = usePersistentState<ThemeMode>("theme", "system");
+  const themeMode = themeState.value;
+  const setThemeMode = themeState.setValue;
+  const designState = usePersistentState<DesignInput>(
+    "design",
+    initialDesign,
+    { delay: 400 },
+  );
+  const design = designState.value;
+  const setDesign = designState.setValue;
+  const [draftNotice, setDraftNotice] = useState(designState.restored);
   const [machines, setMachines] = useState<Machine[]>([]);
-  const [design, setDesign] = useState<DesignInput>(initialDesign);
+  const [machinesLoading, setMachinesLoading] = useState(true);
+  const [machinesError, setMachinesError] = useState<string | null>(null);
   const [isServiceOnline, setIsServiceOnline] = useState(false);
+  const [paletteOpen, setPaletteOpen] = useState(false);
   const [taskHistory, setTaskHistory] = useState<TaskHistoryResult | null>(
     null,
   );
   const [isTasksLoading, setIsTasksLoading] = useState(false);
   const [taskHistoryError, setTaskHistoryError] = useState<string | null>(null);
-  const refresh = () =>
-    refreshTaskHistory(setTaskHistory, setIsTasksLoading, setTaskHistoryError);
+  const initialized = useRef(false);
+  const newTaskRef = useRef<() => void>(() => undefined);
+
+  const refresh = useCallback(
+    () =>
+      refreshTaskHistory(
+        setTaskHistory,
+        setIsTasksLoading,
+        setTaskHistoryError,
+      ),
+    [],
+  );
   const job = useDesignJob(() => void refresh(), setIsServiceOnline);
 
-  useEffect(() => {
-    let active = true;
-    void api
-      .health()
-      .then(() => {
-        if (active) setIsServiceOnline(true);
-        return api.machines();
-      })
-      .then((items) => {
-        if (!active) return;
-        setMachines(items);
-        setDesign((previous) => {
-          const machine =
-            items.find((item) => item.id === previous.machine_type) ?? items[0];
-          return machine
-            ? {
-                ...previous,
-                machine_type: machine.id,
-                guide_rail_type: machine.guide_type,
-                wheel_sequence: machine.wheel_positions,
-                first_wheel_side: machineFirstSide(machine),
-                template_coordinate_system: machine.template_coordinate_system,
-              }
-            : previous;
-        });
-      })
-      .catch(() => {
-        if (active) setIsServiceOnline(false);
+  const loadMachines = useCallback(async () => {
+    setMachinesLoading(true);
+    setMachinesError(null);
+    try {
+      await api.health();
+      setIsServiceOnline(true);
+    } catch (error) {
+      setIsServiceOnline(false);
+      setMachinesError(
+        error instanceof Error ? error.message : "本地 CAD 引擎未连接。",
+      );
+      setMachinesLoading(false);
+      return;
+    }
+    try {
+      const items = await api.machines();
+      setMachines(items);
+      setDesign((previous) => {
+        const machine =
+          items.find((item) => item.id === previous.machine_type) ??
+          items.find((item) => item.supported_by_web_generation) ??
+          items[0];
+        return machine ? designForMachine(machine, previous) : previous;
       });
+    } catch (error) {
+      setMachinesError(
+        error instanceof Error ? error.message : "机台配置读取失败。",
+      );
+    } finally {
+      setMachinesLoading(false);
+    }
+  }, [setDesign]);
+
+  useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+    void loadMachines();
     void refresh();
     if ("__TAURI_INTERNALS__" in window) void check().catch(() => undefined);
-    return () => {
-      active = false;
+  }, [loadMachines, refresh]);
+
+  useEffect(() => {
+    const media = window.matchMedia("(prefers-color-scheme: dark)");
+    const apply = () => {
+      const resolved =
+        themeMode === "system"
+          ? media.matches
+            ? "dark"
+            : "light"
+          : themeMode;
+      document.documentElement.dataset.theme = resolved;
+      document.documentElement.style.colorScheme = resolved;
     };
-  }, []);
+    apply();
+    if (themeMode === "system")
+      media.addEventListener("change", apply);
+    return () => media.removeEventListener("change", apply);
+  }, [themeMode]);
+
+  useEffect(() => {
+    writeStoredString("page", page);
+    const hash = `#/${page}`;
+    if (window.location.hash !== hash)
+      window.history.replaceState(
+        null,
+        "",
+        `${window.location.pathname}${window.location.search}${hash}`,
+      );
+  }, [page]);
 
   useEffect(() => {
     const release = () =>
@@ -189,34 +317,136 @@ export default function App() {
       window.removeEventListener("blur", release);
     };
   }, []);
+
   const selectedMachine = useMemo(
     () =>
       machines.find((machine) => machine.id === design.machine_type) ?? null,
     [design.machine_type, machines],
   );
+
   const newTask = () => {
     job.invalidate();
-    setDesign({ ...initialDesign });
+    setDesign(
+      machines[0]
+        ? designForMachine(machines[0], initialDesign)
+        : { ...initialDesign },
+    );
+    setDraftNotice(false);
     setPage("workspace");
   };
+  newTaskRef.current = newTask;
+
   const update = <K extends keyof DesignInput>(
     key: K,
     value: DesignInput[K],
   ) => {
     job.invalidate();
+    setDraftNotice(false);
     setDesign((previous) => ({ ...previous, [key]: value }));
   };
   const selectMachine = (id: string) => {
     const machine = machines.find((item) => item.id === id);
     if (!machine) return;
     job.invalidate();
-    applyMachine(machine, setDesign);
+    setDraftNotice(false);
+    setDesign((previous) => designForMachine(machine, previous));
   };
   const copyTask = (input: DesignInput) => {
     job.invalidate();
+    setDraftNotice(false);
     setDesign(JSON.parse(JSON.stringify(input)));
     setPage("workspace");
   };
+  const fillExample = () => {
+    job.invalidate();
+    setDraftNotice(false);
+    setDesign((previous) => ({
+      ...previous,
+      finished_spec: exampleSpec(
+        "finished",
+        previous.product_shape_after,
+      ),
+      pre_grinding_spec: exampleSpec(
+        "preform",
+        previous.product_shape_before,
+      ),
+    }));
+    setPage("workspace");
+    toast.push({
+      tone: "success",
+      title: "已填入示例规格",
+      description: "可直接确认计算，或继续修改参数。",
+    });
+  };
+
+  useEffect(() => {
+    const handler = (event: KeyboardEvent) => {
+      const mod = event.metaKey || event.ctrlKey;
+      const key = event.key.toLowerCase();
+      if (mod && key === "k") {
+        event.preventDefault();
+        setPaletteOpen((value) => !value);
+        return;
+      }
+      if (mod && key === "n") {
+        event.preventDefault();
+        newTaskRef.current();
+        return;
+      }
+      if (mod && key === ",") {
+        event.preventDefault();
+        setPage("settings");
+        return;
+      }
+      if (mod && /^[1-5]$/.test(key)) {
+        event.preventDefault();
+        setPage(PAGES[Number(key) - 1]);
+      }
+    };
+    window.addEventListener("keydown", handler);
+    return () => window.removeEventListener("keydown", handler);
+  }, []);
+
+  const modKey = /Mac|iPhone|iPad/.test(navigator.userAgent) ? "⌘" : "Ctrl+";
+  const commands: Command[] = [
+    ...navItems.map((item, index) => ({
+      id: `page-${item.id}`,
+      label: item.label,
+      group: "页面",
+      hint: `${modKey}${index + 1}`,
+      icon: <item.icon size={16} />,
+      run: () => setPage(item.id),
+    })),
+    {
+      id: "new-task",
+      label: "新建任务",
+      group: "操作",
+      hint: `${modKey}N`,
+      icon: <Plus size={16} />,
+      run: newTask,
+    },
+    {
+      id: "refresh-history",
+      label: "刷新历史任务",
+      group: "操作",
+      icon: <RefreshCw size={16} />,
+      run: () => void refresh(),
+    },
+    {
+      id: "fill-example",
+      label: "填入示例规格",
+      group: "操作",
+      icon: <FileText size={16} />,
+      run: fillExample,
+    },
+    ...THEME_MODES.map((mode) => ({
+      id: `theme-${mode.id}`,
+      label: `外观：${mode.label}`,
+      group: "外观",
+      icon: <mode.icon size={16} />,
+      run: () => setThemeMode(mode.id),
+    })),
+  ];
   return (
     <div
       className="app-shell"
@@ -234,24 +464,34 @@ export default function App() {
           aria-label="返回导轨工作台"
         >
           <span className="brand-glyph">
-            <NavIcon kind="workspace" />
+            <Boxes size={25} strokeWidth={1.5} aria-hidden="true" />
           </span>
           <span>
             <strong>成型磨导轨</strong>
             <small>参数化生成器</small>
           </span>
         </button>
+        <button
+          className="sidebar-search"
+          onClick={() => setPaletteOpen(true)}
+          aria-label="打开命令面板"
+          title={`${modKey}K`}
+        >
+          <Search size={15} aria-hidden="true" />
+          <span>搜索与命令</span>
+          <kbd>{modKey}K</kbd>
+        </button>
         <nav>
-          {navItems.map((item) => (
+          {navItems.map(({ id, label, icon: Icon }) => (
             <button
-              className={`nav-item ${page === item.id ? "active" : ""}`}
-              key={item.id}
-              aria-label={item.label}
-              aria-current={page === item.id ? "page" : undefined}
-              onClick={() => setPage(item.id)}
+              className={`nav-item ${page === id ? "active" : ""}`}
+              key={id}
+              aria-label={label}
+              aria-current={page === id ? "page" : undefined}
+              onClick={() => setPage(id)}
             >
-              <NavIcon kind={item.id} />
-              <span>{item.label}</span>
+              <Icon size={20} strokeWidth={1.6} aria-hidden="true" />
+              <span>{label}</span>
             </button>
           ))}
         </nav>
@@ -269,25 +509,79 @@ export default function App() {
       <main className="main-content">
         <header className="topbar">
           <div>
-            <h1>{pageTitle(page)}</h1>
-            <p>依据磨前规格，生成可复核的加工图纸</p>
+            <h1>{PAGE_COPY[page].title}</h1>
+            <p>{PAGE_COPY[page].subtitle}</p>
           </div>
           <div className="topbar-actions">
-            <span className="local-task-label">本地任务</span>
-            <button className="button primary" onClick={newTask}>
+            <span className="local-badge" title="所有任务与文件保存在本机">
+              <HardDrive size={13} aria-hidden="true" />
+              本地任务
+            </span>
+            <button
+              className="button primary"
+              onClick={newTask}
+              title={`新建任务（${modKey}N）`}
+            >
+              <Plus size={16} aria-hidden="true" />
               新建任务
             </button>
           </div>
         </header>
+        {(!isServiceOnline || machinesError) && (
+          <div
+            className={`engine-banner ${isServiceOnline ? "warning" : ""}`}
+            role="alert"
+          >
+            {isServiceOnline ? (
+              <AlertTriangle size={17} aria-hidden="true" />
+            ) : (
+              <WifiOff size={17} aria-hidden="true" />
+            )}
+            <div>
+              <strong>
+                {isServiceOnline
+                  ? "机台配置读取失败"
+                  : "本地 CAD 引擎未连接"}
+              </strong>
+              <span>
+                {isServiceOnline
+                  ? machinesError
+                  : "生成、校验与历史任务暂不可用，请确认本地引擎已启动。"}
+              </span>
+            </div>
+            <button
+              className="button secondary mini"
+              onClick={() => void loadMachines()}
+              disabled={machinesLoading}
+            >
+              {machinesLoading ? (
+                <Loader2 className="spin" size={14} aria-hidden="true" />
+              ) : (
+                <RefreshCw size={14} aria-hidden="true" />
+              )}
+              重新连接
+            </button>
+          </div>
+        )}
         {page === "workspace" && (
           <Workbench
             design={design}
             machines={machines}
+            machinesLoading={machinesLoading}
+            machinesError={machinesError}
             selectedMachine={selectedMachine}
             job={job}
             onMachine={selectMachine}
             onUpdate={update}
             onNew={newTask}
+            onRetryMachines={() => void loadMachines()}
+            draftRestored={draftNotice}
+            onDismissDraft={() => setDraftNotice(false)}
+            onClearDraft={() => {
+              designState.clear();
+              setDraftNotice(false);
+              job.invalidate();
+            }}
             artifactActions={(file) => (
               <ArtifactActions
                 key={`${file.task_id}-${file.name}`}
@@ -309,9 +603,18 @@ export default function App() {
         {page === "templates" && <Templates machines={machines} />}
         {page === "rules" && <Rules />}
         {page === "settings" && (
-          <DesktopSettingsPage onEngineState={setIsServiceOnline} />
+          <DesktopSettingsPage
+            onEngineState={setIsServiceOnline}
+            themeMode={themeMode}
+            onThemeMode={setThemeMode}
+          />
         )}
       </main>
+      <CommandPalette
+        open={paletteOpen}
+        commands={commands}
+        onClose={() => setPaletteOpen(false)}
+      />
     </div>
   );
 }
@@ -471,6 +774,14 @@ function History({
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteMessage, setDeleteMessage] = useState<string | null>(null);
+  const [sortOrder, setSortOrder] = useState<"newest" | "oldest" | "status">(
+    "newest",
+  );
+  const [pendingDelete, setPendingDelete] = useState<
+    { task: TaskSummary } | { count: number } | null
+  >(null);
+  const toast = useToast();
+  const selectAll = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     setDetail(null);
@@ -505,22 +816,43 @@ function History({
   }, [selectedTaskId]);
 
   const normalizedQuery = query.trim().toLowerCase();
-  const tasks = (history?.items ?? []).filter((task) => {
-    if (statusFilter !== "all" && task.status !== statusFilter) return false;
-    if (!normalizedQuery) return true;
-    return [
-      task.task_id,
-      task.finished_spec,
-      task.pre_grinding_spec,
-      task.machine_name,
-    ].some((value) => value.toLowerCase().includes(normalizedQuery));
-  });
+  const tasks = (history?.items ?? [])
+    .filter((task) => {
+      if (statusFilter !== "all" && task.status !== statusFilter) return false;
+      if (!normalizedQuery) return true;
+      return [
+        task.task_id,
+        task.finished_spec,
+        task.pre_grinding_spec,
+        task.machine_name,
+      ].some((value) => value.toLowerCase().includes(normalizedQuery));
+    })
+    .sort((a, b) => {
+      if (sortOrder === "status") {
+        const weight = { running: 0, failed: 1, passed: 2 };
+        const delta = weight[a.status] - weight[b.status];
+        if (delta !== 0) return delta;
+      }
+      const delta =
+        new Date(b.created_at).getTime() - new Date(a.created_at).getTime();
+      return sortOrder === "oldest" ? -delta : delta;
+    });
   const selectableTaskIds = tasks
     .filter((task) => task.can_delete)
     .map((task) => task.task_id);
   const allSelectableTasksSelected =
     selectableTaskIds.length > 0 &&
     selectableTaskIds.every((taskId) => selectedTaskIds.has(taskId));
+  const someSelectableTasksSelected = selectableTaskIds.some((taskId) =>
+    selectedTaskIds.has(taskId),
+  );
+
+  useEffect(() => {
+    if (selectAll.current) {
+      selectAll.current.indeterminate =
+        someSelectableTasksSelected && !allSelectableTasksSelected;
+    }
+  }, [someSelectableTasksSelected, allSelectableTasksSelected]);
 
   const toggleTaskSelection = (taskId: string, checked: boolean) => {
     setSelectedTaskIds((previous) => {
@@ -543,10 +875,6 @@ function History({
   };
 
   const deleteHistoryTask = async (task: TaskSummary) => {
-    const confirmed = window.confirm(
-      `确认删除任务 ${task.finished_spec || task.task_id}？\n删除后 DXF、DWG、预览和报告均无法恢复。`,
-    );
-    if (!confirmed) return;
     setDeletingTaskId(task.task_id);
     setDeleteError(null);
     setDeleteMessage(null);
@@ -559,13 +887,15 @@ function History({
         return next;
       });
       setDeleteMessage("任务已删除。");
+      toast.success("任务已删除", task.finished_spec || task.task_id);
       await onRefresh();
     } catch (deleteTaskError) {
-      setDeleteError(
+      const message =
         deleteTaskError instanceof Error
           ? deleteTaskError.message
-          : "历史任务删除失败。",
-      );
+          : "历史任务删除失败。";
+      setDeleteError(message);
+      toast.error("任务删除失败", message);
     } finally {
       setDeletingTaskId(null);
     }
@@ -574,10 +904,6 @@ function History({
   const deleteSelectedTasks = async () => {
     const taskIds = Array.from(selectedTaskIds);
     if (taskIds.length === 0) return;
-    const confirmed = window.confirm(
-      `确认批量删除已选择的 ${taskIds.length} 个任务？\n删除后 DXF、DWG、预览和报告均无法恢复。`,
-    );
-    if (!confirmed) return;
     setIsBulkDeleting(true);
     setDeleteError(null);
     setDeleteMessage(null);
@@ -599,13 +925,20 @@ function History({
       setDeleteMessage(
         `已删除 ${result.deleted.length} 个任务${skippedSummary}`,
       );
+      toast.success(
+        `已删除 ${result.deleted.length} 个任务`,
+        result.skipped.length
+          ? `跳过 ${result.skipped.length} 项，详见列表说明。`
+          : undefined,
+      );
       await onRefresh();
     } catch (bulkDeleteError) {
-      setDeleteError(
+      const message =
         bulkDeleteError instanceof Error
           ? bulkDeleteError.message
-          : "批量删除失败。",
-      );
+          : "批量删除失败。";
+      setDeleteError(message);
+      toast.error("批量删除失败", message);
     } finally {
       setIsBulkDeleting(false);
     }
@@ -625,7 +958,12 @@ function History({
             onClick={onRefresh}
             disabled={isLoading}
           >
-            刷新记录
+            {isLoading ? (
+              <Loader2 className="spin" size={14} aria-hidden="true" />
+            ) : (
+              <RefreshCw size={14} aria-hidden="true" />
+            )}
+            {isLoading ? "刷新中…" : "刷新记录"}
           </button>
         </div>
         <div className="history-filters">
@@ -651,6 +989,19 @@ function History({
             <option value="failed">失败 / 阻断</option>
             <option value="running">执行中</option>
           </select>
+          <select
+            aria-label="排序方式"
+            value={sortOrder}
+            onChange={(event) =>
+              setSortOrder(
+                event.target.value as "newest" | "oldest" | "status",
+              )
+            }
+          >
+            <option value="newest">最新优先</option>
+            <option value="oldest">最早优先</option>
+            <option value="status">按状态</option>
+          </select>
           <span>共 {tasks.length} 条</span>
         </div>
         <div className="history-bulk-actions">
@@ -660,15 +1011,26 @@ function History({
           <button
             className="button danger mini"
             disabled={selectedTaskIds.size === 0 || isBulkDeleting}
-            onClick={() => void deleteSelectedTasks()}
+            onClick={() => setPendingDelete({ count: selectedTaskIds.size })}
           >
-            {isBulkDeleting ? "批量删除中…" : "批量删除"}
+            {isBulkDeleting ? (
+              <>
+                <Loader2 className="spin" size={13} aria-hidden="true" />
+                批量删除中…
+              </>
+            ) : (
+              <>
+                <Trash2 size={13} aria-hidden="true" />
+                批量删除
+              </>
+            )}
           </button>
           <small>执行中任务不可删除。</small>
         </div>
         <div className="table-head selectable">
           <label className="task-selector">
             <input
+              ref={selectAll}
               type="checkbox"
               aria-label="全选当前可删除任务"
               checked={allSelectableTasksSelected}
@@ -701,7 +1063,7 @@ function History({
             deletingTaskId={deletingTaskId}
             onView={setSelectedTaskId}
             onToggleSelection={toggleTaskSelection}
-            onDelete={(task) => void deleteHistoryTask(task)}
+            onDelete={(task) => setPendingDelete({ task })}
           />
         )}
         {!error && !isLoading && tasks.length === 0 && (
@@ -722,6 +1084,37 @@ function History({
         error={detailError}
         onClose={() => setSelectedTaskId(null)}
         onCopy={onCopy}
+      />
+      <ConfirmDialog
+        open={Boolean(pendingDelete)}
+        title={
+          pendingDelete && "task" in pendingDelete
+            ? "删除这个任务？"
+            : "批量删除所选任务？"
+        }
+        description={
+          pendingDelete && "task" in pendingDelete ? (
+            <>
+              <strong>{pendingDelete.task.finished_spec || pendingDelete.task.task_id}</strong>
+              <br />
+              DXF、DWG、预览和校验报告将一并删除，无法恢复。
+            </>
+          ) : (
+            <>
+              将删除已选择的 {pendingDelete?.count ?? 0} 个任务，相关图纸和报告无法恢复。
+            </>
+          )
+        }
+        confirmLabel="删除"
+        busy={Boolean(deletingTaskId) || isBulkDeleting}
+        onClose={() => setPendingDelete(null)}
+        onConfirm={() => {
+          const pending = pendingDelete;
+          setPendingDelete(null);
+          if (!pending) return;
+          if ("task" in pending) void deleteHistoryTask(pending.task);
+          else void deleteSelectedTasks();
+        }}
       />
     </section>
   );
@@ -803,7 +1196,9 @@ function TaskRows({
 function TaskEmpty({ filtered = false }: { filtered?: boolean }) {
   return (
     <div className="empty-table">
-      <span>◷</span>
+      <span>
+        <Clock size={22} aria-hidden="true" />
+      </span>
       <div>
         <strong>{filtered ? "没有符合条件的任务" : "暂无任务记录"}</strong>
         <p>
@@ -1088,6 +1483,15 @@ async function refreshTaskHistory(
 }
 
 function Templates({ machines }: { machines: Machine[] }) {
+  const [query, setQuery] = useState("");
+  const toast = useToast();
+  const normalized = query.trim().toLowerCase();
+  const filtered = machines.filter((machine) =>
+    [machine.name, machine.id, machine.wheel_positions.join(" ")]
+      .join(" ")
+      .toLowerCase()
+      .includes(normalized),
+  );
   return (
     <section className="panel page-panel">
       <PanelTitle
@@ -1095,6 +1499,15 @@ function Templates({ machines }: { machines: Machine[] }) {
         title="机台模板"
         subtitle="来自 templates/&lt;machine_id&gt;/config.yaml，仅供查看。"
       />
+      <div className="template-tools">
+        <input
+          aria-label="搜索机台模板"
+          placeholder="搜索机台名称、ID 或砂轮顺序"
+          value={query}
+          onChange={(event) => setQuery(event.target.value)}
+        />
+        <span>共 {filtered.length} 台</span>
+      </div>
       <div className="template-table">
         <div className="template-head">
           <span>机台</span>
@@ -1102,9 +1515,33 @@ function Templates({ machines }: { machines: Machine[] }) {
           <span>砂轮顺序</span>
           <span>固定长度</span>
         </div>
-        {machines.map((machine) => (
+        {filtered.map((machine) => (
           <div className="template-row" key={machine.id}>
-            <strong>{machine.name}</strong>
+            <div className="template-name">
+              <strong>{machine.name}</strong>
+              <small>
+                <code>{machine.id}</code>
+                <button
+                  type="button"
+                  className="icon-button mini"
+                  title="复制机台 ID"
+                  aria-label={`复制机台 ID ${machine.id}`}
+                  onClick={() => {
+                    void navigator.clipboard
+                      .writeText(machine.id)
+                      .then(() => toast.success("机台 ID 已复制"))
+                      .catch(() => toast.error("无法访问剪贴板。"));
+                  }}
+                >
+                  <Copy size={12} aria-hidden="true" />
+                </button>
+                <span
+                  className={`support-badge ${machine.supported_by_web_generation ? "ok" : "unsupported"}`}
+                >
+                  {machine.supported_by_web_generation ? "可生成" : "仅桌面"}
+                </span>
+              </small>
+            </div>
             <span>
               {machine.guide_sections} 段 /{" "}
               {machine.guide_type === "double_guide" ? "双导轨" : "单导轨"}
@@ -1113,6 +1550,13 @@ function Templates({ machines }: { machines: Machine[] }) {
             <span>{machine.guide_length} mm</span>
           </div>
         ))}
+        {filtered.length === 0 && (
+          <div className="table-message">
+            {machines.length
+              ? "没有匹配的机台。"
+              : "尚未读取到机台配置，请确认本地引擎已连接。"}
+          </div>
+        )}
       </div>
     </section>
   );
@@ -1157,9 +1601,14 @@ function Rules() {
 
 function DesktopSettingsPage({
   onEngineState,
+  themeMode,
+  onThemeMode,
 }: {
   onEngineState: (online: boolean) => void;
+  themeMode: ThemeMode;
+  onThemeMode: (mode: ThemeMode) => void;
 }) {
+  const toast = useToast();
   const [settings, setSettings] = useState<DesktopSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
   const [version, setVersion] = useState("1.2.0-dev");
@@ -1178,6 +1627,29 @@ function DesktopSettingsPage({
       setSettingsError(
         error instanceof Error ? error.message : "设置读取失败。",
       );
+    }
+  };
+
+  const copyValue = async (value: string | null | undefined, label: string) => {
+    if (!value) return;
+    try {
+      await navigator.clipboard.writeText(value);
+      toast.success(`${label}已复制`);
+    } catch {
+      toast.error("无法访问剪贴板，请手动复制。");
+    }
+  };
+
+  const resetAutoCad = async () => {
+    try {
+      setSettings(await api.updateSettings(null));
+      setSettingsError(null);
+      toast.success("已恢复 AutoCAD 自动检测");
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "恢复自动检测失败。";
+      setSettingsError(message);
+      toast.error(message);
     }
   };
 
@@ -1302,6 +1774,35 @@ function DesktopSettingsPage({
     <section className="settings-page">
       <section className="panel page-panel">
         <PanelTitle
+          number="外观"
+          title="界面主题"
+          subtitle="主题只影响工作台界面，不改变导出图纸。"
+        />
+        <div className="theme-options" role="group" aria-label="界面主题">
+          {(
+            [
+              ["system", "跟随系统", Monitor],
+              ["light", "浅色", Sun],
+              ["dark", "深色", Moon],
+            ] as const
+          ).map(([mode, label, Icon]) => (
+            <button
+              key={mode}
+              className={`theme-option ${themeMode === mode ? "active" : ""}`}
+              aria-pressed={themeMode === mode}
+              onClick={() => onThemeMode(mode)}
+            >
+              <Icon size={18} strokeWidth={1.6} aria-hidden="true" />
+              <span>{label}</span>
+              {themeMode === mode && (
+                <Check size={15} aria-hidden="true" className="theme-check" />
+              )}
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="panel page-panel">
+        <PanelTitle
           number="本机"
           title="AutoCAD 与数据目录"
           subtitle="DWG 只调用本机 AutoCAD；未安装时仍可正常生成 DXF。"
@@ -1309,7 +1810,22 @@ function DesktopSettingsPage({
         {settingsError && <div className="alert error">{settingsError}</div>}
         <dl className="settings-list">
           <dt>应用数据目录</dt>
-          <dd>{settings?.app_data_root ?? "读取中…"}</dd>
+          <dd className="setting-value">
+            <span>{settings?.app_data_root ?? "读取中…"}</span>
+            {settings?.app_data_root && (
+              <button
+                type="button"
+                className="icon-button mini"
+                aria-label="复制应用数据目录"
+                title="复制路径"
+                onClick={() =>
+                  void copyValue(settings.app_data_root, "应用数据目录")
+                }
+              >
+                <Copy size={13} aria-hidden="true" />
+              </button>
+            )}
+          </dd>
           <dt>AutoCAD 状态</dt>
           <dd>
             {settings?.autocad.available
@@ -1317,7 +1833,22 @@ function DesktopSettingsPage({
               : "未检测到；仍可生成和下载 DXF"}
           </dd>
           <dt>AcCoreConsole</dt>
-          <dd>{settings?.autocad.path ?? "未配置"}</dd>
+          <dd className="setting-value">
+            <span>{settings?.autocad.path ?? "未配置"}</span>
+            {settings?.autocad.path && (
+              <button
+                type="button"
+                className="icon-button mini"
+                aria-label="复制 AcCoreConsole 路径"
+                title="复制路径"
+                onClick={() =>
+                  void copyValue(settings.autocad.path, "AcCoreConsole 路径")
+                }
+              >
+                <Copy size={13} aria-hidden="true" />
+              </button>
+            )}
+          </dd>
         </dl>
         <div className="settings-actions">
           <button
@@ -1328,7 +1859,7 @@ function DesktopSettingsPage({
           </button>
           <button
             className="button secondary"
-            onClick={() => void api.updateSettings(null).then(setSettings)}
+            onClick={() => void resetAutoCad()}
           >
             恢复自动检测
           </button>
@@ -1337,6 +1868,7 @@ function DesktopSettingsPage({
             disabled={!tauri}
             onClick={() => void restartEngine()}
           >
+            <RefreshCw size={14} aria-hidden="true" />
             重启本地 CAD 引擎
           </button>
         </div>
@@ -1396,28 +1928,4 @@ function updateFailureMessage(
     return "更新包下载失败，可能无法稳定访问 GitHub；当前版本已保留。";
   }
   return "更新安装失败，本地 CAD 引擎已尝试恢复；当前版本已保留。";
-}
-
-function pageTitle(page: Page) {
-  return {
-    workspace: "导轨工作台",
-    history: "历史任务",
-    templates: "机台模板",
-    rules: "规则与说明",
-    settings: "设置与更新",
-  }[page];
-}
-
-function applyMachine(
-  machine: Machine,
-  setter: Dispatch<SetStateAction<DesignInput>>,
-) {
-  setter((previous) => ({
-    ...previous,
-    machine_type: machine.id,
-    guide_rail_type: machine.guide_type,
-    wheel_sequence: machine.wheel_positions,
-    first_wheel_side: machineFirstSide(machine),
-    template_coordinate_system: machine.template_coordinate_system,
-  }));
 }

@@ -26,6 +26,8 @@ jobs:
           MPLCONFIGDIR: ${{ runner.temp }}/matplotlib
       - run: npm ci --ignore-scripts
         working-directory: frontend
+      - run: npm test
+        working-directory: frontend
       - run: npm run build
         working-directory: frontend
       - run: npm audit --audit-level=low
