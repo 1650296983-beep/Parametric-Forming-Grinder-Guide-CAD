@@ -20,6 +20,7 @@ from .dimension_writer import (
     add_linear_dimension_with_text,
 )
 from .dimension_roles import SECTION_CENTER_OPENING
+from .dimension_layout import resolve_dimension_text_overlaps
 from .dimension_precision import (
     build_dimension_precision_audit,
     normalize_dimension_display_precision,
@@ -404,6 +405,7 @@ class DualGuideTemplateEngine:
             _simplify_release_layers(doc)
             self._strip_nonrelease_text_layers(modelspace)
         normalize_dimension_display_precision(doc, modelspace)
+        resolve_dimension_text_overlaps(doc)
         doc.saveas(output_path)
         return {
             "machine_template": _machine_template_payload(template),

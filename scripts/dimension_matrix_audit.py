@@ -179,6 +179,7 @@ def _audit_payload(audit: dict[str, Any]) -> dict[str, Any]:
         "orphan_parametric_dimensions": audit.get(
             "orphan_parametric_dimensions", []
         ),
+        "dimension_text_overlaps": audit.get("dimension_text_overlaps", []),
     }
 
 

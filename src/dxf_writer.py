@@ -21,6 +21,7 @@ from .dimension_writer import (
     add_section_template_dimensions,
     add_slot_width_dimension,
 )
+from .dimension_layout import resolve_dimension_text_overlaps
 from .dimension_precision import normalize_dimension_display_precision
 from .dimension_roles import SECTION_CENTER_OPENING, set_dimension_role
 from .block_geometry import BlockGuideSection, validate_block_relief_geometry
@@ -134,6 +135,7 @@ def write_dxf(
         if isinstance(profile, TileSection):
             assert_side_view_consistency(doc, profile)
     normalize_dimension_display_precision(doc, modelspace)
+    resolve_dimension_text_overlaps(doc)
     doc.saveas(output_path)
     return output_path
 
@@ -245,6 +247,7 @@ def _write_template_based_dxf(
         _simplify_release_layers(doc)
         assert_side_view_consistency(doc, tile_section, machine_config=machine_config)
     normalize_dimension_display_precision(doc, modelspace)
+    resolve_dimension_text_overlaps(doc)
     doc.saveas(output_path)
     return output_path
 
@@ -329,6 +332,7 @@ def _write_triple_single_down_up_flat_arc_dxf(
     if output_mode == "release":
         _simplify_release_layers(doc)
     normalize_dimension_display_precision(doc, modelspace)
+    resolve_dimension_text_overlaps(doc)
     doc.saveas(output_path)
     return output_path
 
@@ -1064,6 +1068,7 @@ def _write_block_template_based_dxf(
             machine_config=machine_config,
         )
     normalize_dimension_display_precision(doc, modelspace)
+    resolve_dimension_text_overlaps(doc)
     doc.saveas(output_path)
     return output_path
 

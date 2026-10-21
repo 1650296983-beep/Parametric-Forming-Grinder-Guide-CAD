@@ -2,7 +2,8 @@
   "schema_version": 1,
   "rules": [
     "2026-10-20 user approved section opening floor(min(slot_width * 0.30, original machine cap), 0.01 mm).",
-    "2026-10-20 repair applies existing 0.6 product-length opening limit at every true cavity projection and recalculates upper wheel placements."
+    "2026-10-20 repair applies existing 0.6 product-length opening limit at every true cavity projection and recalculates upper wheel placements.",
+    "2026-10-22 annotation layout keeps 1.2 mm text clearance by translating linear dimension lines only; triple_single_up_up 3.00 dimension line moves while defpoint2/defpoint3 stay bound."
   ],
   "provenance": "Values record reviewed local outputs for the approved rule repair; user approval applies to the rules, not an individual review of each golden value. Original expected_* files remain frozen.",
   "cases": {
@@ -3085,6 +3086,84 @@
           "before": null,
           "after": "floor(min(slot_width * 0.30, machine.section_center_opening), 0.01 mm)",
           "added": true
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3229.195317,
+          "after": 3227.741352
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3229.195317,
+          "after": 3223.241352
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -85.05648,
+          "after": -94.494575
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3229.195317,
+          "after": 3227.741352
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3229.195317,
+          "after": 3223.241352
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -85.05648,
+          "after": -94.494575
         }
       ]
     }

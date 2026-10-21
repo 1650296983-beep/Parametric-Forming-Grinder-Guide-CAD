@@ -7,6 +7,7 @@ from pathlib import Path
 from typing import Any
 
 from .block_geometry import BlockGuideSection
+from .dimension_layout import find_dimension_text_overlaps
 from .cavity_projection import derive_cavity_projection_profile
 from .dimension_roles import get_dimension_role
 from .geometry import TileSection
@@ -235,6 +236,7 @@ def build_dimension_definition_point_audit(
     )
     text_mismatches = _dimension_text_measurement_mismatches(entries)
     orphan_dimensions = _orphan_parametric_dimensions(entries, profile)
+    text_overlaps = find_dimension_text_overlaps(doc)
     return {
         "dxf_path": str(dxf_path),
         "point_tolerance": POINT_TOLERANCE,
@@ -247,10 +249,12 @@ def build_dimension_definition_point_audit(
         ),
         "text_measurement_mismatches": text_mismatches,
         "orphan_parametric_dimensions": orphan_dimensions,
+        "dimension_text_overlaps": text_overlaps,
         "release_allowed": all_bound
         and all(item["status"] == "PASS" for item in role_audit.values())
         and not text_mismatches
-        and not orphan_dimensions,
+        and not orphan_dimensions
+        and not text_overlaps,
     }
 
 
