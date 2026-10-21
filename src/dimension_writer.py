@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import atan2, cos, radians, sin
+from math import acos, asin, atan2, cos, radians, sin
 from pathlib import Path
 
 from .geometry import TileSection
@@ -709,11 +709,10 @@ def _is_guide_thickness_dimension(
 ) -> bool:
     if not _is_verticalish_linear_dimension(entity):
         return False
-    if not (0.5 <= measurement <= 5.0):
-        return False
-    if abs(measurement - geometry.center_opening) <= 0.05:
-        return False
-    return True
+    # The center opening is a horizontal datum; a vertical dimension in this
+    # range is the guide-thickness dimension even when its historical value is
+    # numerically close to the (possibly narrow) actual opening.
+    return 0.5 <= measurement <= 5.0
 
 
 def _set_linear_definition(entity, first: tuple[float, float], second: tuple[float, float]) -> None:
@@ -781,6 +780,37 @@ def _set_radius_definition_to_target(
     entity.dxf.defpoint4 = (target[0], target[1], 0.0)
 
 
+def _r_form_dimension_max_dx(
+    geometry: SlotDimensionGeometry,
+    radius: float,
+    requested_dx: float,
+) -> float | None:
+    """Largest horizontal offset that keeps the leader target on the retained main arc.
+
+    The side relief arcs trim ``alpha`` radians off each end of the nominal main arc,
+    so the usable half span is ``asin(half_slot / R) - alpha``.  A fixed fraction of
+    the half slot (the previous layout) overshoots that span for narrow, small-R
+    slots and leaves the radius dimension target outside the real geometry.
+    """
+    half_slot = geometry.slot_width / 2.0
+    relief_radius = geometry.relief_radius
+    if radius <= 0.0 or relief_radius <= 0.0 or not (0.0 < half_slot < radius):
+        return None
+    relief_cosine = 1.0 - (relief_radius * relief_radius) / (2.0 * radius * radius)
+    alpha = acos(min(1.0, max(-1.0, relief_cosine)))
+    beta_limit = asin(half_slot / radius) - alpha
+    beta_requested = asin(min(1.0, abs(requested_dx) / radius))
+    # Historical layouts place the leader just inside the trimmed endpoint;
+    # leave them untouched.  Only clamp when the requested target actually
+    # overshoots the retained arc, then keep a small angular margin.
+    if beta_requested <= beta_limit + radians(0.01):
+        return None
+    margin = radians(0.2)
+    if beta_limit <= margin:
+        return None
+    return radius * sin(beta_limit - margin)
+
+
 def _r_form_dimension_layout(
     geometry: SlotDimensionGeometry,
     radius: float,
@@ -796,6 +826,9 @@ def _r_form_dimension_layout(
         center = geometry.upper_radius_center
         dx = -min(max((half_slot + half_opening) / 2.0, 0.1), max(half_slot - geometry.relief_radius * 0.25, 0.1))
         text_midpoint = (geometry.left_x - 13.0, geometry.top_y + 5.2)
+    max_dx = _r_form_dimension_max_dx(geometry, radius, dx)
+    if max_dx is not None:
+        dx = -max_dx
     y = center[1] + (radius * radius - dx * dx) ** 0.5
     return (center[0] + dx, y), text_midpoint
 

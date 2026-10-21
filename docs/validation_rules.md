@@ -118,6 +118,10 @@ release 中不得残留旧规格参数化槽口图元。检查对象包括：
 
 `triple_double_down_up_up` 还必须审计 release 中全部 DIMENSION 的定义点，并输出 `dimension_definition_point_audit.json`。每项必须包含 `dimension_role`、`measurement`、`display_text`、`defpoint2`、`defpoint3`、两个预期几何点、`point_error` 和 `bound_to_geometry`；`point_error > 0.01 mm` 时禁止 release。
 
+模板中的小尺寸（导轨厚度、固定台阶）不得按“距新槽边固定 5 mm”识别。槽宽变化后该阈值会改变命中对象，未被选中的旧厚度尺寸会残留在 release 中（例如遗留 `2.10`）。识别顺序固定为：上端点落在当前槽顶、尺寸 X 位于当前槽宽内、距槽中心最近；不得以槽宽相关的距离作为首条件。
+
+弧面槽底的机台固定型腔下沿（例如 `12.0 mm`）是到名义弦线的基准，不是弧面上的实体点。审计允许一个端点绑定真实几何、另一端点位于名义弦线，且该虚拟端点偏离弧面的距离不超过当前槽宽对应的弓高；其他尺寸仍须两端绑定真实几何。`R_form` 引出点必须落在侧部避空保留后的主弧范围内；窄槽小 R 时按 `asin(half_slot / R) - acos(1 - r² / (2R²))` 限制水平偏移，不得落在被避空切除的弧段上。
+
 双导轨机型的 `release_allowed = true` 必须同时满足：显式输入规则正确、机台外轮廓为白色 Continuous、型腔投影线为绿色 DASHED、全部尺寸定义点绑定真实几何、上下砂轮缺口安全规则通过、双导轨两节参数同步。
 
 所有机台及所有磨前形状的砂轮目标吃入量均为 `preform_thickness_mid * 0.6`。若由此得到的 R80 自然开口大于 `product_length * 0.6`，校验必须确认生成器通过移动圆心限制开口，并使报告值、圆心、圆弧端点和相关 DIMENSION 定义点一致；机台配置不得用固定吃入量覆盖该公共规则。

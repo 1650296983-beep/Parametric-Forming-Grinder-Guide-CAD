@@ -722,7 +722,11 @@ def _update_down_up_flat_arc_template_dimensions(
         dimension.dxf.layer = DIMENSION_LAYER
 
     slot_width_dim = _find_block_slot_width_dimension(dimensions, geometry)
-    thickness_dim = _find_down_up_flat_arc_thickness_dimension(dimensions, geometry)
+    thickness_dim = _find_down_up_flat_arc_thickness_dimension(
+        dimensions,
+        geometry,
+        slot_width_dim,
+    )
     opening_dim = _find_down_up_flat_arc_opening_dimension(dimensions, geometry)
     relief_size_dim = _find_dimension_by_text(dimensions, "4-<>")
     r_form_dim = _find_down_up_flat_arc_r_dimension(dimensions)
@@ -803,22 +807,79 @@ def _update_down_up_flat_arc_opening_dimension(
     set_dimension_role(dimension, SECTION_CENTER_OPENING)
 
 
-def _find_down_up_flat_arc_thickness_dimension(dimensions, geometry: SlotDimensionGeometry):
+def _slot_width_dimension_edge_xs(slot_width_dim: Any) -> tuple[float, ...]:
+    """Return the historical slot-edge X coordinates of the template width dimension."""
+    if slot_width_dim is None:
+        return ()
+    if not (
+        slot_width_dim.dxf.hasattr("defpoint2")
+        and slot_width_dim.dxf.hasattr("defpoint3")
+    ):
+        return ()
+    return (
+        float(slot_width_dim.dxf.defpoint2.x),
+        float(slot_width_dim.dxf.defpoint3.x),
+    )
+
+
+def _is_vertical_linear_dimension(dimension: Any) -> bool:
+    """A vertical linear dimension, including templates whose extension points are offset."""
+    if dimension.dxf.hasattr("angle"):
+        angle = float(dimension.dxf.angle % 180.0)
+        return abs(angle - 90.0) <= 0.01
+    if not (
+        dimension.dxf.hasattr("defpoint2")
+        and dimension.dxf.hasattr("defpoint3")
+    ):
+        return False
+    return (
+        abs(
+            float(dimension.dxf.defpoint2.x)
+            - float(dimension.dxf.defpoint3.x)
+        )
+        <= 0.001
+    )
+
+
+def _find_down_up_flat_arc_thickness_dimension(
+    dimensions,
+    geometry: SlotDimensionGeometry,
+    slot_width_dim: Any = None,
+):
+    """Find the template's guide-thickness dimension by topology, not by a fixed offset.
+
+    The archived thickness dimension is vertical and shares an X coordinate with
+    one end of the slot-width dimension.  A fixed distance from the *new* slot
+    edge fails as soon as the new slot width differs from the template's
+    historical width by more than that distance, leaving a stale dimension in
+    the release (for example a leftover ``2.10``).
+    """
+    edge_xs = _slot_width_dimension_edge_xs(slot_width_dim)
+    candidates: list[tuple[float, Any]] = []
     for dimension in dimensions:
         if not (dimension.dxf.hasattr("defpoint2") and dimension.dxf.hasattr("defpoint3")):
             continue
+        if not _is_vertical_linear_dimension(dimension):
+            continue
         p2 = dimension.dxf.defpoint2
         p3 = dimension.dxf.defpoint3
-        if abs(p2.x - p3.x) > 0.001:
-            continue
-        if abs(p2.x - geometry.right_x) > 5.0:
-            continue
         try:
             measurement = float(dimension.get_measurement())
         except Exception:
             continue
-        if 1.0 <= measurement <= 15.0:
+        if not (0.5 <= measurement <= 15.0):
+            continue
+        if abs(measurement - geometry.slot_base_height) <= 0.01:
+            continue
+        if edge_xs and any(
+            abs(float(point.x) - edge_x) <= 0.001
+            for point in (p2, p3)
+            for edge_x in edge_xs
+        ):
             return dimension
+        candidates.append((abs(float(p2.x) - geometry.right_x), dimension))
+    if candidates:
+        return min(candidates, key=lambda item: item[0])[1]
     return None
 
 
@@ -1247,11 +1308,13 @@ def _update_down_up_rectangular_template_dimensions(
     thickness_dim = _find_down_up_flat_arc_thickness_dimension(
         dimensions,
         geometry,
+        slot_width_dim,
     )
     if thickness_dim is None:
         thickness_dim = _find_rectangular_thickness_dimension(
             dimensions,
             geometry,
+            slot_width_dim,
         )
     opening_dim = _find_down_up_flat_arc_opening_dimension(
         dimensions,
@@ -1362,7 +1425,9 @@ def _dimension_near_geometry(
 def _find_rectangular_thickness_dimension(
     dimensions,
     geometry: SlotDimensionGeometry,
+    slot_width_dim: Any = None,
 ):
+    edge_xs = _slot_width_dimension_edge_xs(slot_width_dim)
     candidates = []
     for dimension in dimensions:
         if not (
@@ -1378,6 +1443,16 @@ def _find_rectangular_thickness_dimension(
             continue
         p2 = dimension.dxf.defpoint2
         p3 = dimension.dxf.defpoint3
+        if not _is_vertical_linear_dimension(dimension):
+            continue
+        if abs(measurement - geometry.slot_base_height) <= 0.01:
+            continue
+        if edge_xs and any(
+            abs(float(point.x) - edge_x) <= 0.001
+            for point in (p2, p3)
+            for edge_x in edge_xs
+        ):
+            return dimension
         points = (p2, p3)
         distance = min(
             hypot(
@@ -1386,8 +1461,7 @@ def _find_rectangular_thickness_dimension(
             )
             for point in points
         )
-        if distance <= 5.0:
-            candidates.append((distance, dimension))
+        candidates.append((distance, dimension))
     if not candidates:
         return None
     return min(candidates, key=lambda item: item[0])[1]
@@ -1416,6 +1490,16 @@ def _find_block_slot_width_dimension(dimensions, geometry: SlotDimensionGeometry
 
 
 def _find_block_thickness_dimension(dimensions, geometry: SlotDimensionGeometry):
+    """Find the slot thickness dimension by topology, not by a fixed 5 mm window.
+
+    Several template dimensions are vertical and small (the guide thickness, a
+    fixed outer step).  The round slot thickness dimension shares its upper
+    extension point with the actual slot top; selecting by distance to the new
+    slot edge changes the winner with the slot width and leaves the losing
+    dimension stale in the release.
+    """
+    candidates: list[tuple[float, float, float, float, Any]] = []
+    center_x = (geometry.left_x + geometry.right_x) / 2.0
     for dimension in dimensions:
         if not (dimension.dxf.hasattr("defpoint2") and dimension.dxf.hasattr("defpoint3")):
             continue
@@ -1423,15 +1507,37 @@ def _find_block_thickness_dimension(dimensions, geometry: SlotDimensionGeometry)
         p3 = dimension.dxf.defpoint3
         if abs(p2.x - p3.x) > 0.001:
             continue
-        if abs(p2.x - geometry.right_x) > 5.0 and abs(p3.x - geometry.right_x) > 5.0:
-            continue
         try:
             measurement = float(dimension.get_measurement())
         except Exception:
             continue
-        if 0.5 <= measurement <= 5.0:
-            return dimension
-    return None
+        if not (0.5 <= measurement <= 5.0):
+            continue
+        # The guide-thickness dimension spans downward from the slot top; a
+        # fixed outer-step dimension also has an endpoint at the slot top but
+        # extends upward from it, so compare the upper endpoint explicitly.
+        top_error = abs(
+            max(float(p2.y), float(p3.y)) - geometry.top_y
+        )
+        x = float(p2.x)
+        outside_slot = not (
+            geometry.left_x - 0.5 <= x <= geometry.right_x + 0.5
+        )
+        center_distance = abs(x - center_x)
+        edge_distance = abs(x - geometry.right_x)
+        candidates.append(
+            (top_error, outside_slot, center_distance, edge_distance, dimension)
+        )
+    if not candidates:
+        return None
+    touching_slot_top = [
+        candidate for candidate in candidates if candidate[0] <= 0.05
+    ]
+    inside_slot = [
+        candidate for candidate in candidates if not candidate[1]
+    ]
+    pool = touching_slot_top or inside_slot or candidates
+    return min(pool, key=lambda item: (item[1], item[2], item[3]))[4]
 
 
 def _find_block_top_gap_dimension(dimensions, geometry: SlotDimensionGeometry):

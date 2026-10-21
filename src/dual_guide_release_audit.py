@@ -117,6 +117,25 @@ def build_dimension_definition_point_audit(
                 expected_1 = defpoint2
                 expected_2 = defpoint3
                 binding_mode = "rounded_slot_tangent_envelope"
+            elif _fixed_slot_base_datum_is_valid(
+                point_1,
+                point_2,
+                nearest_1,
+                nearest_2,
+                measurement,
+                role,
+                profile,
+                machine,
+            ):
+                # The machine's fixed slot-base height is a linear datum from the
+                # guide bottom to the nominal cavity chord.  On an arc cavity the
+                # nominal chord point is the apex minus the sagitta, so it can sit
+                # a few tenths off the retained arc while still being the correct
+                # datum for the fixed 12 mm machine dimension.
+                point_error = 0.0
+                expected_1 = defpoint2
+                expected_2 = defpoint3
+                binding_mode = "fixed_machine_slot_base_datum"
             elif _rounded_corner_virtual_datum_is_valid(
                 nearest_1,
                 nearest_2,
@@ -681,6 +700,43 @@ def _narrowest_gap_virtual_datum_is_valid(
         + profile.guide_spec.relief.relief_size / 2.0
     )
     return max(distances) <= plane_envelope_allowance + POINT_TOLERANCE
+
+
+def _fixed_slot_base_datum_is_valid(
+    point_1: Any,
+    point_2: Any,
+    nearest_1: dict[str, Any],
+    nearest_2: dict[str, Any],
+    measurement: float | None,
+    role: str,
+    profile: TileSection | BlockGuideSection,
+    machine: MachineConfig,
+) -> bool:
+    """Validate the fixed slot-base datum against the nominal cavity chord.
+
+    ``fixed_slot_base_12`` is deliberately a machine datum, not a point on the
+    cut contour: the dimension runs from the guide bottom to the nominal chord
+    of the cavity base, while a rounded/arc base has its apex one sagitta above
+    that chord.  One endpoint must lie on formal geometry, the other may sit on
+    the chord no farther from the retained arc than that sagitta.
+    """
+    if role != "fixed_slot_base_12" or measurement is None:
+        return False
+    if abs(measurement - machine.section_slot_base_height) > POINT_TOLERANCE:
+        return False
+    distances = (nearest_1["distance"], nearest_2["distance"])
+    if not any(distance <= POINT_TOLERANCE for distance in distances):
+        return False
+    if abs(abs(float(point_2.y) - float(point_1.y)) - measurement) > POINT_TOLERANCE:
+        return False
+    if not isinstance(profile, TileSection):
+        return False
+    radius = profile.forming_spec.R_form
+    half_slot = profile.guide_spec.guide_slot_width / 2.0
+    if radius <= half_slot:
+        return False
+    sagitta = radius - sqrt(radius * radius - half_slot * half_slot)
+    return max(distances) <= sagitta + POINT_TOLERANCE
 
 
 def _rounded_corner_virtual_datum_is_valid(
