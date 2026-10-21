@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from math import atan2, cos, degrees, hypot, radians, sin, sqrt
 from pathlib import Path
 from typing import Any
@@ -232,6 +233,8 @@ def build_dimension_definition_point_audit(
     all_bound = bool(entries) and all(
         entry["bound_to_geometry"] for entry in entries
     )
+    text_mismatches = _dimension_text_measurement_mismatches(entries)
+    orphan_dimensions = _orphan_parametric_dimensions(entries, profile)
     return {
         "dxf_path": str(dxf_path),
         "point_tolerance": POINT_TOLERANCE,
@@ -242,8 +245,12 @@ def build_dimension_definition_point_audit(
         "all_required_roles_pass": all(
             item["status"] == "PASS" for item in role_audit.values()
         ),
+        "text_measurement_mismatches": text_mismatches,
+        "orphan_parametric_dimensions": orphan_dimensions,
         "release_allowed": all_bound
-        and all(item["status"] == "PASS" for item in role_audit.values()),
+        and all(item["status"] == "PASS" for item in role_audit.values())
+        and not text_mismatches
+        and not orphan_dimensions,
     }
 
 
@@ -631,6 +638,159 @@ def _nearest_radius_geometry(
                 ],
             }
     return best
+
+
+_DIMENSION_TEXT_NUMBER = re.compile(
+    r"^(?:\d+-)?(?:%%[cC]|[Rr∅ØΦφ])?\s*([-+]?\d+(?:\.\d+)?)"
+)
+
+
+def _dimension_text_value(display_text: str) -> float | None:
+    """Read the numeric value shown by a dimension, ignoring count/R prefixes."""
+    text = display_text.replace(" ", "")
+    if not text or text == "<>":
+        return None
+    match = _DIMENSION_TEXT_NUMBER.match(text)
+    if match is None:
+        return None
+    try:
+        return float(match.group(1))
+    except ValueError:
+        return None
+
+
+def _dimension_text_measurement_mismatches(
+    entries: list[dict[str, Any]],
+) -> list[dict[str, Any]]:
+    """Reject dimensions whose visible value disagrees with native geometry.
+
+    The definition-point audit alone only proves that the dimension extension
+    points sit on geometry.  A rotated dimension can keep correct points while
+    its native group 42 measurement (and therefore some viewers' displayed
+    value) disagrees with the overridden text.  Compare the visible text with
+    the native measurement here.
+    """
+    mismatches = []
+    for entry in entries:
+        measurement = entry.get("measurement")
+        display_text = entry.get("display_text") or ""
+        if measurement is None:
+            continue
+        display_value = _dimension_text_value(display_text)
+        if display_value is None:
+            continue
+        if abs(abs(display_value) - abs(measurement)) <= 0.011:
+            continue
+        mismatches.append(
+            {
+                "dimension_handle": entry.get("dimension_handle"),
+                "dimension_role": entry.get("dimension_role"),
+                "display_text": display_text,
+                "display_measurement": display_value,
+                "native_measurement": measurement,
+            }
+        )
+    return mismatches
+
+
+def _orphan_parametric_dimensions(
+    entries: list[dict[str, Any]],
+    profile: TileSection | BlockGuideSection,
+) -> list[dict[str, Any]]:
+    """Find unclassified dimensions sitting inside a section slot.
+
+    Fixed frame/step dimensions live outside the slot width in X, while a stale
+    slot dimension stays inside the rebuilt slot.  Requiring an explicit role
+    for every in-slot linear dimension prevents historical values from being
+    carried into a release even when their definition points happen to touch
+    current geometry.
+    """
+    guide_thickness = profile.guide_spec.guide_thickness
+    thickness_dimensions = [
+        entry
+        for entry in entries
+        if entry.get("dimension_role") == "guide_thickness"
+        and entry.get("defpoint2") is not None
+        and entry.get("defpoint3") is not None
+    ]
+    boxes: list[tuple[float, float, float, float]] = []
+    for entry in entries:
+        if entry.get("dimension_role") != "slot_width":
+            continue
+        point_2 = entry.get("defpoint2")
+        point_3 = entry.get("defpoint3")
+        if point_2 is None or point_3 is None:
+            continue
+        left, right = sorted((point_2[0], point_3[0]))
+        midpoint_y = (point_2[1] + point_3[1]) / 2.0
+        nearby = [
+            dimension
+            for dimension in thickness_dimensions
+            if abs(
+                (
+                    dimension["defpoint2"][1]
+                    + dimension["defpoint3"][1]
+                )
+                / 2.0
+                - midpoint_y
+            )
+            <= 30.0
+        ]
+        if nearby:
+            dimension = min(
+                nearby,
+                key=lambda item: abs(
+                    (
+                        item["defpoint2"][1]
+                        + item["defpoint3"][1]
+                    )
+                    / 2.0
+                    - midpoint_y
+                ),
+            )
+            bottom = min(
+                dimension["defpoint2"][1],
+                dimension["defpoint3"][1],
+            )
+            top = max(
+                dimension["defpoint2"][1],
+                dimension["defpoint3"][1],
+            )
+        else:
+            bottom = midpoint_y - guide_thickness / 2.0
+            top = midpoint_y + guide_thickness / 2.0
+        boxes.append((left - 1.0, right + 1.0, bottom - 0.5, top + 0.5))
+    if not boxes:
+        return []
+
+    def inside(point: list[float], box: tuple[float, float, float, float]) -> bool:
+        return (
+            box[0] <= point[0] <= box[1]
+            and box[2] <= point[1] <= box[3]
+        )
+
+    orphans = []
+    for entry in entries:
+        if entry.get("dimension_role") != "other_release_dimension":
+            continue
+        point_2 = entry.get("defpoint2")
+        point_3 = entry.get("defpoint3")
+        if point_2 is None or point_3 is None:
+            continue
+        if any(
+            inside(point_2, box) and inside(point_3, box)
+            for box in boxes
+        ):
+            orphans.append(
+                {
+                    "dimension_handle": entry.get("dimension_handle"),
+                    "display_text": entry.get("display_text"),
+                    "measurement": entry.get("measurement"),
+                    "defpoint2": point_2,
+                    "defpoint3": point_3,
+                }
+            )
+    return orphans
 
 
 def _rounded_slot_virtual_datum_is_valid(
