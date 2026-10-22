@@ -8,6 +8,7 @@ from src.dimension_roles import (
     LOWER_WHEEL_NOTCH_OPENING,
     REQUIRED_BLOCK_TO_TILE_DIMENSION_ROLES,
     SECTION_CENTER_OPENING,
+    SECTION_DIMENSION_ROLES,
     UPPER_WHEEL_KEY_PROCESS_HEIGHT,
     UPPER_WHEEL_LOCAL_CUT_IN_DEPTH,
     get_dimension_role,
@@ -403,7 +404,10 @@ def _assert_required_process_dimensions(doc, profile, machine) -> None:
         UPPER_WHEEL_KEY_PROCESS_HEIGHT: derived.side_clearance_height,
         UPPER_WHEEL_LOCAL_CUT_IN_DEPTH: derived.wheel_cut_allowance,
     }
-    assert set(dimensions) == set(REQUIRED_BLOCK_TO_TILE_DIMENSION_ROLES)
+    assert set(REQUIRED_BLOCK_TO_TILE_DIMENSION_ROLES) <= set(dimensions)
+    assert set(dimensions) <= set(REQUIRED_BLOCK_TO_TILE_DIMENSION_ROLES) | (
+        SECTION_DIMENSION_ROLES
+    ), "unexpected extra dimension role"
     for role, value in expected.items():
         assert dimensions[role].get_measurement() == pytest.approx(value)
     assert dimensions[SECTION_CENTER_OPENING].dxf.text == f"{profile.guide_spec.center_opening:.2f}"

@@ -5,7 +5,18 @@ from math import acos, asin, atan2, cos, radians, sin
 from pathlib import Path
 
 from .geometry import TileSection
-from .dimension_roles import set_dimension_role
+from .dimension_roles import (
+    SECTION_CENTER_OPENING,
+    SECTION_FIXED_HEIGHT,
+    SECTION_FIXED_WIDTH,
+    SECTION_GUIDE_THICKNESS,
+    SECTION_R_FORM,
+    SECTION_RELIEF_DIAMETER,
+    SECTION_RELIEF_RADIUS,
+    SECTION_SLOT_BASE_HEIGHT,
+    SECTION_SLOT_WIDTH,
+    set_dimension_role,
+)
 from .global_rules import CENTER_TRANSITION_RADIUS, format_dimension
 from .template_paths import LEGACY_TEMPLATE_ROOT, legacy_template_path
 
@@ -400,12 +411,14 @@ def add_section_template_dimensions(
             continue
         copied = copy_template_dimension_without_associations(entity)
         copied.dxf.layer = DIMENSION_LAYER
-        _update_section_dimension(copied, tile_section, geometry)
+        role = _update_section_dimension(copied, tile_section, geometry)
         _sync_actual_measurement(copied)
         try:
             modelspace.add_entity(copied)
         except Exception:
             continue
+        if role is not None:
+            set_dimension_role(copied, role)
         try:
             copied.render()
         except Exception:
@@ -469,6 +482,7 @@ def add_bed_618_r_form_dimensions(
             modelspace.add_entity(copied)
         except Exception:
             continue
+        set_dimension_role(copied, SECTION_R_FORM)
         try:
             copied.render()
         except Exception:
@@ -568,35 +582,43 @@ def _add_line(modelspace, start: tuple[float, float], end: tuple[float, float], 
     modelspace.add_line(start, end, dxfattribs={"layer": layer})
 
 
-def _update_section_dimension(entity, tile_section: TileSection, geometry: SlotDimensionGeometry) -> None:
+def _update_section_dimension(
+    entity, tile_section: TileSection, geometry: SlotDimensionGeometry
+) -> str | None:
+    """Rebind one archived template dimension and return the role it now plays."""
     measurement = float(entity.get_measurement())
     text = entity.dxf.text
     if abs(measurement - geometry.outer_height) < 0.05:
         _set_linear_definition(entity, (geometry.outer_left, geometry.outer_top), (geometry.outer_left, geometry.outer_bottom))
         _set_dimension_text(entity, format_dimension(geometry.outer_height))
+        return SECTION_FIXED_HEIGHT
     elif abs(measurement - geometry.outer_width) < 0.05 or (
         _is_horizontal_linear_dimension(entity) and 25.0 <= measurement <= 45.0
     ):
         _set_linear_definition(entity, (geometry.outer_left, geometry.outer_top), (geometry.outer_right, geometry.outer_top))
         _set_dimension_text(entity, format_dimension(geometry.outer_width))
+        return SECTION_FIXED_WIDTH
     elif abs(measurement - geometry.slot_base_height) < 0.05 or (
         _is_verticalish_linear_dimension(entity)
         and 5.0 <= measurement <= 25.0
     ):
         _set_linear_definition(entity, (geometry.outer_right, geometry.base_y), (geometry.outer_right, geometry.outer_bottom))
         _set_dimension_text(entity, format_dimension(geometry.slot_base_height))
+        return SECTION_SLOT_BASE_HEIGHT
     elif _is_horizontal_linear_dimension(entity) and (
         abs(measurement - geometry.center_opening) < 0.05
         or 1.0 <= measurement <= 4.0
     ):
         _set_linear_definition(entity, (geometry.opening_left_x, geometry.outer_top), (geometry.opening_right_x, geometry.outer_top))
         _set_dimension_text(entity, format_dimension(geometry.center_opening))
+        return SECTION_CENTER_OPENING
     elif _is_slot_width_dimension(entity, measurement, text, geometry):
         _set_linear_definition(entity, (geometry.left_x, geometry.base_y), (geometry.right_x, geometry.base_y))
         _set_dimension_text(
             entity,
             tile_section.guide_spec.slot_width_dimension_text,
         )
+        return SECTION_SLOT_WIDTH
     elif _is_guide_thickness_dimension(entity, measurement, geometry):
         _set_linear_definition(
             entity,
@@ -604,6 +626,7 @@ def _update_section_dimension(entity, tile_section: TileSection, geometry: SlotD
             (geometry.guide_thickness_reference_x, geometry.guide_thickness_base_y),
         )
         _set_dimension_text(entity, f"{geometry.guide_thickness:.2f}")
+        return SECTION_GUIDE_THICKNESS
     elif text.startswith("4-") or text.startswith("2-") or measurement < 1.0:
         old_center = entity.dxf.defpoint if entity.dxf.hasattr("defpoint") else None
         old_text_midpoint = entity.dxf.text_midpoint if entity.dxf.hasattr("text_midpoint") else None
@@ -635,8 +658,9 @@ def _update_section_dimension(entity, tile_section: TileSection, geometry: SlotD
                 entity,
                 f"2-R{format_dimension(geometry.center_transition_radius)}",
             )
-        else:
-            _set_dimension_text(entity, tile_section.guide_spec.relief.relief_label)
+            return SECTION_RELIEF_RADIUS
+        _set_dimension_text(entity, tile_section.guide_spec.relief.relief_label)
+        return SECTION_RELIEF_DIAMETER
     elif abs(measurement - 17.45) < 0.05:
         is_lower = (
             tile_section.arc_side == "lower"
@@ -658,6 +682,8 @@ def _update_section_dimension(entity, tile_section: TileSection, geometry: SlotD
         if entity.dxf.hasattr("text_midpoint"):
             entity.dxf.text_midpoint = (text_midpoint[0], text_midpoint[1], 0.0)
         _set_dimension_text(entity, f"R{tile_section.forming_spec.R_form:.2f}")
+        return SECTION_R_FORM
+    return None
 
 
 def _sync_actual_measurement(entity) -> None:

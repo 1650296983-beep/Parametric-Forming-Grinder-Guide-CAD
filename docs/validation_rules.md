@@ -89,6 +89,8 @@ release 中不得残留旧规格参数化槽口图元。检查对象包括：
 
 `R_form` 原生半径标注数量必须由最终成型磨前型腔拓扑决定，而不是由机台或成品 R 数量决定：矩形槽为 `0`，一平一弧为 `1`，上下同 R 型腔为 `2`。每个 `R_form` 标注的定义点必须绑定对应的真实主圆弧。模板 `DIMENSION` 只可复用样式和文字布局；复制前必须移除旧 `DIMASSOC` 关联，再以最终几何重新建立定义点，禁止继承模板历史关联。
 
+截面尺寸角色（外框宽高、槽宽、导轨厚度、中心开口、槽底高度、顶部间隙、4-避空直径、2-R0.5、`R_form`）由模板尺寸自身几何族识别并写入 XDATA `CAD_DIM_ROLE`，再由 `src/section_dimension_spec.py` 按当前 `SlotDimensionGeometry` 重新发射。审计以该角色为准；未分类尺寸、未占用载体或拓扑已不存在的角色（如矩形槽的旧 R）都会使 release 失败。审计报告仍沿用历史标签：`slot_base_height` 在等于机台固定槽底高度时记为 `fixed_slot_base_12`，避空半径/直径记为 `relief`。
+
 ## 双规格自检
 
 显式双规格输入的 `report.json` 必须包含 `dual_spec_validation`，且以下

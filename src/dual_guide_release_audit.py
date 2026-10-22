@@ -9,7 +9,12 @@ from typing import Any
 from .block_geometry import BlockGuideSection
 from .dimension_layout import find_dimension_text_overlaps
 from .cavity_projection import derive_cavity_projection_profile
-from .dimension_roles import get_dimension_role
+from .dimension_roles import (
+    SECTION_RELIEF_DIAMETER,
+    SECTION_RELIEF_RADIUS,
+    SECTION_SLOT_BASE_HEIGHT,
+    get_dimension_role,
+)
 from .geometry import TileSection
 from .global_rules import (
     DIMENSION_POINT_BINDING_TOLERANCE,
@@ -391,6 +396,12 @@ def _duplicate_line_handles(lines: list[Any]) -> list[list[str]]:
     ]
 
 
+_AUDIT_ROLE_ALIASES = {
+    SECTION_RELIEF_DIAMETER: "relief",
+    SECTION_RELIEF_RADIUS: "relief",
+}
+
+
 def _dimension_role(
     dimension: Any,
     display_text: str,
@@ -400,7 +411,14 @@ def _dimension_role(
 ) -> str:
     explicit_role = get_dimension_role(dimension)
     if explicit_role is not None:
-        return explicit_role
+        if (
+            explicit_role == SECTION_SLOT_BASE_HEIGHT
+            and measurement is not None
+            and _close(measurement, 12.0)
+            and _close(measurement, machine.section_slot_base_height)
+        ):
+            return "fixed_slot_base_12"
+        return _AUDIT_ROLE_ALIASES.get(explicit_role, explicit_role)
     normalized = display_text.replace(" ", "")
     guide = profile.guide_spec
     r_form = profile.forming_spec.R_form if isinstance(profile, TileSection) else None

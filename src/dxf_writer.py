@@ -23,7 +23,27 @@ from .dimension_writer import (
 )
 from .dimension_layout import resolve_dimension_text_overlaps
 from .dimension_precision import normalize_dimension_display_precision
-from .dimension_roles import SECTION_CENTER_OPENING, set_dimension_role
+from .dimension_roles import (
+    SECTION_CENTER_OPENING,
+    SECTION_FIXED_HEIGHT,
+    SECTION_FIXED_WIDTH,
+    SECTION_GUIDE_THICKNESS,
+    SECTION_R_FORM,
+    SECTION_RELIEF_DIAMETER,
+    SECTION_RELIEF_RADIUS,
+    SECTION_SLOT_BASE_HEIGHT,
+    SECTION_SLOT_WIDTH,
+    SECTION_TOP_GAP,
+    set_dimension_role,
+)
+from .section_dimension_spec import (
+    DimensionSpecError,
+    block_section_specs,
+    emit_section_dimensions,
+    flat_arc_section_specs,
+    frame_from_anchor,
+    index_section_dimensions,
+)
 from .block_geometry import BlockGuideSection, validate_block_relief_geometry
 from .geometry import Point
 from .geometry import ArcSegment, LineSegment, SectionProfile, TileSection
@@ -313,9 +333,13 @@ def _write_triple_single_down_up_flat_arc_dxf(
     else:
         slot_geometry = _add_down_up_flat_arc_slot_entities(modelspace, tile_section, anchor)
     _rebuild_section_top_boundary(modelspace, slot_geometry)
-    _update_down_up_flat_arc_template_dimensions(doc, modelspace, tile_section, slot_geometry)
-    if tile_section.process_type == "block_to_tile" and tile_section.arc_side == "lower":
-        _remove_unbound_flat_arc_slot_base_dimension(modelspace, slot_geometry)
+    _update_down_up_flat_arc_template_dimensions(
+        doc,
+        modelspace,
+        tile_section,
+        slot_geometry,
+        anchor,
+    )
     if output_mode == "debug":
         _add_debug_entities(modelspace, slot_geometry)
     add_side_view_to_dxf(
@@ -719,45 +743,64 @@ def _update_down_up_flat_arc_template_dimensions(
     modelspace,
     tile_section: TileSection,
     geometry: SlotDimensionGeometry,
+    anchor: TemplateAnchor,
 ) -> None:
-    guide = tile_section.guide_spec
     dimensions = list(modelspace.query("DIMENSION"))
     for dimension in dimensions:
         dimension.dxf.layer = DIMENSION_LAYER
 
-    slot_width_dim = _find_block_slot_width_dimension(dimensions, geometry)
-    thickness_dim = _find_down_up_flat_arc_thickness_dimension(
+    index = index_section_dimensions(
         dimensions,
-        geometry,
-        slot_width_dim,
+        frame_from_anchor(anchor),
     )
-    opening_dim = _find_down_up_flat_arc_opening_dimension(dimensions, geometry)
-    relief_size_dim = _find_dimension_by_text(dimensions, "4-<>")
-    r_form_dim = _find_down_up_flat_arc_r_dimension(dimensions)
+    include_slot_base = not (
+        tile_section.process_type == "block_to_tile"
+        and tile_section.arc_side == "lower"
+    )
+    specs = flat_arc_section_specs(
+        tile_section,
+        geometry,
+        index,
+        include_slot_base=include_slot_base,
+        r_form_slots=1,
+    )
+    emit_section_dimensions(
+        doc,
+        modelspace,
+        index,
+        specs,
+        geometry,
+        _apply_flat_arc_section_spec,
+        drop_roles=() if include_slot_base else (SECTION_SLOT_BASE_HEIGHT,),
+    )
 
-    if slot_width_dim is not None:
-        _update_block_slot_width_dimension(doc, slot_width_dim, guide.slot_width_dimension_text, geometry)
-    if thickness_dim is not None:
-        _update_block_thickness_dimension(doc, thickness_dim, f"{guide.guide_thickness:.2f}", geometry)
-    if opening_dim is not None:
-        _update_down_up_flat_arc_opening_dimension(doc, opening_dim, geometry)
-    if relief_size_dim is not None:
-        _update_flat_arc_relief_diameter_dimension(
-            doc,
-            relief_size_dim,
-            geometry,
-        )
-    if r_form_dim is not None:
+
+def _apply_flat_arc_section_spec(doc, dimension, spec, geometry) -> None:
+    role = spec.role
+    if role == SECTION_SLOT_WIDTH:
+        _update_block_slot_width_dimension(doc, dimension, spec.text, geometry)
+    elif role == SECTION_GUIDE_THICKNESS:
+        _update_block_thickness_dimension(doc, dimension, spec.text, geometry)
+    elif role == SECTION_CENTER_OPENING:
+        _update_down_up_flat_arc_opening_dimension(doc, dimension, geometry)
+    elif role == SECTION_RELIEF_DIAMETER:
+        _update_flat_arc_relief_diameter_dimension(doc, dimension, geometry)
+    elif role == SECTION_RELIEF_RADIUS:
+        _update_block_relief_radius_dimension(doc, dimension, geometry)
+    elif role == SECTION_SLOT_BASE_HEIGHT:
+        _update_section_slot_base_dimension([dimension], geometry)
+    elif role == SECTION_TOP_GAP:
+        _update_block_top_gap_dimension(doc, dimension, geometry)
+    elif role == SECTION_R_FORM:
         _update_down_up_flat_arc_r_dimension(
             doc,
-            r_form_dim,
-            tile_section.forming_spec.R_form,
+            dimension,
+            spec.measurement,
             geometry,
-            upper_arc=(
-                tile_section.process_type == "tile"
-                or tile_section.arc_side == "upper"
-            ),
+            upper_arc=spec.variant == "upper",
         )
+    else:
+        raise DimensionSpecError(f"Unsupported flat-arc section role: {role!r}")
 
 
 def _find_down_up_flat_arc_opening_dimension(dimensions, geometry: SlotDimensionGeometry):
@@ -1040,9 +1083,16 @@ def _write_block_template_based_dxf(
             modelspace,
             block_section,
             slot_geometry,
+            anchor,
         )
     else:
-        _update_block_template_dimensions(doc, modelspace, block_section, slot_geometry)
+        _update_block_template_dimensions(
+            doc,
+            modelspace,
+            block_section,
+            slot_geometry,
+            anchor,
+        )
     if output_mode == "debug":
         _add_debug_entities(modelspace, slot_geometry)
     add_side_view_to_dxf(
@@ -1270,34 +1320,44 @@ def _update_block_template_dimensions(
     modelspace,
     block_section: BlockGuideSection,
     geometry: SlotDimensionGeometry,
+    anchor: TemplateAnchor,
 ) -> None:
-    guide = block_section.guide_spec
     dimensions = list(modelspace.query("DIMENSION"))
-    slot_width_dim = _find_block_slot_width_dimension(dimensions, geometry)
-    thickness_dim = _find_block_thickness_dimension(dimensions, geometry)
-    relief_radius_dim = _find_dimension_by_text(dimensions, "2-<>")
-    relief_size_dim = _find_dimension_by_text(dimensions, "4-<>")
-    top_gap_dim = _find_block_top_gap_dimension(dimensions, geometry)
-
     for dimension in dimensions:
         dimension.dxf.layer = DIMENSION_LAYER
+    index = index_section_dimensions(
+        dimensions,
+        frame_from_anchor(anchor),
+    )
+    specs = block_section_specs(block_section, geometry, index)
+    emit_section_dimensions(
+        doc,
+        modelspace,
+        index,
+        specs,
+        geometry,
+        _apply_block_section_spec,
+    )
 
-    if slot_width_dim is not None:
-        _update_block_slot_width_dimension(doc, slot_width_dim, guide.slot_width_dimension_text, geometry)
-    if thickness_dim is not None:
-        _update_block_thickness_dimension(doc, thickness_dim, f"{guide.guide_thickness:.2f}", geometry)
-    if relief_radius_dim is not None:
-        _update_block_relief_radius_dimension(doc, relief_radius_dim, geometry)
-    if relief_size_dim is not None:
-        _update_block_relief_size_dimension(
-            doc,
-            relief_size_dim,
-            geometry,
-            bind_as_diameter=True,
-        )
-    if top_gap_dim is not None:
-        _update_block_top_gap_dimension(doc, top_gap_dim, geometry)
-    _update_section_slot_base_dimension(dimensions, geometry)
+
+def _apply_block_section_spec(doc, dimension, spec, geometry) -> None:
+    role = spec.role
+    if role == SECTION_SLOT_WIDTH:
+        _update_block_slot_width_dimension(doc, dimension, spec.text, geometry)
+    elif role == SECTION_GUIDE_THICKNESS:
+        _update_block_thickness_dimension(doc, dimension, spec.text, geometry)
+    elif role == SECTION_CENTER_OPENING:
+        _update_down_up_flat_arc_opening_dimension(doc, dimension, geometry)
+    elif role == SECTION_RELIEF_DIAMETER:
+        _update_flat_arc_relief_diameter_dimension(doc, dimension, geometry)
+    elif role == SECTION_RELIEF_RADIUS:
+        _update_block_relief_radius_dimension(doc, dimension, geometry)
+    elif role == SECTION_SLOT_BASE_HEIGHT:
+        _update_section_slot_base_dimension([dimension], geometry)
+    elif role == SECTION_TOP_GAP:
+        _update_block_top_gap_dimension(doc, dimension, geometry)
+    else:
+        raise DimensionSpecError(f"Unsupported block section role: {role!r}")
 
 
 def _update_down_up_rectangular_template_dimensions(
@@ -1305,77 +1365,26 @@ def _update_down_up_rectangular_template_dimensions(
     modelspace,
     block_section: BlockGuideSection,
     geometry: SlotDimensionGeometry,
+    anchor: TemplateAnchor,
 ) -> None:
     """Rebind the archived down/up dimensions to a rectangular groove."""
-    guide = block_section.guide_spec
     dimensions = list(modelspace.query("DIMENSION"))
-    slot_width_dim = _find_block_slot_width_dimension(dimensions, geometry)
-    thickness_dim = _find_down_up_flat_arc_thickness_dimension(
-        dimensions,
-        geometry,
-        slot_width_dim,
-    )
-    if thickness_dim is None:
-        thickness_dim = _find_rectangular_thickness_dimension(
-            dimensions,
-            geometry,
-            slot_width_dim,
-        )
-    opening_dim = _find_down_up_flat_arc_opening_dimension(
-        dimensions,
-        geometry,
-    )
-    top_gap_dim = _find_block_top_gap_dimension(dimensions, geometry)
-    relief_size_dim = _find_dimension_by_text(dimensions, "4-<>")
-    relief_radius_dim = _find_dimension_by_text(dimensions, "2-<>")
-    radius_dimensions = [
-        dimension
-        for dimension in dimensions
-        if dimension.dxf.hasattr("defpoint")
-        and dimension.dxf.hasattr("defpoint4")
-        and 5.0 < float(dimension.get_measurement()) < 200.0
-        and _dimension_near_geometry(dimension, geometry)
-    ]
-
     for dimension in dimensions:
         dimension.dxf.layer = DIMENSION_LAYER
-    if slot_width_dim is not None:
-        _update_block_slot_width_dimension(
-            doc,
-            slot_width_dim,
-            guide.slot_width_dimension_text,
-            geometry,
-        )
-    if thickness_dim is not None:
-        _update_block_thickness_dimension(
-            doc,
-            thickness_dim,
-            f"{guide.guide_thickness:.2f}",
-            geometry,
-        )
-    if opening_dim is not None:
-        _update_down_up_flat_arc_opening_dimension(
-            doc,
-            opening_dim,
-            geometry,
-        )
-    if top_gap_dim is not None:
-        _update_block_top_gap_dimension(doc, top_gap_dim, geometry)
-    if relief_size_dim is not None:
-        _update_flat_arc_relief_diameter_dimension(
-            doc,
-            relief_size_dim,
-            geometry,
-        )
-    if relief_radius_dim is not None:
-        _update_block_relief_radius_dimension(
-            doc,
-            relief_radius_dim,
-            geometry,
-        )
-    _update_section_slot_base_dimension(dimensions, geometry)
-    for dimension in radius_dimensions:
-        modelspace.delete_entity(dimension)
+    index = index_section_dimensions(
+        dimensions,
+        frame_from_anchor(anchor),
+    )
+    specs = block_section_specs(block_section, geometry, index)
+    emit_section_dimensions(
+        doc,
+        modelspace,
+        index,
+        specs,
+        geometry,
+        _apply_block_section_spec,
+        drop_roles=(SECTION_R_FORM,),
+    )
 
 
 def _update_section_slot_base_dimension(dimensions, geometry: SlotDimensionGeometry) -> None:
