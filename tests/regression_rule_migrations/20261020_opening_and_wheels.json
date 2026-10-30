@@ -2834,6 +2834,70 @@
           ],
           "before": -608.078672,
           "after": -607.305594
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 101,
+          "after": 97,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "layer_entity_counts",
+            "FIXED_TEMPLATE"
+          ],
+          "before": 144,
+          "after": 140,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "line_count"
+          ],
+          "before": 101,
+          "after": 97,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 91,
+          "after": 87,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "layer_entity_counts",
+            "FIXED_TEMPLATE"
+          ],
+          "before": 144,
+          "after": 140,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "line_count"
+          ],
+          "before": 91,
+          "after": 87,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
         }
       ]
     },
@@ -2847,7 +2911,72 @@
         "expected_report.json": "e0ea2388d41b2bdd0d9f326a23642c63cefbeeeb164360dea8cc9923fc384691",
         "input.json": "ddf24b576c5c4b6374dbb145bd9ef4e7a4e3358285ebe28c0de6611cdb6c6717"
       },
-      "changes": []
+      "changes": [
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 102,
+          "after": 98,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "layer_entity_counts",
+            "FIXED_TEMPLATE"
+          ],
+          "before": 146,
+          "after": 142,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "line_count"
+          ],
+          "before": 102,
+          "after": 98,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 92,
+          "after": 88,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "layer_entity_counts",
+            "FIXED_TEMPLATE"
+          ],
+          "before": 146,
+          "after": 142,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "line_count"
+          ],
+          "before": 92,
+          "after": 88,
+          "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        }
+      ]
     },
     "triple_single_down_up/case_001": {
       "frozen_sha256": {
@@ -3164,6 +3293,70 @@
           ],
           "before": -85.05648,
           "after": -94.494575
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 42,
+          "after": 41,
+          "reason": "2026-10-30: remove stale template boundary line using 0.001 mm tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "layer_entity_counts",
+            "FIXED_TEMPLATE"
+          ],
+          "before": 40,
+          "after": 39,
+          "reason": "2026-10-30: remove stale template boundary line using 0.001 mm tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "line_count"
+          ],
+          "before": 42,
+          "after": 41,
+          "reason": "2026-10-30: remove stale template boundary line using 0.001 mm tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "entity_counts",
+            "LINE"
+          ],
+          "before": 37,
+          "after": 36,
+          "reason": "2026-10-30: remove stale template boundary line using 0.001 mm tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "layer_entity_counts",
+            "FIXED_TEMPLATE"
+          ],
+          "before": 40,
+          "after": 39,
+          "reason": "2026-10-30: remove stale template boundary line using 0.001 mm tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "line_count"
+          ],
+          "before": 37,
+          "after": 36,
+          "reason": "2026-10-30: remove stale template boundary line using 0.001 mm tolerance."
         }
       ]
     }

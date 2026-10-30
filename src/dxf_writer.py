@@ -373,10 +373,10 @@ def _is_down_up_flat_arc_template_param_entity(entity, anchor: TemplateAnchor) -
         if _line_is_outer_frame(start, end, anchor):
             return False
         return (
-            anchor.left <= start.x <= anchor.right
-            and anchor.left <= end.x <= anchor.right
-            and anchor.bottom <= start.y <= anchor.top
-            and anchor.bottom <= end.y <= anchor.top
+            anchor.left - 0.001 <= start.x <= anchor.right + 0.001
+            and anchor.left - 0.001 <= end.x <= anchor.right + 0.001
+            and anchor.bottom - 0.001 <= start.y <= anchor.top + 0.001
+            and anchor.bottom - 0.001 <= end.y <= anchor.top + 0.001
         )
     return False
 
@@ -1186,10 +1186,10 @@ def _is_block_template_param_entity(entity, anchor: TemplateAnchor) -> bool:
         if _line_is_outer_frame(start, end, anchor):
             return False
         return (
-            anchor.left <= start.x <= anchor.right
-            and anchor.left <= end.x <= anchor.right
-            and anchor.bottom <= start.y <= anchor.top
-            and anchor.bottom <= end.y <= anchor.top
+            anchor.left - 0.001 <= start.x <= anchor.right + 0.001
+            and anchor.left - 0.001 <= end.x <= anchor.right + 0.001
+            and anchor.bottom - 0.001 <= start.y <= anchor.top + 0.001
+            and anchor.bottom - 0.001 <= end.y <= anchor.top + 0.001
         )
     return False
 

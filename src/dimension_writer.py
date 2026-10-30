@@ -379,6 +379,9 @@ def add_section_template_dimensions(
         raise FileNotFoundError(f"Section dimension template not found: {path}")
     source_doc = ezdxf.readfile(path)
     source_dimensions = list(source_doc.modelspace().query("DIMENSION"))
+    from .section_dimension_spec import infer_section_frame
+    source_frame = infer_section_frame(source_dimensions)
+
     flat_arc_radius_dimensions = [
         entity
         for entity in source_dimensions
@@ -410,6 +413,14 @@ def add_section_template_dimensions(
         if skip_secondary_relief_dimension and _dimension_text(entity).startswith("2-"):
             continue
         copied = copy_template_dimension_without_associations(entity)
+        if source_frame is not None and copied.dimtype in {0, 1}:
+            dx = geometry.outer_left - source_frame.left
+            dy = geometry.outer_bottom - source_frame.bottom
+            for name in ("defpoint", "text_midpoint"):
+                if copied.dxf.hasattr(name):
+                    point = copied.dxf.get(name)
+                    copied.dxf.set(name, (point.x + dx, point.y + dy, point.z))
+
         copied.dxf.layer = DIMENSION_LAYER
         role = _update_section_dimension(copied, tile_section, geometry)
         _sync_actual_measurement(copied)
