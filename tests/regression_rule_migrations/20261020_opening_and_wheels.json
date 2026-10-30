@@ -3357,6 +3357,62 @@
           "before": 37,
           "after": 36,
           "reason": "2026-10-30: remove stale template boundary line using 0.001 mm tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3227.741352,
+          "after": 3227.695317,
+          "reason": "2026-10-30: quantize outward annotation clearance to 0.5 mm drafting steps."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3223.241352,
+          "after": 3223.195317,
+          "reason": "2026-10-30: quantize outward annotation clearance to 0.5 mm drafting steps."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3227.741352,
+          "after": 3227.695317,
+          "reason": "2026-10-30: quantize outward annotation clearance to 0.5 mm drafting steps."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3223.241352,
+          "after": 3223.195317,
+          "reason": "2026-10-30: quantize outward annotation clearance to 0.5 mm drafting steps."
         }
       ]
     }

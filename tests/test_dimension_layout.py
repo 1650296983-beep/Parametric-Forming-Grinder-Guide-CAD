@@ -104,3 +104,13 @@ def test_overlap_audit_blocks_release_when_text_collides(tmp_path):
 
     assert audit["dimension_text_overlaps"]
     assert not audit["release_allowed"]
+
+
+def test_layout_shifts_use_outward_drafting_increments():
+    doc = ezdxf.new('R2010')
+    for y in (3, 5):
+        doc.modelspace().add_linear_dim(base=(50, y), p1=(10, 0), p2=(90, 0)).render()
+    result = resolve_dimension_text_overlaps(doc)
+    assert result['release_allowed']
+    assert result['moves']
+    assert all(move['delta'] * 2 == pytest.approx(round(move['delta'] * 2)) for move in result['moves'])

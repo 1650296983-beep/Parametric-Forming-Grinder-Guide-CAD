@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from math import atan2, degrees
+from math import atan2, degrees, ceil
 from typing import Any
 
 from ezdxf import bbox
@@ -207,7 +207,9 @@ def _best_move(
                 if required is None:
                     continue
                 for extra in (0.0, 1.0, 2.0, 4.0):
-                    delta = required + direction * extra
+                    # Quantize outward moves to drafting increments so small
+                    # font-metric differences do not change final coordinates.
+                    delta = direction * ceil(abs(required) / 0.5) * 0.5 + direction * extra
                     if abs(delta) > MAX_LAYOUT_SHIFT:
                         continue
                     moved = item.shifted(delta)
