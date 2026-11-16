@@ -255,7 +255,11 @@ def write_machine_report(
                 release_doc,
                 machine.wheel_radius,
             ),
-            "guide_length_matches_config": machine.guide_length == 435.0,
+            "guide_length_matches_config": (
+                abs(sum(machine.side_fixed_spans) - machine.guide_length) <= 1e-6
+                if machine.side_fixed_spans
+                else machine.guide_length > 0
+            ),
             "wheel_positions_match_config": list(machine.wheel_positions),
         },
         "template_comparison": {

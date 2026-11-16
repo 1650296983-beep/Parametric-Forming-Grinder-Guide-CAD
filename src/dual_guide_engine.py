@@ -406,6 +406,7 @@ class DualGuideTemplateEngine:
             self._strip_nonrelease_text_layers(modelspace)
         normalize_dimension_display_precision(doc, modelspace)
         resolve_dimension_text_overlaps(doc)
+        normalize_dimension_display_precision(doc, modelspace)
         doc.saveas(output_path)
         return {
             "machine_template": _machine_template_payload(template),

@@ -81,11 +81,13 @@ def _text_bounds(doc: Any, dimension: Any) -> tuple[float, float, float, float] 
 def _movement_axis(dimension: Any) -> str | None:
     """Return the axis perpendicular to the dimension line.
 
-    Only linear dimensions are safe to translate: group 10 locates their
-    dimension line, while defpoint2/defpoint3 stay on the measured geometry.
-    Radius, diameter and angular dimensions use group 10 as a geometry anchor.
+    Linear dimensions translate along group 10 while defpoint2/defpoint3 stay
+    on the measured geometry.  Radius and diameter dimensions keep group 10 and
+    group 15 on the arc and shift only their text_midpoint when needed.
     """
     dimtype = int(dimension.dxf.dimtype) & 15
+    if dimtype in {3, 4} and dimension.dxf.hasattr("text_midpoint"):
+        return "radial_y"
     if dimtype not in {0, 1} or not dimension.dxf.hasattr("defpoint"):
         return None
     try:
@@ -180,7 +182,7 @@ def _shift_toward(
             delta = other[2] + margin - item.bounds[0]
         else:
             delta = other[0] - margin - item.bounds[2]
-    elif item.axis == "y":
+    elif item.axis in {"y", "radial_y"}:
         if direction > 0:
             delta = other[3] + margin - item.bounds[1]
         else:
@@ -223,7 +225,8 @@ def _best_move(
                     # clear the collision by the same amount, move the larger
                     # (usually the fixed datum) rather than a small parameter.
                     measurement = item.measurement or 0.0
-                    score = abs(delta) - 0.01 * min(measurement, 100.0)
+                    radial_penalty = 50.0 if item.axis == "radial_y" else 0.0
+                    score = radial_penalty + abs(delta) - 0.01 * min(measurement, 100.0)
                     if best is None or score < best[0]:
                         best = (score, item, delta)
                     break
@@ -268,6 +271,8 @@ def _translate_dimension(doc: Any, handle: str, delta: float, axis: str) -> bool
     if not dimension:
         return False
     dimension = dimension[0]
+    if axis == "radial_y":
+        return _translate_radial_dimension_text(doc, dimension, delta)
     if not dimension.dxf.hasattr("defpoint"):
         return False
     text_payload = _capture_texts(doc, dimension)
@@ -285,6 +290,27 @@ def _translate_dimension(doc: Any, handle: str, delta: float, axis: str) -> bool
         return False
     _restore_texts(doc, dimension, text_payload)
     return True
+
+
+def _translate_radial_dimension_text(
+    doc: Any,
+    dimension: Any,
+    delta: float,
+) -> bool:
+    if not dimension.dxf.hasattr("text_midpoint"):
+        return False
+    name = dimension.dxf.get("geometry")
+    if not name or name not in doc.blocks:
+        return False
+    midpoint = dimension.dxf.text_midpoint
+    dimension.dxf.text_midpoint = Vec3(midpoint.x, midpoint.y + delta, midpoint.z)
+    moved = False
+    for entity in doc.blocks[name]:
+        if entity.dxftype() in {"TEXT", "MTEXT"} and entity.dxf.hasattr("insert"):
+            insert = entity.dxf.insert
+            entity.dxf.insert = Vec3(insert.x, insert.y + delta, insert.z)
+            moved = True
+    return moved
 
 
 def resolve_dimension_text_overlaps(

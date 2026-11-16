@@ -156,6 +156,7 @@ def write_dxf(
             assert_side_view_consistency(doc, profile)
     normalize_dimension_display_precision(doc, modelspace)
     resolve_dimension_text_overlaps(doc)
+    normalize_dimension_display_precision(doc, modelspace)
     doc.saveas(output_path)
     return output_path
 
@@ -268,6 +269,7 @@ def _write_template_based_dxf(
         assert_side_view_consistency(doc, tile_section, machine_config=machine_config)
     normalize_dimension_display_precision(doc, modelspace)
     resolve_dimension_text_overlaps(doc)
+    normalize_dimension_display_precision(doc, modelspace)
     doc.saveas(output_path)
     return output_path
 
@@ -357,12 +359,13 @@ def _write_triple_single_down_up_flat_arc_dxf(
         _simplify_release_layers(doc)
     normalize_dimension_display_precision(doc, modelspace)
     resolve_dimension_text_overlaps(doc)
+    normalize_dimension_display_precision(doc, modelspace)
     doc.saveas(output_path)
     return output_path
 
 
 def _is_down_up_flat_arc_template_param_entity(entity, anchor: TemplateAnchor) -> bool:
-    if entity.dxftype() == "DIMENSION":
+    if entity.dxftype() == "DIMENSION" or _is_section_center_entity(entity):
         return False
     if entity.dxftype() == "ARC":
         center = entity.dxf.center
@@ -1119,6 +1122,7 @@ def _write_block_template_based_dxf(
         )
     normalize_dimension_display_precision(doc, modelspace)
     resolve_dimension_text_overlaps(doc)
+    normalize_dimension_display_precision(doc, modelspace)
     doc.saveas(output_path)
     return output_path
 
@@ -1171,14 +1175,14 @@ def _extract_block_template_anchor(modelspace) -> TemplateAnchor:
 
 
 def _is_block_template_param_entity(entity, anchor: TemplateAnchor) -> bool:
-    if entity.dxftype() == "DIMENSION":
+    if entity.dxftype() == "DIMENSION" or _is_section_center_entity(entity):
         return False
     if entity.dxftype() == "ARC":
         center = entity.dxf.center
         return (
             anchor.left - 2.0 <= center.x <= anchor.right + 2.0
-            and anchor.bottom <= center.y <= anchor.top + 2.0
-            and entity.dxf.radius <= 5.0
+            and anchor.bottom - 50.0 <= center.y <= anchor.top + 20.0
+            and entity.dxf.radius < 50.0
         )
     if entity.dxftype() == "LINE":
         start = entity.dxf.start
@@ -1812,18 +1816,6 @@ def _set_dimension_actual_measurement(dimension, value: float) -> None:
 
 def _format_compact_decimal(value: float) -> str:
     return f"{value:.2f}"
-    add_linear_dimension_with_text(
-        modelspace,
-        (geometry.left_x, geometry.top_y - relief_radius),
-        (geometry.left_x + relief_size, geometry.top_y - relief_radius),
-        (geometry.left_x - 1.5, geometry.top_y - relief_radius + 2.0),
-        (geometry.left_x + relief_size - 1.5, geometry.top_y - relief_radius + 2.0),
-        "4-<>",
-        (geometry.left_x - 4.2, geometry.top_y - relief_radius + 2.2),
-        angle=0.0,
-        include_fallback=include_debug,
-        include_native=True,
-    )
 
 
 def _extract_template_anchor(modelspace, tile_section: TileSection) -> TemplateAnchor:
@@ -1862,6 +1854,8 @@ def _extract_template_anchor(modelspace, tile_section: TileSection) -> TemplateA
 
 
 def _is_template_param_entity(entity, anchor: TemplateAnchor, tile_section: TileSection) -> bool:
+    if _is_section_center_entity(entity):
+        return False
     if entity.dxftype() == "ARC":
         center = entity.dxf.center
         radius = entity.dxf.radius
@@ -1882,18 +1876,18 @@ def _is_template_param_entity(entity, anchor: TemplateAnchor, tile_section: Tile
 
 
 def _arc_is_inside_slot_work_area(center, radius: float, anchor: TemplateAnchor) -> bool:
-    min_x = anchor.slot_center_x - 8.0
-    max_x = anchor.slot_center_x + 8.0
-    min_y = anchor.bottom - 30.0
-    max_y = anchor.top + 5.0
-    param_radius = radius <= 2.0 or 5.0 <= radius <= 80.0
+    min_x = anchor.left - 2.0
+    max_x = anchor.right + 2.0
+    min_y = anchor.bottom - 50.0
+    max_y = anchor.top + 20.0
+    param_radius = radius <= 5.0 or 5.0 <= radius < 80.0
     return min_x <= center.x <= max_x and min_y <= center.y <= max_y and param_radius
 
 
 def _line_is_inside_slot_work_area(start, end, anchor: TemplateAnchor) -> bool:
-    min_x = anchor.slot_center_x - 5.0
-    max_x = anchor.slot_center_x + 5.0
-    min_y = anchor.slot_base_y - 2.0
+    min_x = anchor.left - 0.001
+    max_x = anchor.right + 0.001
+    min_y = anchor.bottom - 0.001
     max_y = anchor.top + 0.5
     return (
         min_x <= start.x <= max_x

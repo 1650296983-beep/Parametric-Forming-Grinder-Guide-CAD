@@ -561,8 +561,8 @@ def _rebuild_cavity_projection_lines(
 ) -> None:
     layout = geometry.layout
     y_values = tuple(boundary[0] for boundary in boundaries)
-    lower_y = min(y_values) - 0.6
-    upper_y = max(y_values) + 0.6
+    lower_y = min(min(y_values) - 0.6, layout.lower_y + 0.5)
+    upper_y = max(max(y_values) + 0.6, layout.upper_y - 0.5)
     for entity in list(modelspace.query("LINE")):
         if entity.dxf.layer not in {SIDE_DERIVED_LAYER, SIDE_CAVITY_LAYER}:
             continue

@@ -114,3 +114,22 @@ def test_layout_shifts_use_outward_drafting_increments():
     assert result['release_allowed']
     assert result['moves']
     assert all(move['delta'] * 2 == pytest.approx(round(move['delta'] * 2)) for move in result['moves'])
+
+
+def test_resolver_separates_overlapping_radial_dimension_texts():
+    doc = ezdxf.new("R2010")
+    modelspace = doc.modelspace()
+    modelspace.add_radius_dim(
+        center=(0, 0), radius=10, angle=30, location=(14, 8), text="4-R0.50"
+    ).render()
+    modelspace.add_radius_dim(
+        center=(0, 1), radius=10, angle=30, location=(14, 8.5), text="2-R0.50"
+    ).render()
+
+    assert find_dimension_text_overlaps(doc)
+    result = resolve_dimension_text_overlaps(doc)
+
+    assert result["release_allowed"]
+    assert not result["remaining_overlaps"]
+    assert result["moves"]
+

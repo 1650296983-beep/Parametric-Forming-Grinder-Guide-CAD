@@ -1611,7 +1611,7 @@ function DesktopSettingsPage({
   const toast = useToast();
   const [settings, setSettings] = useState<DesktopSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [version, setVersion] = useState("1.2.0-dev");
+  const [version, setVersion] = useState("1.2.4-dev");
   const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
   const [updateMessage, setUpdateMessage] = useState("尚未检查更新。");
   const [checking, setChecking] = useState(false);
@@ -1659,7 +1659,7 @@ function DesktopSettingsPage({
       return;
     }
     setChecking(true);
-    if (!quiet) setUpdateMessage("正在连接 GitHub Releases…");
+    if (!quiet) setUpdateMessage("正在检查更新…");
     try {
       const found = await check();
       setAvailableUpdate(found);

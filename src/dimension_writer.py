@@ -672,7 +672,9 @@ def _update_section_dimension(
             return SECTION_RELIEF_RADIUS
         _set_dimension_text(entity, tile_section.guide_spec.relief.relief_label)
         return SECTION_RELIEF_DIAMETER
-    elif abs(measurement - 17.45) < 0.05:
+    elif abs(measurement - 17.45) < 0.05 or (
+        (int(entity.dxf.dimtype) & 15) == 4 and measurement > 5.0
+    ):
         is_lower = (
             tile_section.arc_side == "lower"
             if tile_section.process_type == "block_to_tile"
