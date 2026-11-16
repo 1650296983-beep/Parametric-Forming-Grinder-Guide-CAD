@@ -798,6 +798,27 @@ def _set_relief_radius_definition(
             0.0,
         )
         return
+    if (int(entity.dxf.dimtype) & 15) == 3:
+        old_p1 = entity.dxf.defpoint
+        old_p2 = entity.dxf.defpoint4
+        dx = float(old_p2.x) - float(old_p1.x)
+        dy = float(old_p2.y) - float(old_p1.y)
+        length = (dx * dx + dy * dy) ** 0.5
+        if length > 1e-9:
+            ux, uy = dx / length, dy / length
+        else:
+            ux, uy = 0.70710678, 0.70710678
+        entity.dxf.defpoint = (
+            center[0] - ux * radius,
+            center[1] - uy * radius,
+            0.0,
+        )
+        entity.dxf.defpoint4 = (
+            center[0] + ux * radius,
+            center[1] + uy * radius,
+            0.0,
+        )
+        return
     slot_mid_y = (geometry.base_y + geometry.top_y) / 2.0
     direction = -1.0 if center[1] >= slot_mid_y else 1.0
     entity.dxf.defpoint = (center[0], center[1], 0.0)

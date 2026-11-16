@@ -328,18 +328,33 @@ def _bind_r80_dimensions_to_formal_arcs(
         )
         start_angle = float(arc.dxf.start_angle) % 360.0
         sweep = (float(arc.dxf.end_angle) - start_angle) % 360.0
-        angle = radians((start_angle + sweep / 2.0) % 360.0)
+        # Place the R80 target off the vertical centerline so the radial leader
+        # never overlaps the red center line or the 90/200 station extensions.
+        prefer_right = float(old_target.x) > float(old_center.x) + 1e-3
+        fraction = 0.72 if prefer_right else 0.28
+        angle = radians((start_angle + sweep * fraction) % 360.0)
         center = arc.dxf.center
+        target_x = float(center.x) + radius * cos(angle)
+        target_y = float(center.y) + radius * sin(angle)
         dimension.dxf.defpoint = (
             float(center.x),
             float(center.y),
             float(old_center.z),
         )
         dimension.dxf.defpoint4 = (
-            float(center.x) + radius * cos(angle),
-            float(center.y) + radius * sin(angle),
+            target_x,
+            target_y,
             float(old_target.z),
         )
+        if dimension.dxf.hasattr("text_midpoint"):
+            # Position the label partway along the diagonal radial leader,
+            # clear of the guide outline and adjacent station dimensions.
+            text_r = max(radius * 0.65, radius - 22.0)
+            dimension.dxf.text_midpoint = (
+                float(center.x) + text_r * cos(angle),
+                float(center.y) + text_r * sin(angle),
+                float(old_target.z),
+            )
         _set_actual_measurement(dimension, radius)
         dimension.dxf.text = f"R{radius:.2f}"
         try:
