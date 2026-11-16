@@ -1594,6 +1594,20 @@ def _update_block_slot_width_dimension(doc, dimension, label: str, geometry: Slo
     old_base = dimension.dxf.defpoint2.y
     dimension.dxf.defpoint2 = (geometry.left_x, geometry.base_y, dimension.dxf.defpoint2.z)
     dimension.dxf.defpoint3 = (geometry.right_x, geometry.base_y, dimension.dxf.defpoint3.z)
+    for attr in ("defpoint", "text_midpoint"):
+        if dimension.dxf.hasattr(attr):
+            dimension.dxf.set(
+                attr,
+                _map_slot_dimension_point(
+                    dimension.dxf.get(attr),
+                    old_left,
+                    old_right,
+                    geometry.left_x,
+                    geometry.right_x,
+                    old_base,
+                    geometry.base_y,
+                ),
+            )
     dimension.dxf.text = label
     _set_dimension_actual_measurement(dimension, geometry.slot_width)
     _transform_dimension_block(
@@ -1756,14 +1770,15 @@ def _update_block_top_gap_dimension(doc, dimension, geometry: SlotDimensionGeome
 
 
 def _map_slot_dimension_point(point, old_left, old_right, new_left, new_right, old_base, new_base):
-    x = point.x
     if old_left - 0.001 <= point.x <= old_right + 0.001:
         ratio = (point.x - old_left) / (old_right - old_left)
         x = new_left + ratio * (new_right - new_left)
-    elif abs(point.x - old_left) <= 0.001:
-        x = new_left
-    elif abs(point.x - old_right) <= 0.001:
-        x = new_right
+    elif point.x > old_right + 0.001:
+        x = point.x + (new_right - old_right)
+    elif point.x < old_left - 0.001:
+        x = point.x + (new_left - old_left)
+    else:
+        x = point.x
     y = new_base + (point.y - old_base) if abs(point.y - old_base) <= 20.0 else point.y
     return (x, y, point.z)
 

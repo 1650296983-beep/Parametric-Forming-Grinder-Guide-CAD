@@ -303,7 +303,8 @@
             1
           ],
           "before": 57.015577,
-          "after": 57.293143
+          "after": 58.097879,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -316,7 +317,8 @@
             1
           ],
           "before": 44.615577,
-          "after": 44.893143
+          "after": 76.312877,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -603,7 +605,8 @@
             1
           ],
           "before": 57.015577,
-          "after": 57.293143
+          "after": 58.097879,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -616,7 +619,8 @@
             1
           ],
           "before": 44.615577,
-          "after": 44.893143
+          "after": 76.312877,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -704,6 +708,454 @@
           ],
           "before": 36,
           "after": 35
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 68.045444,
+          "after": 68.545444,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 70.795444,
+          "after": 71.295444,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3241.351869,
+          "after": 3259.900935,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 31.267693,
+          "after": 29.267693,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3238.246869,
+          "after": 3244.456869,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.246869,
+          "after": 3244.839892,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 58.079685,
+          "after": 58.901079,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3233.30753,
+          "after": 3248.474627,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 62.39412,
+          "after": 69.12585,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.929969,
+          "after": 3243.773769,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3221.246869,
+          "after": 3246.618014,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 53.749685,
+          "after": 52.889347,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3225.246869,
+          "after": 3238.18171,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 63.779685,
+          "after": 65.201116,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3560.483328,
+          "after": 3549.164753,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3557.233328,
+          "after": 3550.353812,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 68.045444,
+          "after": 68.545444,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            1,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 70.795444,
+          "after": 71.295444,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3241.351869,
+          "after": 3259.900935,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 31.267693,
+          "after": 29.267693,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3238.246869,
+          "after": 3244.456869,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.246869,
+          "after": 3244.839892,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 58.079685,
+          "after": 58.901079,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3233.30753,
+          "after": 3248.474627,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 62.39412,
+          "after": 69.12585,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.929969,
+          "after": 3243.773769,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3221.246869,
+          "after": 3246.618014,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 53.749685,
+          "after": 52.889347,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3225.246869,
+          "after": 3238.18171,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 63.779685,
+          "after": 65.201116,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3560.483328,
+          "after": 3549.164753,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3557.233328,
+          "after": 3550.353812,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         }
       ]
     },
@@ -886,7 +1338,8 @@
             0
           ],
           "before": 3239.846869,
-          "after": 3239.884369
+          "after": 3242.819369,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -938,7 +1391,8 @@
             1
           ],
           "before": 56.213756,
-          "after": 56.287961
+          "after": 70.967522,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -986,7 +1440,8 @@
             1
           ],
           "before": 49.577828,
-          "after": 49.726238
+          "after": 52.325412,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -999,7 +1454,8 @@
             1
           ],
           "before": 37.177828,
-          "after": 37.326238
+          "after": 70.288064,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -1121,7 +1577,8 @@
             0
           ],
           "before": 3239.846869,
-          "after": 3239.884369
+          "after": 3242.819369,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -1173,7 +1630,8 @@
             1
           ],
           "before": 56.213756,
-          "after": 56.287961
+          "after": 70.967522,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -1221,7 +1679,8 @@
             1
           ],
           "before": 49.577828,
-          "after": 49.726238
+          "after": 52.325412,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -1234,7 +1693,8 @@
             1
           ],
           "before": 37.177828,
-          "after": 37.326238
+          "after": 70.288064,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -1274,6 +1734,594 @@
           ],
           "before": 40,
           "after": 39
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3241.351869,
+          "after": 3250.302183,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 33.961153,
+          "after": 31.961153,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3239.091869,
+          "after": 3243.611869,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3239.091869,
+          "after": 3243.994892,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 49.129685,
+          "after": 49.951079,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3234.381823,
+          "after": 3247.629627,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 53.871773,
+          "after": 54.17585,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3239.589069,
+          "after": 3243.114669,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3222.091869,
+          "after": 3245.958914,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 44.849685,
+          "after": 43.938558,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3226.091869,
+          "after": 3243.290463,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 54.829685,
+          "after": 62.261528,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3644.43868,
+          "after": 3663.816622,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 47.901541,
+          "after": 45.519164,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3641.18868,
+          "after": 3658.049832,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 60.301541,
+          "after": 28.200269,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3699.170121,
+          "after": 3690.670121,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 41.875613,
+          "after": 27.731847,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3386.735402,
+          "after": 3388.735402,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3444.43868,
+          "after": 3464.665203,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3441.18868,
+          "after": 3461.418183,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3241.351869,
+          "after": 3250.302183,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 33.961153,
+          "after": 31.961153,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3239.091869,
+          "after": 3243.611869,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3239.091869,
+          "after": 3243.994892,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 49.129685,
+          "after": 49.951079,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3234.381823,
+          "after": 3247.629627,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 53.871773,
+          "after": 54.17585,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3239.589069,
+          "after": 3243.114669,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3222.091869,
+          "after": 3245.958914,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 44.849685,
+          "after": 43.938558,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3226.091869,
+          "after": 3243.290463,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            8,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 54.829685,
+          "after": 62.261528,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3644.43868,
+          "after": 3663.816622,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 47.901541,
+          "after": 45.519164,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3641.18868,
+          "after": 3658.049832,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 60.301541,
+          "after": 28.200269,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3699.170121,
+          "after": 3690.670121,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 41.875613,
+          "after": 27.731847,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3386.735402,
+          "after": 3388.735402,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3444.43868,
+          "after": 3464.665203,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3441.18868,
+          "after": 3461.418183,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         }
       ]
     },
@@ -1309,6 +2357,454 @@
           "before": null,
           "after": "floor(min(slot_width * 0.30, machine.section_center_opening), 0.01 mm)",
           "added": true
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3242.019058,
+          "after": 3242.124058,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -267.261878,
+          "after": -273.261878,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3251.976201,
+          "after": 3252.081201,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -267.261878,
+          "after": -273.261878,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3481.69463,
+          "after": 3462.418258,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -256.96851,
+          "after": -254.61142,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3478.44463,
+          "after": 3465.444882,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -269.36851,
+          "after": -236.610321,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3448.435587,
+          "after": 3439.935587,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -251.005213,
+          "after": -236.924078,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3681.69463,
+          "after": 3700.971002,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -256.96851,
+          "after": -254.61142,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3678.44463,
+          "after": 3697.944378,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -269.36851,
+          "after": -236.610321,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3745.828336,
+          "after": 3737.328336,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -251.005213,
+          "after": -236.924078,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3242.019058,
+          "after": 3242.124058,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -267.261878,
+          "after": -273.261878,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3251.976201,
+          "after": 3252.081201,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -267.261878,
+          "after": -273.261878,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3481.69463,
+          "after": 3462.418258,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -256.96851,
+          "after": -254.61142,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3478.44463,
+          "after": 3465.444882,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -269.36851,
+          "after": -236.610321,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3448.435587,
+          "after": 3439.935587,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -251.005213,
+          "after": -236.924078,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3681.69463,
+          "after": 3700.971002,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -256.96851,
+          "after": -254.61142,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3678.44463,
+          "after": 3697.944378,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -269.36851,
+          "after": -236.610321,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3745.828336,
+          "after": 3737.328336,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -251.005213,
+          "after": -236.924078,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         }
       ]
     },
@@ -1578,7 +3074,8 @@
             1
           ],
           "before": -180.037514,
-          "after": -179.651054
+          "after": -169.939561,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -1665,7 +3162,8 @@
             1
           ],
           "before": -180.037514,
-          "after": -179.651054
+          "after": -169.939561,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -1908,7 +3406,8 @@
             1
           ],
           "before": -596.828672,
-          "after": -596.442133
+          "after": -586.730718,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -1995,7 +3494,8 @@
             1
           ],
           "before": -596.828672,
-          "after": -596.442133
+          "after": -586.730718,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -2238,7 +3738,8 @@
             1
           ],
           "before": -180.037514,
-          "after": -179.651054
+          "after": -169.939561,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -2325,7 +3826,8 @@
             1
           ],
           "before": -180.037514,
-          "after": -179.651054
+          "after": -169.939561,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -2568,7 +4070,8 @@
             1
           ],
           "before": -596.828672,
-          "after": -596.442133
+          "after": -586.730718,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -2655,7 +4158,8 @@
             1
           ],
           "before": -596.828672,
-          "after": -596.442133
+          "after": -586.730718,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
           "path": [
@@ -2898,6 +4402,342 @@
           "before": 91,
           "after": 87,
           "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3244.637169,
+          "after": 3245.907,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -206.277887,
+          "after": -206.278372,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3257.679101,
+          "after": 3258.948932,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -206.277887,
+          "after": -206.278372,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3510.706391,
+          "after": 3506.706391,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -113.971491,
+          "after": -123.742529,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            21,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3539.955624,
+          "after": 3535.955624,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            21,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -611.455539,
+          "after": -621.226626,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            31,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3246.067548,
+          "after": 3247.338,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            31,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -125.584948,
+          "after": -125.585372,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            31,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3259.10948,
+          "after": 3260.379932,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            31,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -125.584948,
+          "after": -125.585372,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3244.637169,
+          "after": 3245.907,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -206.277887,
+          "after": -206.278372,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3257.679101,
+          "after": 3258.948932,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -206.277887,
+          "after": -206.278372,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3510.706391,
+          "after": 3506.706391,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -113.971491,
+          "after": -123.742529,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            21,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3539.955624,
+          "after": 3535.955624,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            21,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -611.455539,
+          "after": -621.226626,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            31,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3246.067548,
+          "after": 3247.338,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            31,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -125.584948,
+          "after": -125.585372,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            31,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3259.10948,
+          "after": 3260.379932,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            31,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -125.584948,
+          "after": -125.585372,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         }
       ]
     },
@@ -2975,6 +4815,566 @@
           "before": 92,
           "after": 88,
           "reason": "2026-10-30: remove two stale template neck lines per section using boundary tolerance."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3244.432548,
+          "after": 3247.343,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -107.46369,
+          "after": -108.834115,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3256.88969,
+          "after": 3259.800143,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -107.46369,
+          "after": -108.834115,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3244.432548,
+          "after": 3247.343,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -203.0979,
+          "after": -204.468115,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3256.88969,
+          "after": 3259.800143,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -203.0979,
+          "after": -204.468115,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            19,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3491.740488,
+          "after": 3493.740488,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            19,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -94.518085,
+          "after": -85.095871,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            20,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3489.927452,
+          "after": 3491.927452,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            20,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -190.15219,
+          "after": -180.730081,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            21,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3674.850663,
+          "after": 3676.850663,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            21,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -190.15219,
+          "after": -180.730081,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3509.473547,
+          "after": 3511.473547,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            29,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -479.207095,
+          "after": -469.784893,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            36,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3687.660511,
+          "after": 3689.660511,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            36,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -479.207095,
+          "after": -469.784893,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            37,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3872.583722,
+          "after": 3874.583722,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            37,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -479.207095,
+          "after": -469.784893,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3244.432548,
+          "after": 3247.343,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -107.46369,
+          "after": -108.834115,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3256.88969,
+          "after": 3259.800143,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -107.46369,
+          "after": -108.834115,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3244.432548,
+          "after": 3247.343,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -203.0979,
+          "after": -204.468115,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3256.88969,
+          "after": 3259.800143,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -203.0979,
+          "after": -204.468115,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            19,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3491.740488,
+          "after": 3493.740488,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            19,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -94.518085,
+          "after": -85.095871,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            20,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3489.927452,
+          "after": 3491.927452,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            20,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -190.15219,
+          "after": -180.730081,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            21,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3674.850663,
+          "after": 3676.850663,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            21,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -190.15219,
+          "after": -180.730081,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3509.473547,
+          "after": 3511.473547,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            27,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -479.207095,
+          "after": -469.784893,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            34,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3687.660511,
+          "after": 3689.660511,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            34,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -479.207095,
+          "after": -469.784893,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            35,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3872.583722,
+          "after": 3874.583722,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            35,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -479.207095,
+          "after": -469.784893,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         }
       ]
     },
@@ -3180,6 +5580,450 @@
           ],
           "before": "2.00",
           "after": "1.68"
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "lower_wheel_key_process_height",
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3518.110204,
+          "after": 3513.460204,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "lower_wheel_key_process_height",
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 41.892953,
+          "after": 27.731847,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "upper_wheel_key_process_height",
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3593.110204,
+          "after": 3591.260204,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "upper_wheel_key_process_height",
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 56.346416,
+          "after": 70.967522,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3247.321869,
+          "after": 3244.151869,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3262.721869,
+          "after": 3259.551869,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3467.210204,
+          "after": 3486.616174,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 47.936222,
+          "after": 45.546841,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3463.960204,
+          "after": 3480.84313,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 60.336222,
+          "after": 28.23003,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3647.210204,
+          "after": 3667.34584,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 49.843148,
+          "after": 52.418629,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3643.960204,
+          "after": 3664.119912,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 37.443148,
+          "after": 70.385081,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3518.110204,
+          "after": 3513.460204,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 41.892953,
+          "after": 27.731847,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3593.110204,
+          "after": 3591.260204,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 56.346416,
+          "after": 70.967522,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3247.321869,
+          "after": 3244.151869,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            5,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3262.721869,
+          "after": 3259.551869,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3467.210204,
+          "after": 3486.616174,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 47.936222,
+          "after": 45.546841,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3463.960204,
+          "after": 3480.84313,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 60.336222,
+          "after": 28.23003,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3647.210204,
+          "after": 3667.34584,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": 49.843148,
+          "after": 52.418629,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3643.960204,
+          "after": 3664.119912,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            10,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 37.443148,
+          "after": 70.385081,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3518.110204,
+          "after": 3513.460204,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 41.892953,
+          "after": 27.731847,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3593.110204,
+          "after": 3591.260204,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 56.346416,
+          "after": 70.967522,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         }
       ]
     },
@@ -3413,6 +6257,398 @@
           "before": 3223.241352,
           "after": 3223.195317,
           "reason": "2026-10-30: quantize outward annotation clearance to 0.5 mm drafting steps."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3246.821331,
+          "after": 3246.921331,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3259.007046,
+          "after": 3259.107046,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3468.204666,
+          "after": 3458.483167,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -96.04117,
+          "after": -95.448301,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3465.704666,
+          "after": 3459.305183,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -104.34117,
+          "after": -77.213052,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3648.204666,
+          "after": 3638.483167,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -96.04117,
+          "after": -95.448301,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3645.704666,
+          "after": 3639.305183,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -104.34117,
+          "after": -77.213052,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3502.397862,
+          "after": 3495.397862,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -94.517872,
+          "after": -86.275612,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3684.528502,
+          "after": 3677.528502,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -94.517872,
+          "after": -86.275612,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3246.821331,
+          "after": 3246.921331,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            3,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3259.007046,
+          "after": 3259.107046,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3468.204666,
+          "after": 3458.483167,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -96.04117,
+          "after": -95.448301,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3465.704666,
+          "after": 3459.305183,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            11,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -104.34117,
+          "after": -77.213052,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3648.204666,
+          "after": 3638.483167,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -96.04117,
+          "after": -95.448301,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3645.704666,
+          "after": 3639.305183,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -104.34117,
+          "after": -77.213052,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3502.397862,
+          "after": 3495.397862,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -94.517872,
+          "after": -86.275612,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3684.528502,
+          "after": 3677.528502,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            14,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -94.517872,
+          "after": -86.275612,
+          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         }
       ]
     }

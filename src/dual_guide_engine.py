@@ -18,6 +18,7 @@ from .dimension_writer import (
     TEMPLATE_DIMENSION_STYLE,
     TEMPLATE_DIMENSION_TEXT_HEIGHT,
     add_linear_dimension_with_text,
+    apply_linear_outside_extension,
 )
 from .dimension_roles import SECTION_CENTER_OPENING
 from .dimension_layout import resolve_dimension_text_overlaps
@@ -1281,31 +1282,33 @@ class DualGuideTemplateEngine:
                 )
                 if crown is not None:
                     crown_x, crown_y, surface_y = crown
-                    if abs(measurement - 1.2) <= 0.05:
-                        arc = _r80_arc_at_crown(
-                            modelspace,
-                            crown_x,
-                            crown_y,
-                            self.machine.wheel_radius,
+                    arc = _r80_arc_at_crown(
+                        modelspace,
+                        crown_x,
+                        crown_y,
+                        self.machine.wheel_radius,
+                    )
+                    is_upper_wheel = (
+                        crown_y < float(arc.dxf.center.y)
+                        if arc is not None
+                        else surface_y > crown_y
+                    )
+                    is_local_cut_in = abs(measurement - 1.2) <= 0.05
+                    if is_local_cut_in and arc is not None:
+                        measured = (
+                            self._upper_wheel_safety_payload(profile)[
+                                "effective_cut_in_depth"
+                            ]
+                            if is_upper_wheel
+                            else self._lower_wheel_safety_payload(profile)[
+                                "effective_cut_in_depth"
+                            ]
                         )
-                        if arc is not None:
-                            is_upper_wheel = crown_y < float(
-                                arc.dxf.center.y
-                            )
-                            measured = (
-                                self._upper_wheel_safety_payload(profile)[
-                                    "effective_cut_in_depth"
-                                ]
-                                if is_upper_wheel
-                                else self._lower_wheel_safety_payload(profile)[
-                                    "effective_cut_in_depth"
-                                ]
-                            )
-                            surface_y = (
-                                crown_y + measured
-                                if is_upper_wheel
-                                else crown_y - measured
-                            )
+                        surface_y = (
+                            crown_y + measured
+                            if is_upper_wheel
+                            else crown_y - measured
+                        )
                     measured = abs(surface_y - crown_y)
                     _bind_dimension_to_wheel_crown(dimension, crown_x, crown_y, surface_y)
                     _set_dimension_actual_measurement(dimension, measured)
@@ -1317,6 +1320,11 @@ class DualGuideTemplateEngine:
                         # association data; their definition points and block
                         # text are still updated deterministically below.
                         pass
+                    if not is_local_cut_in:
+                        apply_linear_outside_extension(
+                            dimension,
+                            "up" if is_upper_wheel else "down",
+                        )
                     _set_dimension_block_text(doc, dimension, dimension.dxf.text)
                     continue
 
@@ -2085,6 +2093,7 @@ def _add_slot_width_dimension(
     )
     if dimension is not None:
         _bind_slot_width_dimension_to_geometry(dimension, geometry)
+        apply_linear_outside_extension(dimension, "right")
     return dimension
 
 

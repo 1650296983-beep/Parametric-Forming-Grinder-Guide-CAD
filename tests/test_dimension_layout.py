@@ -133,3 +133,64 @@ def test_resolver_separates_overlapping_radial_dimension_texts():
     assert not result["remaining_overlaps"]
     assert result["moves"]
 
+
+@pytest.mark.parametrize(
+    ("machine_id", "first_wheel_side"),
+    (
+        ("double_head_up_up", "upper"),
+        ("double_head_up_down", "upper"),
+        ("triple_single_up_up", "upper"),
+        ("triple_single_down_up", "lower"),
+    ),
+)
+def test_slot_width_and_side_clearance_extend_outside_geometry(
+    tmp_path,
+    machine_id,
+    first_wheel_side,
+):
+    machine, profile = _build_profile(machine_id, first_wheel_side)
+    path = tmp_path / f"{machine_id}_outside.dxf"
+    write_dxf(profile, path, output_mode="release", machine_id=machine_id)
+
+    doc = ezdxf.readfile(path)
+    slot_dim = next(
+        d
+        for d in doc.modelspace().query("DIMENSION")
+        if d.dxf.layer == "DIMENSION" and "±" in (d.dxf.text or "")
+    )
+    right_slot_x = max(float(slot_dim.dxf.defpoint2.x), float(slot_dim.dxf.defpoint3.x))
+    assert float(slot_dim.dxf.text_midpoint.x) > right_slot_x
+    dim_y = float(slot_dim.dxf.defpoint.y)
+    assert any(
+        e.dxftype() == "LINE"
+        and abs(float(e.dxf.start.y) - dim_y) < 1e-3
+        and abs(float(e.dxf.end.y) - dim_y) < 1e-3
+        and max(float(e.dxf.start.x), float(e.dxf.end.x)) > float(slot_dim.dxf.text_midpoint.x)
+        for e in doc.blocks[slot_dim.dxf.geometry]
+    )
+
+    upper_y = machine.side_layout.upper_y
+    lower_y = machine.side_layout.lower_y
+    side_clearance_dims = [
+        d
+        for d in doc.modelspace().query("DIMENSION")
+        if d.dxf.layer == "SIDE_DIMENSION"
+        and d.dxf.hasattr("defpoint2")
+        and d.dxf.hasattr("defpoint3")
+        and abs(float(d.dxf.defpoint2.y) - float(d.dxf.defpoint3.y)) > 1.0
+        and float(d.get_measurement()) < 20.0
+        and (
+            abs(max(float(d.dxf.defpoint2.y), float(d.dxf.defpoint3.y)) - upper_y) < 1e-3
+            or abs(min(float(d.dxf.defpoint2.y), float(d.dxf.defpoint3.y)) - lower_y) < 1e-3
+        )
+    ]
+    assert side_clearance_dims
+    for side_dim in side_clearance_dims:
+        y2 = float(side_dim.dxf.defpoint2.y)
+        y3 = float(side_dim.dxf.defpoint3.y)
+        if abs(max(y2, y3) - upper_y) < 1e-3:
+            assert float(side_dim.dxf.text_midpoint.y) > upper_y
+        else:
+            assert float(side_dim.dxf.text_midpoint.y) < lower_y
+
+

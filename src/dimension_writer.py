@@ -214,7 +214,7 @@ def add_slot_width_dimension(
     include_native: bool = True,
 ) -> None:
     y = geometry.base_y - 19.2
-    add_linear_dimension_with_text(
+    native_dimension = add_linear_dimension_with_text(
         modelspace,
         (geometry.left_x, geometry.base_y),
         (geometry.right_x, geometry.base_y),
@@ -226,6 +226,8 @@ def add_slot_width_dimension(
         include_fallback=include_fallback,
         include_native=include_native,
     )
+    if native_dimension is not None:
+        apply_linear_outside_extension(native_dimension, "right")
 
 
 def add_guide_thickness_dimension(
@@ -401,6 +403,10 @@ def add_section_template_dimensions(
                 key=lambda entity: float(entity.dxf.defpoint.y),
             )
         )
+    has_secondary_relief = (
+        not skip_secondary_relief_dimension
+        and any(_dimension_text(entity).startswith("2-") for entity in source_dimensions)
+    )
     for entity in source_doc.modelspace():
         if entity.dxftype() != "DIMENSION":
             continue
@@ -422,7 +428,12 @@ def add_section_template_dimensions(
                     copied.dxf.set(name, (point.x + dx, point.y + dy, point.z))
 
         copied.dxf.layer = DIMENSION_LAYER
-        role = _update_section_dimension(copied, tile_section, geometry)
+        role = _update_section_dimension(
+            copied,
+            tile_section,
+            geometry,
+            prefer_upper_r_form_left=has_secondary_relief,
+        )
         _sync_actual_measurement(copied)
         try:
             modelspace.add_entity(copied)
@@ -479,6 +490,7 @@ def add_bed_618_r_form_dimensions(
             geometry,
             tile_section.forming_spec.R_form,
             is_lower=is_lower,
+            prefer_left=True,
         )
         _set_radius_definition_to_target(copied, center, target)
         copied._cad_custom_dimension_layout = {
@@ -596,7 +608,11 @@ def _add_line(modelspace, start: tuple[float, float], end: tuple[float, float], 
 
 
 def _update_section_dimension(
-    entity, tile_section: TileSection, geometry: SlotDimensionGeometry
+    entity,
+    tile_section: TileSection,
+    geometry: SlotDimensionGeometry,
+    *,
+    prefer_upper_r_form_left: bool = False,
 ) -> str | None:
     """Rebind one archived template dimension and return the role it now plays."""
     measurement = float(entity.get_measurement())
@@ -631,6 +647,10 @@ def _update_section_dimension(
             entity,
             tile_section.guide_spec.slot_width_dimension_text,
         )
+        entity._cad_custom_dimension_layout = {
+            "kind": "linear_outside",
+            "direction": "right",
+        }
         return SECTION_SLOT_WIDTH
     elif _is_guide_thickness_dimension(entity, measurement, geometry):
         _set_linear_definition(
@@ -676,29 +696,17 @@ def _update_section_dimension(
         relief_angle_deg = 40.0
         ux = cos(radians(relief_angle_deg))
         uy = sin(radians(relief_angle_deg))
-        if (int(entity.dxf.dimtype) & 15) == 3 and entity.dxf.hasattr("defpoint4"):
-            entity.dxf.defpoint = (
-                new_center[0] - ux * geometry.relief_radius,
-                new_center[1] - uy * geometry.relief_radius,
-                0.0,
-            )
-            entity.dxf.defpoint4 = (
-                new_center[0] + ux * geometry.relief_radius,
-                new_center[1] + uy * geometry.relief_radius,
-                0.0,
-            )
-        else:
-            _set_radius_definition_to_target(
-                entity,
-                new_center,
-                (
-                    new_center[0] + ux * geometry.relief_radius,
-                    new_center[1] + uy * geometry.relief_radius,
-                ),
-            )
         target = (
             new_center[0] + ux * geometry.relief_radius,
             new_center[1] + uy * geometry.relief_radius,
+        )
+        # Switch archived 4-R diameter dimension to radius base type so group 10/15
+        # bind center -> arc point with R_relief measurement and single leader.
+        entity.dxf.dimtype = (int(entity.dxf.dimtype) & ~0x0F) | 4
+        _set_radius_definition_to_target(
+            entity,
+            new_center,
+            target,
         )
         leader_end = (target[0] + ux * 8.5, target[1] + uy * 8.5)
         text_midpoint = (
@@ -729,6 +737,7 @@ def _update_section_dimension(
             geometry,
             tile_section.forming_spec.R_form,
             is_lower=is_lower,
+            prefer_left=prefer_upper_r_form_left,
         )
         _set_radius_definition_to_target(entity, center, target)
         entity._cad_custom_dimension_layout = {
@@ -921,6 +930,7 @@ def _r_form_dimension_layout(
     geometry: SlotDimensionGeometry,
     radius: float,
     is_lower: bool,
+    prefer_left: bool = False,
 ) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float], float]:
     half_slot = geometry.slot_width / 2.0
     half_opening = geometry.center_opening / 2.0
@@ -934,21 +944,27 @@ def _r_form_dimension_layout(
     if max_dx is not None:
         dx = max_dx
     y = center[1] + (radius * radius - dx * dx) ** 0.5
-    target = (center[0] + dx, y)
-    # Use a short outward leader that stays clear of the cavity with text
-    # aligned along the leader line (matching CAD angled radial style).
-    angle_deg = -65.0 if is_lower else 78.0
+    if not is_lower and prefer_left:
+        target = (center[0] - dx, y)
+        angle_deg = 108.0
+        text_rotation = -72.0
+    else:
+        target = (center[0] + dx, y)
+        # Use a short outward leader that stays clear of the cavity with text
+        # aligned along the leader line (matching CAD angled radial style).
+        angle_deg = -65.0 if is_lower else 78.0
+        text_rotation = angle_deg
     ux = cos(radians(angle_deg))
     uy = sin(radians(angle_deg))
     leader_len = 7.5 if is_lower else 9.5
     text_dist = 4.8 if is_lower else 6.5
     leader_end = (target[0] + ux * leader_len, target[1] + uy * leader_len)
-    rot_rad = radians(angle_deg)
+    rot_rad = radians(text_rotation)
     text_midpoint = (
         target[0] + ux * text_dist - sin(rot_rad) * 0.9,
         target[1] + uy * text_dist + cos(rot_rad) * 0.9,
     )
-    return target, leader_end, text_midpoint, angle_deg
+    return target, leader_end, text_midpoint, text_rotation
 
 
 def _radius_dimension_center(entity, geometry: SlotDimensionGeometry) -> tuple[float, float]:
@@ -1010,6 +1026,14 @@ def _sync_custom_dimension_block_layout(entity) -> None:
     layout = getattr(entity, "_cad_custom_dimension_layout", None)
     if not layout:
         return
+    if layout.get("kind") == "linear_outside":
+        apply_linear_outside_extension(
+            entity,
+            str(layout["direction"]),
+            gap_from_boundary=float(layout.get("gap_from_boundary", 2.0)),
+            tail_padding=float(layout.get("tail_padding", 1.5)),
+        )
+        return
     doc = getattr(entity, "doc", None)
     if doc is None or not entity.dxf.hasattr("geometry") or entity.dxf.geometry not in doc.blocks:
         return
@@ -1031,6 +1055,172 @@ def _sync_custom_dimension_block_layout(entity) -> None:
         layout["text_midpoint"],
         float(layout.get("text_rotation", 0.0)),
     )
+
+
+def apply_linear_outside_extension(
+    dimension,
+    direction: str,
+    *,
+    gap_from_boundary: float = 2.0,
+    tail_padding: float = 1.5,
+) -> None:
+    """Place linear dimension text outside the extension lines on an extended dim line."""
+    if direction not in {"right", "left", "up", "down"}:
+        raise ValueError(f"Unsupported linear outside direction: {direction!r}")
+    if dimension is None or not (
+        dimension.dxf.hasattr("defpoint")
+        and dimension.dxf.hasattr("defpoint2")
+        and dimension.dxf.hasattr("defpoint3")
+    ):
+        return
+    doc = getattr(dimension, "doc", None)
+    if doc is None:
+        return
+
+    from ezdxf import bbox
+
+    saved_text = dimension.dxf.text if dimension.dxf.hasattr("text") else ""
+    if not dimension.dxf.hasattr("geometry") or dimension.dxf.geometry not in doc.blocks:
+        try:
+            dimension.render()
+        except Exception:
+            return
+    block = doc.blocks.get(dimension.dxf.geometry)
+    if block is None:
+        return
+
+    ov = dimension.override()
+    dimscale = float(ov.get("dimscale", 1.0) or 1.0)
+    if dimscale <= 0.0:
+        dimscale = 1.0
+    dimtxt = float(ov.get("dimtxt", 2.5) or 2.5) * dimscale
+    dimasz = float(ov.get("dimasz", 2.5) or 2.5) * dimscale
+    dimgap = float(ov.get("dimgap", 1.5) or 1.5) * dimscale
+
+    text_entities = [e for e in block if e.dxftype() in {"MTEXT", "TEXT"}]
+    text_span = None
+    if text_entities:
+        extent = bbox.extents([text_entities[0]])
+        if extent.has_data:
+            text_span = (
+                float(extent.size.x)
+                if direction in {"right", "left"}
+                else float(extent.size.y)
+            )
+    if text_span is None or text_span <= 0.0:
+        plain = saved_text or _format_compact_decimal(float(dimension.get_measurement()))
+        text_span = max(len(plain) * dimtxt * 0.72, dimtxt * 2.5)
+
+    p2 = dimension.dxf.defpoint2
+    p3 = dimension.dxf.defpoint3
+    defpt = dimension.dxf.defpoint
+    is_horizontal = direction in {"right", "left"}
+    if is_horizontal:
+        span = abs(float(p3.x) - float(p2.x))
+        dim_coord = float(defpt.y)
+        boundary = (
+            max(float(p2.x), float(p3.x))
+            if direction == "right"
+            else min(float(p2.x), float(p3.x))
+        )
+        sign = 1.0 if direction == "right" else -1.0
+        arrows_outside = span < (2.0 * dimasz + dimgap)
+        arrow_clearance = dimasz if arrows_outside else 0.0
+        text_start = boundary + sign * (arrow_clearance + gap_from_boundary)
+        tail_end = boundary + sign * (
+            arrow_clearance + gap_from_boundary + text_span + tail_padding
+        )
+        text_pos = (
+            text_start + sign * (text_span / 2.0),
+            dim_coord + dimgap + dimtxt / 2.0,
+        )
+        text_rotation = 0.0
+    else:
+        span = abs(float(p3.y) - float(p2.y))
+        dim_coord = float(defpt.x)
+        boundary = (
+            max(float(p2.y), float(p3.y))
+            if direction == "up"
+            else min(float(p2.y), float(p3.y))
+        )
+        sign = 1.0 if direction == "up" else -1.0
+        arrows_outside = span < (2.0 * dimasz + dimgap)
+        arrow_clearance = dimasz if arrows_outside else 0.0
+        text_start = boundary + sign * (arrow_clearance + gap_from_boundary)
+        tail_end = boundary + sign * (
+            arrow_clearance + gap_from_boundary + text_span + tail_padding
+        )
+        text_pos = (
+            dim_coord - (dimgap + dimtxt / 2.0),
+            text_start + sign * (text_span / 2.0),
+        )
+        text_rotation = 90.0
+
+    ov["dimtih"] = 0
+    ov["dimtoh"] = 0
+    ov.set_location(text_pos, leader=False)
+    try:
+        ov.render()
+    except Exception:
+        return
+
+    if saved_text:
+        dimension.dxf.text = saved_text
+    _sync_dimension_block_text(dimension)
+    dimension.dxf.text_midpoint = (text_pos[0], text_pos[1], float(defpt.z))
+
+    block = doc.blocks.get(dimension.dxf.geometry)
+    if block is None:
+        return
+    line_attribs: dict[str, object] = {}
+    for entity in list(block):
+        if entity.dxftype() in {"MTEXT", "TEXT"}:
+            entity.dxf.insert = (text_pos[0], text_pos[1], float(defpt.z))
+            entity.dxf.rotation = text_rotation
+        elif entity.dxftype() == "LINE":
+            start = entity.dxf.start
+            end = entity.dxf.end
+            if is_horizontal:
+                on_dim_line = (
+                    abs(float(start.y) - dim_coord) <= 1e-4
+                    and abs(float(end.y) - dim_coord) <= 1e-4
+                )
+                on_tail_side = (
+                    (float(start.x) - boundary) * sign > -1e-4
+                    and (float(end.x) - boundary) * sign > -1e-4
+                )
+            else:
+                on_dim_line = (
+                    abs(float(start.x) - dim_coord) <= 1e-4
+                    and abs(float(end.x) - dim_coord) <= 1e-4
+                )
+                on_tail_side = (
+                    (float(start.y) - boundary) * sign > -1e-4
+                    and (float(end.y) - boundary) * sign > -1e-4
+                )
+            if on_dim_line and not line_attribs:
+                line_attribs = {
+                    key: entity.dxf.get(key)
+                    for key in ("color", "linetype", "lineweight")
+                    if entity.dxf.hasattr(key)
+                }
+            if on_dim_line and on_tail_side:
+                block.delete_entity(entity)
+
+    tail_start_coord = boundary + sign * arrow_clearance
+    if is_horizontal:
+        p_start = (tail_start_coord, dim_coord, 0.0)
+        p_end = (tail_end, dim_coord, 0.0)
+    else:
+        p_start = (dim_coord, tail_start_coord, 0.0)
+        p_end = (dim_coord, tail_end, 0.0)
+    block.add_line(p_start, p_end, dxfattribs=line_attribs)
+    dimension._cad_custom_dimension_layout = {
+        "kind": "linear_outside",
+        "direction": direction,
+        "gap_from_boundary": gap_from_boundary,
+        "tail_padding": tail_padding,
+    }
 
 
 def sync_aligned_radius_block(

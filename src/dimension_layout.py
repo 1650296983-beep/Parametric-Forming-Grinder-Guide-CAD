@@ -289,6 +289,17 @@ def _translate_dimension(doc: Any, handle: str, delta: float, axis: str) -> bool
         dimension.dxf.defpoint = point
         return False
     _restore_texts(doc, dimension, text_payload)
+    custom_layout = getattr(dimension, "_cad_custom_dimension_layout", None)
+    if custom_layout and custom_layout.get("kind") == "linear_outside":
+        from .dimension_writer import apply_linear_outside_extension
+
+        apply_linear_outside_extension(
+            dimension,
+            str(custom_layout["direction"]),
+            gap_from_boundary=float(custom_layout.get("gap_from_boundary", 2.0)),
+            tail_padding=float(custom_layout.get("tail_padding", 1.5)),
+        )
+        _restore_texts(doc, dimension, text_payload)
     return True
 
 

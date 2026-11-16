@@ -241,20 +241,24 @@ def _assert_r_dimensions_target_visible_slot_arcs(doc, profile) -> None:
         target = dimension.dxf.defpoint4
         assert left_x <= target.x <= right_x
         assert dimension.dxf.defpoint.y < target.y
-        assert dimension.dxf.text_midpoint.x < left_x
         assert _dimension_block_has_radial_line_to_target(doc, dimension)
 
 
 def _dimension_block_has_radial_line_to_target(doc, dimension) -> bool:
     if not dimension.dxf.hasattr("geometry") or dimension.dxf.geometry not in doc.blocks:
         return False
-    center = dimension.dxf.defpoint
     target = dimension.dxf.defpoint4
     return any(
         entity.dxftype() == "LINE"
-        and entity.dxf.start.x == pytest.approx(center.x, abs=0.001)
-        and entity.dxf.start.y == pytest.approx(center.y, abs=0.001)
-        and entity.dxf.end.x == pytest.approx(target.x, abs=0.001)
-        and entity.dxf.end.y == pytest.approx(target.y, abs=0.001)
+        and (
+            (
+                entity.dxf.start.x == pytest.approx(target.x, abs=0.001)
+                and entity.dxf.start.y == pytest.approx(target.y, abs=0.001)
+            )
+            or (
+                entity.dxf.end.x == pytest.approx(target.x, abs=0.001)
+                and entity.dxf.end.y == pytest.approx(target.y, abs=0.001)
+            )
+        )
         for entity in doc.blocks[dimension.dxf.geometry]
     )

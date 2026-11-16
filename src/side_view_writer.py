@@ -14,6 +14,7 @@ from .dimension_writer import (
     TEMPLATE_DIMENSION_TEXT_HEIGHT,
     TEXT_HEIGHT,
     add_linear_dimension_with_text,
+    apply_linear_outside_extension,
     copy_template_dimension_without_associations,
     sync_aligned_radius_block,
 )
@@ -114,7 +115,7 @@ def _add_triple_single_down_up_process_dimensions(modelspace, geometry: SideView
     )
     lower_top_y = layout.lower_y + derived.wheel_notch_depth
     lower_dim_x = layout.center_a_x + 49.5
-    add_linear_dimension_with_text(
+    lower_key_dim = add_linear_dimension_with_text(
         modelspace,
         (layout.center_a_x, layout.lower_y),
         (layout.center_a_x, lower_top_y),
@@ -131,10 +132,12 @@ def _add_triple_single_down_up_process_dimensions(modelspace, geometry: SideView
         dimstyle=TEMPLATE_DIMENSION_STYLE,
         dimension_text_height=TEMPLATE_DIMENSION_TEXT_HEIGHT,
     )
+    if lower_key_dim is not None:
+        apply_linear_outside_extension(lower_key_dim, "down")
 
     upper_low_y = layout.upper_y - derived.side_clearance_height
     upper_height_dim_x = layout.center_b_x - 52.7
-    add_linear_dimension_with_text(
+    upper_key_dim = add_linear_dimension_with_text(
         modelspace,
         (layout.center_b_x, upper_low_y),
         (layout.center_b_x, layout.upper_y),
@@ -151,6 +154,8 @@ def _add_triple_single_down_up_process_dimensions(modelspace, geometry: SideView
         dimstyle=TEMPLATE_DIMENSION_STYLE,
         dimension_text_height=TEMPLATE_DIMENSION_TEXT_HEIGHT,
     )
+    if upper_key_dim is not None:
+        apply_linear_outside_extension(upper_key_dim, "up")
 
     upper_cut_in = derived.wheel_cut_allowance
     upper_dim_x = layout.center_b_x + 11.5
@@ -182,7 +187,7 @@ def _add_triple_single_down_up_block_bread_process_dimensions(
     derived = geometry.derived
     lower_top_y = layout.lower_y + derived.wheel_notch_depth
     lower_dim_x = layout.center_a_x + 49.5
-    add_linear_dimension_with_text(
+    lower_key_dim = add_linear_dimension_with_text(
         modelspace,
         (layout.center_a_x, layout.lower_y),
         (layout.center_a_x, lower_top_y),
@@ -199,10 +204,12 @@ def _add_triple_single_down_up_block_bread_process_dimensions(
         dimstyle=TEMPLATE_DIMENSION_STYLE,
         dimension_text_height=TEMPLATE_DIMENSION_TEXT_HEIGHT,
     )
+    if lower_key_dim is not None:
+        apply_linear_outside_extension(lower_key_dim, "down")
 
     upper_low_y = layout.upper_y - derived.side_clearance_height
     upper_dim_x = layout.center_b_x - 52.7
-    add_linear_dimension_with_text(
+    upper_key_dim = add_linear_dimension_with_text(
         modelspace,
         (layout.center_b_x, upper_low_y),
         (layout.center_b_x, layout.upper_y),
@@ -219,6 +226,8 @@ def _add_triple_single_down_up_block_bread_process_dimensions(
         dimstyle=TEMPLATE_DIMENSION_STYLE,
         dimension_text_height=TEMPLATE_DIMENSION_TEXT_HEIGHT,
     )
+    if upper_key_dim is not None:
+        apply_linear_outside_extension(upper_key_dim, "up")
 
 
 def _format_dimension_value(value: float, digits: int = 2) -> str:
@@ -289,6 +298,14 @@ def _copy_side_template_entities(
                 copied.render()
             except Exception:
                 pass
+            custom_layout = getattr(copied, "_cad_custom_dimension_layout", None)
+            if custom_layout and custom_layout.get("kind") == "linear_outside":
+                apply_linear_outside_extension(
+                    copied,
+                    str(custom_layout["direction"]),
+                    gap_from_boundary=float(custom_layout.get("gap_from_boundary", 2.0)),
+                    tail_padding=float(custom_layout.get("tail_padding", 1.5)),
+                )
             _sync_dimension_block_text(copied)
     _bind_r80_dimensions_to_formal_arcs(modelspace, geometry)
 
@@ -1021,11 +1038,19 @@ def _update_derived_dimension(entity, geometry: SideViewGeometry, side_style: st
         _set_block_side_clearance_dimension_points(entity, geometry)
         _set_actual_measurement(entity, derived.side_clearance_height)
         entity.dxf.text = f"{derived.side_clearance_height:.2f}"
+        entity._cad_custom_dimension_layout = {
+            "kind": "linear_outside",
+            "direction": "up",
+        }
         return True
     elif 12.8 <= measurement <= 13.8:
         _set_side_clearance_dimension_points(entity, geometry)
         _set_actual_measurement(entity, derived.side_clearance_height)
         entity.dxf.text = f"{derived.side_clearance_height:.2f}"
+        entity._cad_custom_dimension_layout = {
+            "kind": "linear_outside",
+            "direction": "up",
+        }
         return True
     return False
 
@@ -1049,10 +1074,12 @@ def _bind_double_head_up_down_wheel_dimension(
         center_x = layout.center_b_x
         crown_y = layout.lower_y + geometry.derived.wheel_notch_depth
         datum_y = layout.lower_y
+        outside_direction = "down"
     else:
         center_x = layout.center_a_x
         crown_y = layout.upper_y - geometry.derived.side_clearance_height
         datum_y = layout.upper_y
+        outside_direction = "up"
     measured = abs(datum_y - crown_y)
     entity.dxf.defpoint2 = (center_x, crown_y, p2.z)
     entity.dxf.defpoint3 = (center_x, datum_y, p3.z)
@@ -1061,6 +1088,10 @@ def _bind_double_head_up_down_wheel_dimension(
         entity.dxf.defpoint = (dimline.x, datum_y, dimline.z)
     _set_actual_measurement(entity, measured)
     entity.dxf.text = f"{measured:.2f}"
+    entity._cad_custom_dimension_layout = {
+        "kind": "linear_outside",
+        "direction": outside_direction,
+    }
     return True
 
 
