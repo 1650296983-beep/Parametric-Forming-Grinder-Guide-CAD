@@ -6,9 +6,9 @@ PROJECT_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 PYTHON="$PROJECT_ROOT/.venv/bin/python"
 FRONTEND_DIR="$PROJECT_ROOT/frontend"
 API_HOST="127.0.0.1"
-API_PORT="8000"
+API_PORT="${API_PORT:-8000}"
 FRONTEND_HOST="127.0.0.1"
-FRONTEND_PORT="5173"
+FRONTEND_PORT="${FRONTEND_PORT:-5173}"
 API_PID=""
 API_LOG="${TMPDIR:-/tmp}/forming-grinder-guide-api-$$.log"
 ENV_FILE="$PROJECT_ROOT/.env"
@@ -49,8 +49,20 @@ if port_is_listening "$FRONTEND_PORT"; then
     fail "端口 ${FRONTEND_PORT} 已被占用。请关闭已有前端服务后再启动。"
 fi
 
+if port_is_listening "$API_PORT" && ! api_is_healthy; then
+    echo "端口 ${API_PORT} 已被其他服务占用，正在自动查找可用端口..."
+    found_port=""
+    for candidate in $(seq $((API_PORT + 1)) $((API_PORT + 20))); do
+        if ! port_is_listening "$candidate"; then
+            found_port="$candidate"
+            break
+        fi
+    done
+    [[ -n "$found_port" ]] || fail "未找到可用的 API 端口（${API_PORT}-$((API_PORT + 20)) 均被占用）。"
+    API_PORT="$found_port"
+fi
+
 if port_is_listening "$API_PORT"; then
-    api_is_healthy || fail "端口 ${API_PORT} 已被其他服务占用，且不是本项目 API。"
     echo "检测到已有本项目 API，复用 http://${API_HOST}:${API_PORT}。"
 else
     "$PYTHON" -m uvicorn src.web_api:app --host "$API_HOST" --port "$API_PORT" >"$API_LOG" 2>&1 &
@@ -67,7 +79,8 @@ else
     }
 fi
 
-echo "导轨生成器已启动：http://${FRONTEND_HOST}:${FRONTEND_PORT}"
+export CAD_API_PROXY_TARGET="http://${API_HOST}:${API_PORT}"
+echo "导轨生成器已启动：http://${FRONTEND_HOST}:${FRONTEND_PORT}（API: ${CAD_API_PROXY_TARGET}）"
 echo "按 Ctrl+C 将停止本次启动的服务。"
 cd "$FRONTEND_DIR"
 npm run dev -- --host "$FRONTEND_HOST" --port "$FRONTEND_PORT" --strictPort
