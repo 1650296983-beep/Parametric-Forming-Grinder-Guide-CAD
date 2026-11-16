@@ -318,6 +318,12 @@ summary {
   min-height: 0;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
+}
+.page-stage.is-scrollable {
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
 }
 .page-stage.is-animated {
   animation: page-enter 220ms var(--ease-out) both;
@@ -531,7 +537,7 @@ button:not(.is-static):active:not(:disabled) {
   min-width: 0;
   height: 100dvh;
   min-height: 0;
-  overflow-y: auto;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -2320,6 +2326,11 @@ button:not(.is-static):active:not(:disabled) {
     height: auto;
     min-height: 100dvh;
     overflow: visible;
+  }
+  .page-stage,
+  .page-stage.is-scrollable {
+    overflow: visible;
+    scrollbar-gutter: auto;
   }
   .sidebar {
     width: 72px;

@@ -541,7 +541,7 @@ export default function App() {
           </div>
         )}
         <div
-          className={`page-stage ${firstPageRender.current ? "" : "is-animated"}`}
+          className={`page-stage ${page === "workspace" ? "" : "is-scrollable"} ${firstPageRender.current ? "" : "is-animated"}`}
           key={page}
         >
           {page === "workspace" && (
@@ -1566,7 +1566,7 @@ function DesktopSettingsPage({
   const toast = useToast();
   const [settings, setSettings] = useState<DesktopSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [version, setVersion] = useState("1.2.8-dev");
+  const [version, setVersion] = useState("1.2.9-dev");
   const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
   const [updateMessage, setUpdateMessage] = useState("尚未检查更新。");
   const [checking, setChecking] = useState(false);
