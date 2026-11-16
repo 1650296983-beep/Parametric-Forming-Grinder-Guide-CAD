@@ -55,6 +55,14 @@ test("parseSpec rejects a wrong segment count", () => {
   assert.match(result.error ?? "", /需要 4 段/);
 });
 
+test("double R entered as bread gives an actionable shape error", () => {
+  const value = "R27.03*R23.53*5.24*40*3.5";
+  const result = parseSpec(value, "finished", "bread_shape");
+  assert.equal(result.error, "双 R 规格请选择“瓦型（双 R）”。");
+  assert.equal(result.normalized, value);
+  assert.equal(parseSpec(value, "finished", "tile_shape").error, null);
+});
+
 test("parseSpec rejects unbalanced parentheses", () => {
   const result = parseSpec("42.6*8.6(-0.07/-0.09", "preform", "rectangular_block");
   assert.match(result.error ?? "", /括号/);

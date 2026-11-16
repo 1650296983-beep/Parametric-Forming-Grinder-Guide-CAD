@@ -5,7 +5,9 @@
     "2026-10-20 repair applies existing 0.6 product-length opening limit at every true cavity projection and recalculates upper wheel placements.",
     "2026-10-22 annotation layout keeps 1.2 mm text clearance by translating linear dimension lines only; triple_single_up_up 3.00 dimension line moves while defpoint2/defpoint3 stay bound.",
     "2026-11-16 cross-machine dimension audit moves upper R_form, relief labels, dual-guide R80/slot_width, and triple_single_down_up notch opening & local cut-in outside geometry and centerlines; definition_points bindings updated cleanly.",
-    "2026-11-16 v1.2.6 uses Matplotlib-bundled STIXGeneral.ttf metrics only for annotation layout; measurement endpoints, product geometry and all live release gates remain unchanged."
+    "2026-11-16 v1.2.6 uses Matplotlib-bundled STIXGeneral.ttf metrics only for annotation layout; measurement endpoints, product geometry and all live release gates remain unchanged.",
+    "2026-11-16 user explicitly changes only triple_double_up_up_up center-opening cap from 1.00 to 2.00 mm; actual opening remains floor(min(slot_width * 0.30, cap), 0.01 mm). Both sections and real definition-point bindings are rebuilt; archived templates stay frozen.",
+    "2026-11-16 user requested wire-entry label 1.58 outside the crowded cavity. Both dual-guide types share role-based annotation placement above the opening and to its right; only annotation-line/text coordinates change, real measured endpoints and opening geometry stay unchanged."
   ],
   "provenance": "Values record reviewed local outputs for the approved rule repair; user approval applies to the rules, not an individual review of each golden value. Original expected_* files remain frozen.",
   "cases": {
@@ -5152,6 +5154,230 @@
           ],
           "before": -614.479,
           "after": -610.229
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3242.337169,
+          "after": 3240.337,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -172.043673,
+          "after": -169.688,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3252.884788,
+          "after": 3250.082549,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -172.043673,
+          "after": -166.938,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3243.767548,
+          "after": 3241.768,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -91.350734,
+          "after": -88.995,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3254.315167,
+          "after": 3251.513549,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -91.350734,
+          "after": -86.245,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3242.337169,
+          "after": 3240.337,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -172.043673,
+          "after": -169.688,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3252.884788,
+          "after": 3250.082549,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -172.043673,
+          "after": -166.938,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3243.767548,
+          "after": 3241.768,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -91.350734,
+          "after": -88.995,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3254.315167,
+          "after": 3251.513549,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -91.350734,
+          "after": -86.245,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         }
       ]
     },
@@ -5801,7 +6027,8 @@
             0
           ],
           "before": 3243.267548,
-          "after": 3242.268
+          "after": 3241.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
         },
         {
           "path": [
@@ -5814,7 +6041,8 @@
             1
           ],
           "before": -91.350734,
-          "after": -98.850734
+          "after": -82.495,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -5827,7 +6055,8 @@
             0
           ],
           "before": 3252.67231,
-          "after": 3242.768
+          "after": 3251.513549,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -5840,7 +6069,8 @@
             1
           ],
           "before": -91.350734,
-          "after": -94.100734
+          "after": -79.745,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -5918,7 +6148,8 @@
             0
           ],
           "before": 3243.267548,
-          "after": 3242.268
+          "after": 3241.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
         },
         {
           "path": [
@@ -5931,7 +6162,8 @@
             1
           ],
           "before": -186.984944,
-          "after": -194.484944
+          "after": -178.129,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -5944,7 +6176,8 @@
             0
           ],
           "before": 3252.67231,
-          "after": 3242.768
+          "after": 3251.513549,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -5957,7 +6190,8 @@
             1
           ],
           "before": -186.984944,
-          "after": -189.734944
+          "after": -175.379,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -6269,7 +6503,8 @@
             0
           ],
           "before": 3243.267548,
-          "after": 3242.268
+          "after": 3241.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
         },
         {
           "path": [
@@ -6282,7 +6517,8 @@
             1
           ],
           "before": -91.350734,
-          "after": -98.850734
+          "after": -82.495,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -6295,7 +6531,8 @@
             0
           ],
           "before": 3252.67231,
-          "after": 3242.768
+          "after": 3251.513549,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -6308,7 +6545,8 @@
             1
           ],
           "before": -91.350734,
-          "after": -94.100734
+          "after": -79.745,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -6386,7 +6624,8 @@
             0
           ],
           "before": 3243.267548,
-          "after": 3242.268
+          "after": 3241.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
         },
         {
           "path": [
@@ -6399,7 +6638,8 @@
             1
           ],
           "before": -186.984944,
-          "after": -194.484944
+          "after": -178.129,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -6412,7 +6652,8 @@
             0
           ],
           "before": 3252.67231,
-          "after": 3242.768
+          "after": 3251.513549,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -6425,7 +6666,8 @@
             1
           ],
           "before": -186.984944,
-          "after": -189.734944
+          "after": -175.379,
+          "reason": "2026-11-16 user requested outside wire-entry labels; annotation-line/text coordinates only, measured endpoints unchanged."
         },
         {
           "path": [
@@ -6725,6 +6967,225 @@
           ],
           "before": -490.730594,
           "after": -464.592132
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "section_center_opening",
+            "expected_measurement"
+          ],
+          "before": 1.0,
+          "after": 2.0,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "text"
+          ],
+          "before": "1.00",
+          "after": "2.00",
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "measurement"
+          ],
+          "before": 1.0,
+          "after": 2.0,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3242.268,
+          "after": 3241.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3243.268,
+          "after": 3243.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "text"
+          ],
+          "before": "1.00",
+          "after": "2.00",
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "measurement"
+          ],
+          "before": 1.0,
+          "after": 2.0,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3242.268,
+          "after": 3241.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3243.268,
+          "after": 3243.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "text"
+          ],
+          "before": "1.00",
+          "after": "2.00",
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "measurement"
+          ],
+          "before": 1.0,
+          "after": 2.0,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3242.268,
+          "after": 3241.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3243.268,
+          "after": 3243.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "text"
+          ],
+          "before": "1.00",
+          "after": "2.00",
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "measurement"
+          ],
+          "before": 1.0,
+          "after": 2.0,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint2",
+            0
+          ],
+          "before": 3242.268,
+          "after": 3241.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint3",
+            0
+          ],
+          "before": 3243.268,
+          "after": 3243.768,
+          "reason": "2026-11-16 user explicitly changed up-up-up center-opening cap to 2.00 mm; real opening and bound dimensions rebuilt."
         }
       ]
     },

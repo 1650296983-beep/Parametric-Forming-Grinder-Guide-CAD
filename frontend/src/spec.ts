@@ -155,10 +155,17 @@ export function parseSpec(
   const parts = splitTopLevel(normalized);
   const labels = expectedTokenLabels(kind, shape);
   if (labels.length && parts.length !== labels.length) {
+    const doubleRadiusFinished =
+      kind === "finished" &&
+      shape === "bread_shape" &&
+      parts.length === 5 &&
+      parts.slice(0, 2).every((part) => /^R\d/i.test(part));
     return {
       normalized,
       tokens: [],
-      error: `当前形态需要 ${labels.length} 段，实际 ${parts.length} 段。${specHint(kind, shape)}`,
+      error: doubleRadiusFinished
+        ? "双 R 规格请选择“瓦型（双 R）”。"
+        : `当前形态需要 ${labels.length} 段，实际 ${parts.length} 段。`,
       warning: null,
     };
   }

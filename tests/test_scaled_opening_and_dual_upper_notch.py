@@ -43,7 +43,7 @@ def test_opening_rejects_invalid_width_and_cap(value):
     "triple_single_up_up", "triple_single_down_up",
     "triple_double_up_up_up", "triple_double_down_up_up",
 ))
-def test_all_machine_inputs_calculate_narrow_opening_and_retain_original_caps(machine_id, tmp_path):
+def test_all_machine_inputs_calculate_narrow_opening_and_retain_configured_caps(machine_id, tmp_path):
     machine = load_machine_config(machine_id)
     design = DesignInput(
         machine_type=machine_id, guide_rail_type=machine.guide_type,
@@ -78,6 +78,37 @@ def test_all_machine_inputs_calculate_narrow_opening_and_retain_original_caps(ma
         openings = [dim for dim in doc.modelspace().query("DIMENSION") if abs(float(dim.get_measurement()) - 0.90) < 0.001]
     assert len(openings) == machine.guide_sections
     assert all(float(dim.get_measurement()) == pytest.approx(0.90) for dim in openings)
+
+
+@pytest.mark.parametrize("width,expected_opening", [(5.24, 1.58), (9.1, 2.0)])
+def test_up_up_up_two_mm_cap_scales_and_binds_both_real_sections(tmp_path, width, expected_opening):
+    machine = load_machine_config("triple_double_up_up_up")
+    design = DesignInput(
+        machine_type=machine.machine_id, guide_rail_type=machine.guide_type,
+        wheel_sequence=list(machine.wheel_positions), first_wheel_side="upper",
+        template_coordinate_system=machine.template_coordinate_system,
+        finished_spec=f"R27.03*R23.53*{width}*40*3.5",
+        pre_grinding_spec=f"40*{width}(+0.01/-0.01)*3.65(+0.01/-0.01)",
+        product_shape_after="tile_shape", product_shape_before="rectangular_block",
+        relief="4-1",
+    )
+    validation = validate_design(design)
+    assert validation["machine"]["section_center_opening_max"] == 2.0
+    assert validation["derived"]["center_opening"] == expected_opening
+    _, spec, profile, _ = _build_profile_for_design(design, machine)
+    generated = DualGuideTemplateEngine(machine).write_debug_release_and_report(profile, spec, tmp_path)
+    doc = ezdxf.readfile(generated["release_dxf"])
+    openings = [d for d in doc.modelspace().query("DIMENSION") if get_dimension_role(d) == SECTION_CENTER_OPENING]
+    assert len(openings) == 2
+    assert [float(d.get_measurement()) for d in openings] == pytest.approx([expected_opening] * 2)
+    for dimension in openings:
+        edge_y = max(dimension.dxf.defpoint2.y, dimension.dxf.defpoint3.y)
+        right_x = max(dimension.dxf.defpoint2.x, dimension.dxf.defpoint3.x)
+        assert dimension.dxf.defpoint.y >= edge_y + 4.0 - 1e-6
+        assert dimension.dxf.text_midpoint.x > right_x + 2.0
+    audit = build_dimension_definition_point_audit(generated["release_dxf"], profile, machine)
+    assert audit["release_allowed"]
+    assert all(d["point_error"] <= 0.01 for d in audit["dimensions"])
 
 
 @pytest.mark.parametrize("profile_type", ("block", "block_to_tile", "same_r_tile"))

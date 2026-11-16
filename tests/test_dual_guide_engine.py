@@ -173,7 +173,7 @@ def test_dual_guide_engine_updates_both_sections_synchronously(tmp_path):
     ("machine_id", "expected_center_opening"),
     (
         ("triple_double_down_up_up", 2.0),
-        ("triple_double_up_up_up", 1.0),
+        ("triple_double_up_up_up", 2.0),
     ),
 )
 def test_dual_guides_bind_machine_specific_center_opening_and_relief_annotations(

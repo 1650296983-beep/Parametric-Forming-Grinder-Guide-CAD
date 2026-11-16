@@ -170,13 +170,27 @@ def test_dual_upper_upper_wide_slot_has_no_stale_small_dimension(tmp_path, kind)
     assert audit["all_dimensions_bound_to_geometry"], [
         entry for entry in audit["dimensions"] if not entry["bound_to_geometry"]
     ]
-    assert not [
+    two_mm_dimensions = [
         entry
         for entry in audit["dimensions"]
         if entry["measurement"] is not None
         and abs(entry["measurement"] - 2.0) < 0.01
     ]
+    assert len(two_mm_dimensions) == 2
+    assert all(
+        entry["dimension_role"] == "section_center_opening"
+        and entry["bound_to_geometry"]
+        for entry in two_mm_dimensions
+    )
     expected_thickness = 2.67 if kind == "bread_block" else 2.80
     assert report["shared_parameters"]["guide_thickness"] == pytest.approx(
         expected_thickness
+    )
+    thickness_dimensions = [
+        entry for entry in audit["dimensions"]
+        if entry["dimension_role"] == "guide_thickness"
+    ]
+    assert len(thickness_dimensions) == 2
+    assert [entry["measurement"] for entry in thickness_dimensions] == pytest.approx(
+        [expected_thickness] * 2
     )

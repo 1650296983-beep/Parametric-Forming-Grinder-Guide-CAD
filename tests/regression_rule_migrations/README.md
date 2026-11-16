@@ -54,3 +54,19 @@ endpoints, displayed values, product/machine geometry and frozen source hashes
 remain unchanged. These generated coordinate values document the authorized
 repair; they are not represented as individually reviewed production goldens.
 The exact comparison and every independent physical release audit still apply.
+
+On 2026-11-16 the user explicitly changed only `triple_double_up_up_up`'s
+center-opening cap from 1.00 to 2.00 mm. Its frozen 9.15 mm slot therefore has
+two actual 2.00 mm openings. The overlay records exactly 21 additional changed
+leaves: the required opening measurement and each opening's actual measurement,
+text and bound annotation/extension X coordinates in release/debug. The archived
+1.00 mm template and all original expected files remain frozen. New API/DXF
+tests cover both the screenshot's 5.28 mm slot (1.58 mm opening) and a wide slot
+(2.00 mm opening), including synchronization and live definition-point audits.
+
+The user's subsequent request to pull the 1.58 annotation out of the crowded
+cavity is recorded separately: exactly 28 annotation-line/text coordinate
+leaves change across the two dual-guide fixtures and both output modes.
+The shared layout places both section labels above and to the right of their
+openings. Measured endpoints, values, real cavity geometry and every original
+fixture hash are unchanged. Single-guide layouts remain unchanged.

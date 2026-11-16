@@ -131,6 +131,21 @@ def test_windows_validation_workflow_never_publishes_or_requires_signing_secrets
     assert "push:" not in workflow
 
 
+def test_release_waits_for_parallel_verification_and_signed_build() -> None:
+    import yaml
+
+    workflow = yaml.safe_load((ROOT / ".github/workflows/release-windows.yml").read_text())
+    jobs = workflow["jobs"]
+    assert "needs" not in jobs["verify"]
+    assert "needs" not in jobs["build"]
+    assert set(jobs["publish"]["needs"]) == {"verify", "build"}
+    for name in ("verify", "build"):
+        assert not any("action-gh-release" in step.get("uses", "") for step in jobs[name]["steps"])
+    publish_steps = jobs["publish"]["steps"]
+    assert "sha256sum -c SHA256SUMS.txt" in publish_steps[-2]["run"]
+    assert publish_steps[-1]["with"]["draft"] is True
+
+
 def test_cos_workflow_is_recovery_only_and_local_publisher_is_primary() -> None:
     workflow = (
         ROOT / ".github" / "workflows" / "publish-cos-mirror.yml"

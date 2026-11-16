@@ -2,6 +2,7 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
   useMemo,
   useRef,
   useState,
@@ -22,7 +23,10 @@ export interface ToastInput {
 interface ToastItem extends ToastInput {
   id: number;
   tone: ToastTone;
+  closing?: boolean;
 }
+
+const TOAST_EXIT_MS = 150;
 
 interface ToastApi {
   push: (toast: ToastInput) => number;
@@ -43,12 +47,48 @@ export function ToastProvider({ children }: { children: ReactNode }) {
   const [items, setItems] = useState<ToastItem[]>([]);
   const nextId = useRef(1);
   const timers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
+  const exitTimers = useRef(new Map<number, ReturnType<typeof setTimeout>>());
 
-  const dismiss = useCallback((id: number) => {
-    const timer = timers.current.get(id);
-    if (timer) clearTimeout(timer);
-    timers.current.delete(id);
+  const removeNow = useCallback((id: number) => {
+    const exitTimer = exitTimers.current.get(id);
+    if (exitTimer) clearTimeout(exitTimer);
+    exitTimers.current.delete(id);
     setItems((current) => current.filter((item) => item.id !== id));
+  }, []);
+
+  const dismiss = useCallback(
+    (id: number) => {
+      const timer = timers.current.get(id);
+      if (timer) clearTimeout(timer);
+      timers.current.delete(id);
+      const reducedMotion =
+        typeof window !== "undefined" &&
+        window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      if (reducedMotion) {
+        removeNow(id);
+        return;
+      }
+      if (exitTimers.current.has(id)) return;
+      setItems((current) =>
+        current.map((item) =>
+          item.id === id ? { ...item, closing: true } : item,
+        ),
+      );
+      exitTimers.current.set(
+        id,
+        setTimeout(() => removeNow(id), TOAST_EXIT_MS),
+      );
+    },
+    [removeNow],
+  );
+
+  useEffect(() => {
+    return () => {
+      timers.current.forEach((timer) => clearTimeout(timer));
+      timers.current.clear();
+      exitTimers.current.forEach((timer) => clearTimeout(timer));
+      exitTimers.current.clear();
+    };
   }, []);
 
   const push = useCallback(
@@ -92,6 +132,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
           return (
             <div
               className={`toast toast-${item.tone}`}
+              data-closing={item.closing ? "true" : undefined}
               key={item.id}
               role={item.tone === "error" ? "alert" : "status"}
             >

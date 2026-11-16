@@ -252,6 +252,7 @@ export function DrawingCanvas({
           {scene?.views.map((item) => (
             <button
               key={item.id}
+              className="is-static"
               aria-pressed={view?.id === item.id}
               onClick={() => {
                 setViewId(item.id);
@@ -265,6 +266,7 @@ export function DrawingCanvas({
         <div className="zoom-controls">
           {view?.id.startsWith("section_") && (
             <button
+              className="is-static"
               aria-label="放大型腔细节"
               title="放大型腔细节"
               onClick={fitCavity}
@@ -273,6 +275,7 @@ export function DrawingCanvas({
             </button>
           )}
           <button
+            className="is-static"
             aria-label="缩小"
             title="缩小（-）"
             disabled={!view}
@@ -284,6 +287,7 @@ export function DrawingCanvas({
             {Math.round(camera.zoom * 100)}%
           </output>
           <button
+            className="is-static"
             aria-label="放大"
             title="放大（+）"
             disabled={!view}
@@ -292,10 +296,10 @@ export function DrawingCanvas({
             <ZoomIn size={16} aria-hidden="true" />
           </button>
           <button
-            className="fit-button"
+            className="fit-button is-static"
             disabled={!view}
             onClick={fit}
-            title="适应画布（0）"
+            title="适应画布（0 或双击画布）"
             aria-label="适应画布"
           >
             <Maximize2 size={15} aria-hidden="true" />
@@ -304,16 +308,17 @@ export function DrawingCanvas({
         </div>
       </div>
       <div className="cad-surface">
-        <div className="cad-source">
-          {scene
-            ? {
-                parametric_preview: "参数预览 · 尚未生成正式图纸",
-                debug_dxf: "候选图纸 · 正在校验",
-                release_dxf: "正式图纸 · 校验通过",
+        {scene && (
+          <div className="cad-source">
+            {
+              {
+                parametric_preview: "预览",
+                debug_dxf: "校验中",
+                release_dxf: "正式图纸",
               }[scene.source]
-            : "等待当前输入计算"}
-          {taskId && <small>任务 {taskId}</small>}
-        </div>
+            }
+          </div>
+        )}
         {view && (
           <div className="cad-readout" aria-hidden="true">
             <output ref={coordinates}>—</output>
@@ -445,9 +450,9 @@ export function DrawingCanvas({
               );
               // Reveal already-built groups briefly; final release never waits for a replay.
               const delay =
-                scene?.source === "debug_dxf"
-                  ? { outline: 0, center: 0, cavity: 40, dimensions: 80 }[group]
-                  : 0;
+                scene?.source === "release_dxf"
+                  ? 0
+                  : { outline: 0, center: 0, cavity: 70, dimensions: 140 }[group];
               return primitives.length ? (
                 <g
                   key={`${taskId ?? "review"}-${scene?.source}-${view.id}-${group}`}
@@ -476,12 +481,10 @@ export function DrawingCanvas({
                 d="M7 12h38v28H7zM18 12v12q0 8 8 8t8-8V12M26 5v42"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1.3"
+                strokeWidth="1.5"
               />
             </svg>
-            <h3>先确认当前规格</h3>
-            <p>计算后将在这里显示真实比例的导轨型腔与避空。</p>
-            <small>几何由本地 CAD 引擎生成</small>
+            <h3>暂无预览</h3>
           </div>
         )}
       </div>
@@ -489,7 +492,7 @@ export function DrawingCanvas({
         {GROUP_LABELS.map(([group, label]) => (
           <button
             key={group}
-            className="legend-toggle"
+            className="legend-toggle is-static"
             aria-label={`${layers[group] ? "隐藏" : "显示"}${label}`}
             aria-pressed={layers[group]}
             onClick={() => toggleLayer(group)}
@@ -498,7 +501,6 @@ export function DrawingCanvas({
             {label}
           </button>
         ))}
-        <small>拖动平移 · 滚轮缩放 · 双击适应</small>
       </footer>
       <span className="sr-only" role="status">
         {announcement}

@@ -9,7 +9,7 @@ import {
   AlertTriangle,
   ArrowRight,
   Check,
-  Clipboard,
+  CheckCircle2,
   Loader2,
   Plus,
   RotateCcw,
@@ -18,6 +18,7 @@ import {
   X,
 } from "lucide-react";
 import { DrawingCanvas } from "./DrawingCanvas";
+import { CopyIconButton, CrossfadeIcon } from "./UiControls";
 import {
   exampleSpec,
   normalizeSpec,
@@ -27,7 +28,6 @@ import {
   type SpecKind,
   type SpecShape,
 } from "./spec";
-import { useToast } from "./Toast";
 import type {
   DesignInput,
   GeneratedFile,
@@ -139,7 +139,6 @@ function SpecField({
 }) {
   const preview = parseSpec(value, kind, shape);
   const input = useRef<HTMLTextAreaElement>(null);
-  const helpId = `${id}-help`;
   const errorId = `${id}-error`;
 
   useLayoutEffect(() => {
@@ -170,8 +169,10 @@ function SpecField({
         value={value}
         placeholder={exampleSpec(kind, shape)}
         spellCheck={false}
+        title={specHint(kind, shape)}
+        aria-description={specHint(kind, shape)}
         aria-invalid={Boolean(preview.error)}
-        aria-describedby={preview.error ? `${helpId} ${errorId}` : helpId}
+        aria-describedby={preview.error ? errorId : undefined}
         onChange={(event) => onChange(event.target.value)}
         onBlur={() => {
           if (preview.normalized && preview.normalized !== value) {
@@ -187,28 +188,6 @@ function SpecField({
           }
         }}
       />
-      <div className="spec-meta">
-        <small id={helpId}>{specHint(kind, shape)}</small>
-        {preview.normalized && preview.normalized !== value && (
-          <span className="spec-normalized">
-            将归一化为 {preview.normalized}
-          </span>
-        )}
-      </div>
-      {preview.tokens.length > 0 && !preview.error && (
-        <ul className="spec-tokens" aria-label={`${label}解析结果`}>
-          {preview.tokens.map((token, index) => (
-            <li key={`${token.label}-${index}`}>
-              <span>{token.label}</span>
-              <strong>
-                {token.radius ? "R" : ""}
-                {token.value ?? "—"}
-                {token.tolerance && <small> ({token.tolerance})</small>}
-              </strong>
-            </li>
-          ))}
-        </ul>
-      )}
       {preview.error && (
         <p className="field-error" id={errorId} role="alert">
           <AlertTriangle size={13} aria-hidden="true" />
@@ -252,10 +231,6 @@ function InputRail({
     Number.isFinite(design.wheel_radius) && design.wheel_radius > 0;
   return (
     <>
-      <div className="rail-heading">
-        <h2>输入参数</h2>
-        <p>成品与磨前规格独立填写</p>
-      </div>
       <div className="rail-form-section">
         <label htmlFor="machine-select">
           机台
@@ -296,21 +271,14 @@ function InputRail({
               onClick={onRetryMachines}
               disabled={machinesLoading}
             >
-              {machinesLoading ? (
-                <Loader2 className="spin" size={13} aria-hidden="true" />
-              ) : (
-                <RotateCcw size={13} aria-hidden="true" />
-              )}
+              <CrossfadeIcon
+                active={machinesLoading}
+                activeIcon={<Loader2 className="spin" size={13} />}
+                inactiveIcon={<RotateCcw size={13} />}
+              />
               重试
             </button>
           </div>
-        )}
-        {selectedMachine && (
-          <small>
-            {selectedMachine.guide_length} mm ·{" "}
-            {selectedMachine.wheel_positions.join(" / ")} · 入丝口上限{" "}
-            {mm(selectedMachine.section_center_opening_max)} mm
-          </small>
         )}
         {selectedMachine && !selectedMachine.supported_by_web_generation && (
           <p className="field-warning">
@@ -380,7 +348,8 @@ function InputRail({
               value={design.relief}
               spellCheck={false}
               aria-invalid={!relief && Boolean(design.relief)}
-              aria-describedby="relief-help"
+              title="数量-直径，例如 4-1；中心固定 2×R0.50"
+              aria-description="数量-直径，例如 4-1；中心固定 2×R0.50"
               onChange={(event) => onUpdate("relief", event.target.value)}
               onBlur={() =>
                 onUpdate("relief", normalizeSpec(design.relief))
@@ -401,11 +370,6 @@ function InputRail({
             />
           </label>
         </div>
-        <small id="relief-help">
-          {relief
-            ? `${relief.count} 处 Ø${relief.diameter.toFixed(2)} / R${relief.radius.toFixed(2)}；中心另有固定 2 × R0.50。`
-            : "4-1 表示四处 Ø1.00 / R0.50；中心另有固定 2 × R0.50。"}
-        </small>
         {!relief && Boolean(design.relief) && (
           <p className="field-error" role="alert">
             <AlertTriangle size={13} aria-hidden="true" />
@@ -475,9 +439,6 @@ function InputRail({
           </button>
         </div>
       </details>
-      <p className="rail-note">
-        所有尺寸单位为 mm。完整解析与工艺计算由 CAD 引擎执行。
-      </p>
     </>
   );
 }
@@ -528,11 +489,6 @@ function CalculationRows({ validation }: { validation: ValidationResult }) {
         <strong>
           {mm(d.center_opening)} <small>mm</small>
         </strong>
-        <p>
-          槽宽 × 30%，机台上限 {mm(d.opening_max)} mm
-          <br />
-          向下保留两位小数
-        </p>
       </div>
       <div>
         <span>侧部避空</span>
@@ -557,19 +513,15 @@ function CalculationRows({ validation }: { validation: ValidationResult }) {
       </div>
       {validation.decision.arc_radius != null && (
         <div>
-          <span>型腔 R</span>
-          <strong>R{mm(validation.decision.arc_radius)}</strong>
-          <p>
-            {validation.decision.R_form_source === "finished_product_max_radius"
-              ? "取成品双 R 中的较大值"
-              : "取成型磨前规格"}{" "}
-            ·{" "}
+          <span>
+            型腔 R
             {validation.decision.arc_side === "lower"
-              ? "下侧"
+              ? "（下侧）"
               : validation.decision.arc_side === "upper"
-                ? "上侧"
-                : validation.decision.arc_side}
-          </p>
+                ? "（上侧）"
+                : ""}
+          </span>
+          <strong>R{mm(validation.decision.arc_radius)}</strong>
         </div>
       )}
     </div>
@@ -611,7 +563,6 @@ export function Workbench({
   artifactActions: (file: GeneratedFile) => ReactNode;
 }) {
   const { validation, progress } = job;
-  const toast = useToast();
   const rail = useRef<HTMLElement>(null);
   useLayoutEffect(() => {
     if (rail.current) rail.current.scrollTop = 0;
@@ -643,6 +594,8 @@ export function Workbench({
     !!selectedMachine &&
     !!design.finished_spec.trim() &&
     !!design.pre_grinding_spec.trim() &&
+    !parseSpec(design.finished_spec, "finished", design.product_shape_after).error &&
+    !parseSpec(design.pre_grinding_spec, "preform", design.product_shape_before).error &&
     !job.validating;
   const back = () => {
     job.invalidate();
@@ -655,15 +608,6 @@ export function Workbench({
         )
         ?.focus(),
     );
-  };
-  const copyJobId = async () => {
-    if (!job.jobId) return;
-    try {
-      await navigator.clipboard.writeText(job.jobId);
-      toast.success("任务 ID 已复制");
-    } catch {
-      toast.error("无法访问剪贴板，请手动复制任务 ID。");
-    }
   };
   return (
     <section
@@ -691,7 +635,13 @@ export function Workbench({
                   : ""
             }
           >
-            <span>{job.step > index + 1 ? "✓" : index + 1}</span>
+            <span>
+              {job.step > index + 1 ? (
+                <Check size={13} strokeWidth={2.2} aria-hidden="true" />
+              ) : (
+                index + 1
+              )}
+            </span>
             <strong>{label}</strong>
           </li>
         ))}
@@ -703,7 +653,6 @@ export function Workbench({
               <RotateCcw size={15} aria-hidden="true" />
               <div>
                 <strong>已恢复上次草稿</strong>
-                <span>输入保存在本机，可直接继续修改。</span>
               </div>
               <button
                 type="button"
@@ -743,10 +692,9 @@ export function Workbench({
               onRetryMachines={onRetryMachines}
             />
           ) : job.step === 2 && validation ? (
-            <>
+            <div className="rail-stage stagger-group" key="rail-step-2">
               <div className="rail-heading">
                 <h2>计算结果</h2>
-                <p>当前输入已解析</p>
               </div>
               <SnapshotRows
                 design={job.reviewed ?? design}
@@ -782,10 +730,12 @@ export function Workbench({
                   ))}
                 </details>
               )}
-              <p className="rail-note">正式图纸仍需通过完整几何校验。</p>
-            </>
+            </div>
           ) : (
-            <>
+            <div
+              className="rail-stage stagger-group"
+              key={`rail-step-3-${passed ? "passed" : failed ? "failed" : "running"}`}
+            >
               <div
                 className={`rail-heading ${failed ? "failed" : passed ? "passed" : ""}`}
               >
@@ -793,16 +743,18 @@ export function Workbench({
                   {job.connectionError
                     ? "等待恢复连接"
                     : passed
-                      ? "图纸已通过校验"
+                      ? "生成结果"
                       : failed
                         ? "图纸生成被阻断"
                         : "正在绘制与校验"}
                 </h2>
-                <p>
-                  {job.starting
-                    ? "正在提交当前输入快照…"
-                    : (progress?.message ?? "正在连接当前任务…")}
-                </p>
+                {!passed && (
+                  <p>
+                    {job.starting
+                      ? "正在提交当前输入快照…"
+                      : (progress?.message ?? "正在连接当前任务…")}
+                  </p>
+                )}
                 <Elapsed
                   progress={progress}
                   starting={job.starting}
@@ -816,15 +768,13 @@ export function Workbench({
                 <p className="task-id">
                   <span>任务</span>
                   <code>{job.jobId}</code>
-                  <button
-                    type="button"
-                    className="icon-button mini"
-                    onClick={() => void copyJobId()}
+                  <CopyIconButton
+                    value={job.jobId}
+                    size={13}
+                    ariaLabel="复制任务 ID"
                     title="复制任务 ID"
-                    aria-label="复制任务 ID"
-                  >
-                    <Clipboard size={13} aria-hidden="true" />
-                  </button>
+                    successMessage="任务 ID 已复制"
+                  />
                 </p>
               )}
               {job.connectionError && (
@@ -834,7 +784,10 @@ export function Workbench({
                     进度连接中断：{job.connectionError}
                   </p>
                   <p>后台任务可能仍在执行，重新连接将读取同一任务。</p>
-                  <button className="button secondary" onClick={job.reconnect}>
+                  <button
+                    className="button secondary with-icon"
+                    onClick={job.reconnect}
+                  >
                     <RotateCcw size={14} aria-hidden="true" />
                     重新连接任务
                   </button>
@@ -843,7 +796,8 @@ export function Workbench({
               {passed ? (
                 <>
                   <div className="release-gate">
-                    <span>✓</span>正式 release 已通过完整门禁
+                    <CheckCircle2 size={15} aria-hidden="true" />
+                    校验通过
                   </div>
                   {formalFiles.map(([key, file]) => (
                     <div className="formal-file" key={`${job.jobId}-${key}`}>
@@ -873,14 +827,14 @@ export function Workbench({
                   machine={selectedMachine}
                 />
               </details>
-            </>
+            </div>
           )}
         </aside>
         <DrawingCanvas scene={scene} taskId={job.jobId} />
       </div>
       <footer className="workbench-actions">
         <div
-          className={`action-state ${failed || inputError ? "failed" : job.step === 2 || passed ? "passed" : ""}`}
+          className={`action-state ${job.step === 1 && !job.validating && !inputError ? "sr-only" : ""} ${failed || inputError ? "failed" : job.step === 2 || passed ? "passed" : ""}`}
         >
           <span>
             {failed || inputError ? (
@@ -894,16 +848,16 @@ export function Workbench({
           <p>
             {job.step === 1
               ? inputError
-                ? "输入未通过，请查看参数栏说明"
+                ? "请检查输入"
                 : job.validating
-                  ? "正在解析当前输入…"
-                  : "填写成品与磨前规格，确认后查看真实型腔"
+                  ? "正在计算…"
+                  : "待计算"
               : job.step === 2
-                ? "当前输入计算通过 · 尚未生成正式图纸"
+                ? "计算通过"
                 : passed
-                  ? "正式图纸已晋级 · 文件保存在本地任务中"
+                  ? "生成完成"
                   : failed
-                    ? "保留本次输入，请返回修改后重试"
+                    ? "请修正参数后重试"
                     : job.connectionError
                       ? "进度连接中断 · 可重新连接同一任务"
                       : (progress?.message ?? "正在提交任务…")}
@@ -931,26 +885,21 @@ export function Workbench({
           {job.step === 1 ? (
             <button
               key="validate"
-              className="button primary"
+              className="button primary with-icon-right"
               disabled={!canValidate}
               onClick={() => void job.validate(design)}
             >
-              {job.validating ? (
-                <>
-                  <Loader2 className="spin" size={15} aria-hidden="true" />
-                  正在解析…
-                </>
-              ) : (
-                <>
-                  确认计算
-                  <ArrowRight size={15} aria-hidden="true" />
-                </>
-              )}
+              {job.validating ? "正在解析…" : "确认计算"}
+              <CrossfadeIcon
+                active={job.validating}
+                activeIcon={<Loader2 className="spin" size={15} />}
+                inactiveIcon={<ArrowRight size={15} />}
+              />
             </button>
           ) : job.step === 2 ? (
             <button
               key="generate"
-              className="button primary"
+              className="button primary with-icon-right"
               disabled={job.starting}
               onClick={() => void job.generate(design)}
             >
@@ -958,7 +907,11 @@ export function Workbench({
               <ArrowRight size={15} aria-hidden="true" />
             </button>
           ) : passed || failed ? (
-            <button key="new-task" className="button primary" onClick={onNew}>
+            <button
+              key="new-task"
+              className="button primary with-icon"
+              onClick={onNew}
+            >
               <Plus size={15} aria-hidden="true" />
               新建任务
             </button>

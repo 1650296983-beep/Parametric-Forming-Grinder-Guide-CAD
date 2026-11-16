@@ -13,9 +13,7 @@ import {
   Check,
   CheckCircle2,
   Clock,
-  Copy,
   FileText,
-  HardDrive,
   History as HistoryIcon,
   Loader2,
   Monitor,
@@ -31,6 +29,7 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { api } from "./api";
+import { CopyIconButton, CrossfadeIcon } from "./UiControls";
 import { Workbench } from "./Workbench";
 import { useDesignJob } from "./useDesignJob";
 import { resetApiBaseUrl } from "./api";
@@ -65,14 +64,13 @@ const PAGES: Page[] = [
   "settings",
 ];
 
-const PAGE_COPY: Record<Page, { title: string; subtitle: string }> = {
+const PAGE_COPY: Record<Page, { title: string; subtitle?: string }> = {
   workspace: {
     title: "导轨工作台",
-    subtitle: "依据磨前规格，生成可复核的加工图纸",
   },
   history: {
     title: "历史任务",
-    subtitle: "本地任务输入、校验结果与交付文件",
+    subtitle: "任务输入、校验结果与交付图纸",
   },
   templates: {
     title: "机台模板",
@@ -84,7 +82,7 @@ const PAGE_COPY: Record<Page, { title: string; subtitle: string }> = {
   },
   settings: {
     title: "设置与更新",
-    subtitle: "本机引擎、界面外观与签名更新",
+    subtitle: "CAD 引擎、外观主题与签名更新",
   },
 };
 
@@ -220,7 +218,12 @@ export default function App() {
   const [isTasksLoading, setIsTasksLoading] = useState(false);
   const [taskHistoryError, setTaskHistoryError] = useState<string | null>(null);
   const initialized = useRef(false);
+  const firstPageRender = useRef(true);
   const newTaskRef = useRef<() => void>(() => undefined);
+
+  useEffect(() => {
+    firstPageRender.current = false;
+  }, []);
 
   const refresh = useCallback(
     () =>
@@ -302,21 +305,6 @@ export default function App() {
         `${window.location.pathname}${window.location.search}${hash}`,
       );
   }, [page]);
-
-  useEffect(() => {
-    const release = () =>
-      document
-        .querySelectorAll("button.pointer-pressed")
-        .forEach((button) => button.classList.remove("pointer-pressed"));
-    window.addEventListener("pointerup", release);
-    window.addEventListener("pointercancel", release);
-    window.addEventListener("blur", release);
-    return () => {
-      window.removeEventListener("pointerup", release);
-      window.removeEventListener("pointercancel", release);
-      window.removeEventListener("blur", release);
-    };
-  }, []);
 
   const selectedMachine = useMemo(
     () =>
@@ -448,77 +436,71 @@ export default function App() {
     })),
   ];
   return (
-    <div
-      className="app-shell"
-      onPointerDownCapture={(event) => {
-        if (event.pointerType === "mouse" && event.button === 0)
-          (event.target as HTMLElement)
-            .closest("button:not(:disabled)")
-            ?.classList.add("pointer-pressed");
-      }}
-    >
+    <div className="app-shell">
       <aside className="sidebar">
         <button
-          className="brand-text"
+          className="brand-text is-static"
           onClick={() => setPage("workspace")}
           aria-label="返回导轨工作台"
         >
           <span className="brand-glyph">
-            <Boxes size={25} strokeWidth={1.5} aria-hidden="true" />
+            <Boxes size={25} strokeWidth={2} aria-hidden="true" />
           </span>
           <span>
             <strong>成型磨导轨</strong>
-            <small>参数化生成器</small>
           </span>
         </button>
         <button
-          className="sidebar-search"
+          className="sidebar-search is-static"
           onClick={() => setPaletteOpen(true)}
           aria-label="打开命令面板"
           title={`${modKey}K`}
         >
-          <Search size={15} aria-hidden="true" />
+          <Search size={15} strokeWidth={1.5} aria-hidden="true" />
           <span>搜索与命令</span>
           <kbd>{modKey}K</kbd>
         </button>
         <nav>
           {navItems.map(({ id, label, icon: Icon }) => (
             <button
-              className={`nav-item ${page === id ? "active" : ""}`}
+              className={`nav-item is-static ${page === id ? "active" : ""}`}
               key={id}
               aria-label={label}
               aria-current={page === id ? "page" : undefined}
               onClick={() => setPage(id)}
             >
-              <Icon size={20} strokeWidth={1.6} aria-hidden="true" />
+              <Icon size={20} strokeWidth={1.5} aria-hidden="true" />
               <span>{label}</span>
             </button>
           ))}
         </nav>
         <div
           className={`sidebar-bottom ${isServiceOnline && !job.connectionError ? "" : "offline"}`}
+          title={
+            job.connectionError
+              ? "任务进度流断开"
+              : isServiceOnline
+                ? "本地 CAD 引擎已连接，所有任务与文件保存在本机"
+                : "本地 CAD 引擎未连接"
+          }
         >
           <span className="connection-dot" />
           {job.connectionError
             ? "进度连接中断"
             : isServiceOnline
-              ? "本地引擎已连接"
-              : "本地引擎未连接"}
+              ? "引擎就绪"
+              : "引擎未连接"}
         </div>
       </aside>
       <main className="main-content">
         <header className="topbar">
           <div>
             <h1>{PAGE_COPY[page].title}</h1>
-            <p>{PAGE_COPY[page].subtitle}</p>
+            {PAGE_COPY[page].subtitle && <p>{PAGE_COPY[page].subtitle}</p>}
           </div>
           <div className="topbar-actions">
-            <span className="local-badge" title="所有任务与文件保存在本机">
-              <HardDrive size={13} aria-hidden="true" />
-              本地任务
-            </span>
             <button
-              className="button primary"
+              className="button primary with-icon"
               onClick={newTask}
               title={`新建任务（${modKey}N）`}
             >
@@ -550,65 +532,70 @@ export default function App() {
               </span>
             </div>
             <button
-              className="button secondary mini"
+              className="button secondary mini with-icon"
               onClick={() => void loadMachines()}
               disabled={machinesLoading}
             >
-              {machinesLoading ? (
-                <Loader2 className="spin" size={14} aria-hidden="true" />
-              ) : (
-                <RefreshCw size={14} aria-hidden="true" />
-              )}
+              <CrossfadeIcon
+                active={machinesLoading}
+                activeIcon={<Loader2 className="spin" size={14} />}
+                inactiveIcon={<RefreshCw size={14} />}
+              />
               重新连接
             </button>
           </div>
         )}
-        {page === "workspace" && (
-          <Workbench
-            design={design}
-            machines={machines}
-            machinesLoading={machinesLoading}
-            machinesError={machinesError}
-            selectedMachine={selectedMachine}
-            job={job}
-            onMachine={selectMachine}
-            onUpdate={update}
-            onNew={newTask}
-            onRetryMachines={() => void loadMachines()}
-            draftRestored={draftNotice}
-            onDismissDraft={() => setDraftNotice(false)}
-            onClearDraft={() => {
-              designState.clear();
-              setDraftNotice(false);
-              job.invalidate();
-            }}
-            artifactActions={(file) => (
-              <ArtifactActions
-                key={`${file.task_id}-${file.name}`}
-                file={file}
-              />
-            )}
-          />
-        )}
-        {page === "history" && (
-          <History
-            history={taskHistory}
-            isLoading={isTasksLoading}
-            error={taskHistoryError}
-            initialTaskId={null}
-            onRefresh={refresh}
-            onCopy={copyTask}
-          />
-        )}
-        {page === "templates" && <Templates machines={machines} />}
-        {page === "rules" && <Rules />}
-        {page === "settings" && (
-          <DesktopSettingsPage
-            onEngineState={setIsServiceOnline}
-            themeMode={themeMode}
-            onThemeMode={setThemeMode}
-          />
-        )}
+        <div
+          className={`page-stage ${firstPageRender.current ? "" : "is-animated"}`}
+          key={page}
+        >
+          {page === "workspace" && (
+            <Workbench
+              design={design}
+              machines={machines}
+              machinesLoading={machinesLoading}
+              machinesError={machinesError}
+              selectedMachine={selectedMachine}
+              job={job}
+              onMachine={selectMachine}
+              onUpdate={update}
+              onNew={newTask}
+              onRetryMachines={() => void loadMachines()}
+              draftRestored={draftNotice}
+              onDismissDraft={() => setDraftNotice(false)}
+              onClearDraft={() => {
+                designState.clear();
+                setDraftNotice(false);
+                job.invalidate();
+              }}
+              artifactActions={(file) => (
+                <ArtifactActions
+                  key={`${file.task_id}-${file.name}`}
+                  file={file}
+                />
+              )}
+            />
+          )}
+          {page === "history" && (
+            <History
+              history={taskHistory}
+              isLoading={isTasksLoading}
+              error={taskHistoryError}
+              initialTaskId={null}
+              onRefresh={refresh}
+              onCopy={copyTask}
+            />
+          )}
+          {page === "templates" && <Templates machines={machines} />}
+          {page === "rules" && <Rules />}
+          {page === "settings" && (
+            <DesktopSettingsPage
+              onEngineState={setIsServiceOnline}
+              themeMode={themeMode}
+              onThemeMode={setThemeMode}
+            />
+          )}
+        </div>
       </main>
       <CommandPalette
         open={paletteOpen}
@@ -1305,7 +1292,7 @@ function TaskDetailDrawer({
       aria-hidden={!open}
     >
       <button
-        className="task-detail-backdrop"
+        className="task-detail-backdrop is-static"
         aria-label="关闭任务详情"
         tabIndex={-1}
         onClick={onClose}
@@ -1521,20 +1508,13 @@ function Templates({ machines }: { machines: Machine[] }) {
               <strong>{machine.name}</strong>
               <small>
                 <code>{machine.id}</code>
-                <button
-                  type="button"
-                  className="icon-button mini"
+                <CopyIconButton
+                  value={machine.id}
+                  size={12}
+                  ariaLabel={`复制机台 ID ${machine.id}`}
                   title="复制机台 ID"
-                  aria-label={`复制机台 ID ${machine.id}`}
-                  onClick={() => {
-                    void navigator.clipboard
-                      .writeText(machine.id)
-                      .then(() => toast.success("机台 ID 已复制"))
-                      .catch(() => toast.error("无法访问剪贴板。"));
-                  }}
-                >
-                  <Copy size={12} aria-hidden="true" />
-                </button>
+                  successMessage="机台 ID 已复制"
+                />
                 <span
                   className={`support-badge ${machine.supported_by_web_generation ? "ok" : "unsupported"}`}
                 >
@@ -1627,16 +1607,6 @@ function DesktopSettingsPage({
       setSettingsError(
         error instanceof Error ? error.message : "设置读取失败。",
       );
-    }
-  };
-
-  const copyValue = async (value: string | null | undefined, label: string) => {
-    if (!value) return;
-    try {
-      await navigator.clipboard.writeText(value);
-      toast.success(`${label}已复制`);
-    } catch {
-      toast.error("无法访问剪贴板，请手动复制。");
     }
   };
 
@@ -1792,11 +1762,14 @@ function DesktopSettingsPage({
               aria-pressed={themeMode === mode}
               onClick={() => onThemeMode(mode)}
             >
-              <Icon size={18} strokeWidth={1.6} aria-hidden="true" />
+              <Icon size={18} strokeWidth={1.5} aria-hidden="true" />
               <span>{label}</span>
-              {themeMode === mode && (
-                <Check size={15} aria-hidden="true" className="theme-check" />
-              )}
+              <span
+                className={`theme-check icon-swap-layer ${themeMode === mode ? "is-shown" : "is-hidden"}`}
+                aria-hidden="true"
+              >
+                <Check size={15} />
+              </span>
             </button>
           ))}
         </div>
@@ -1813,17 +1786,13 @@ function DesktopSettingsPage({
           <dd className="setting-value">
             <span>{settings?.app_data_root ?? "读取中…"}</span>
             {settings?.app_data_root && (
-              <button
-                type="button"
-                className="icon-button mini"
-                aria-label="复制应用数据目录"
+              <CopyIconButton
+                value={settings.app_data_root}
+                size={13}
+                ariaLabel="复制应用数据目录"
                 title="复制路径"
-                onClick={() =>
-                  void copyValue(settings.app_data_root, "应用数据目录")
-                }
-              >
-                <Copy size={13} aria-hidden="true" />
-              </button>
+                successMessage="应用数据目录已复制"
+              />
             )}
           </dd>
           <dt>AutoCAD 状态</dt>
@@ -1836,17 +1805,13 @@ function DesktopSettingsPage({
           <dd className="setting-value">
             <span>{settings?.autocad.path ?? "未配置"}</span>
             {settings?.autocad.path && (
-              <button
-                type="button"
-                className="icon-button mini"
-                aria-label="复制 AcCoreConsole 路径"
+              <CopyIconButton
+                value={settings.autocad.path}
+                size={13}
+                ariaLabel="复制 AcCoreConsole 路径"
                 title="复制路径"
-                onClick={() =>
-                  void copyValue(settings.autocad.path, "AcCoreConsole 路径")
-                }
-              >
-                <Copy size={13} aria-hidden="true" />
-              </button>
+                successMessage="AcCoreConsole 路径已复制"
+              />
             )}
           </dd>
         </dl>

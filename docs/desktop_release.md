@@ -351,6 +351,12 @@ published.
 
 ## Versioning and publishing
 
+From v1.2.7, the Windows release workflow runs full verification and signed
+installer construction in parallel. The publish job requires both jobs to
+succeed, rechecks transferred SHA-256 checksums, then creates the draft Release.
+Full Python tests, seven-machine regressions, frontend tests/audit, packaged
+engine smoke tests, updater signature verification and provenance remain gates.
+
 Versions must agree in `frontend/package.json`, `src-tauri/tauri.conf.json`,
 `src-tauri/Cargo.toml`, and `desktop/version.py`:
 

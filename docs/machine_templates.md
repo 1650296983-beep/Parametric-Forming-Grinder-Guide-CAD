@@ -93,7 +93,7 @@
 - `triple_double_down_up_up` 的截面中心上口上限为 `2.00 mm`，实际按最终槽宽的 30% 缩小并向下取两位小数。
 - `triple_double_down_up_up` 支持 `rectangular_block`、`bread_big_r_block_preform` 和 `same_r_tile` 三种截面。
 - `triple_double_up_up_up` 使用 `guide_length = 590.0`，`wheel_positions = ["上", "上", "上"]`，`guide_sections = 2`
-- `triple_double_up_up_up` 的截面中心上口上限为 `1.00 mm`，实际按最终槽宽的 30% 缩小并向下取两位小数；上限保持原值，不复用下上上的 `2.00 mm`。
+- `triple_double_up_up_up` 的截面中心上口上限按 2026-11-16 用户明确要求由 `1.00 mm` 改为 `2.00 mm`；实际仍按 `min(最终槽宽 × 30%, 2.00 mm)` 向下取两位小数，两节导轨同步重建真实槽口与尺寸。归档模板保持原样，旧模板的 1.00 mm 不再作为该机型生成上限。
 - 两种双导轨机型的外轮廓均为白色实线，型腔投影线均为绿色虚线
 - `triple_double_up_up_up` 的 R80 圆弧端点必须连接外轮廓，冠点按有效吃入量进入型腔，不得把型腔虚线误作圆弧端点
 - 两种双导轨机型的 R80 半径标注必须以圆心和真实弧顶为定义点；关键高度与吃入量标注必须以真实弧顶和同 X 基准点为定义点

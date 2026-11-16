@@ -7,6 +7,7 @@ from typing import Any
 from ezdxf.math import Vec3
 
 from .annotation_metrics import annotation_text_extents
+from .dimension_roles import SECTION_CENTER_OPENING, get_dimension_role
 
 
 # A little air between neighbouring annotations; drawings are read at plot
@@ -323,6 +324,22 @@ def _translate_radial_dimension_text(
             entity.dxf.insert = Vec3(insert.x, insert.y + delta, insert.z)
             moved = True
     return moved
+
+
+def place_center_opening_dimensions_outside(doc: Any) -> None:
+    """Place dual-section entry labels above the opening and outside its right edge."""
+    # The entry opening is too narrow to carry its own text between the
+    # extension lines. Lift its dimension line above the measured edge and
+    # extend the text to the right; actual measured endpoints stay untouched.
+    from .dimension_writer import apply_linear_outside_extension
+
+    for dimension in doc.modelspace().query("DIMENSION"):
+        if get_dimension_role(dimension) != SECTION_CENTER_OPENING:
+            continue
+        point = dimension.dxf.defpoint
+        edge_y = max(dimension.dxf.defpoint2.y, dimension.dxf.defpoint3.y)
+        dimension.dxf.defpoint = Vec3(point.x, max(point.y, edge_y + 4.0), point.z)
+        apply_linear_outside_extension(dimension, "right")
 
 
 def resolve_dimension_text_overlaps(
