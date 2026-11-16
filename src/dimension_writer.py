@@ -480,10 +480,12 @@ def add_bed_618_r_form_dimensions(
             tile_section.forming_spec.R_form,
             is_lower=is_lower,
         )
+        leader_end = (text_midpoint[0] + 2.0, text_midpoint[1])
         _set_radius_definition_to_target(copied, center, target)
         copied._cad_custom_dimension_layout = {
             "kind": "radius",
             "target": target,
+            "leader_end": leader_end,
             "text_midpoint": text_midpoint,
         }
         copied.dxf.text = f"R{tile_section.forming_spec.R_form:.2f}"
@@ -686,10 +688,12 @@ def _update_section_dimension(
             tile_section.forming_spec.R_form,
             is_lower=is_lower,
         )
+        leader_end = (text_midpoint[0] + 2.0, text_midpoint[1])
         _set_radius_definition_to_target(entity, center, target)
         entity._cad_custom_dimension_layout = {
             "kind": "radius",
             "target": target,
+            "leader_end": leader_end,
             "text_midpoint": text_midpoint,
         }
         if entity.dxf.hasattr("text_midpoint"):
@@ -881,16 +885,22 @@ def _r_form_dimension_layout(
     if is_lower:
         center = geometry.lower_radius_center
         dx = -min(max(half_slot * 0.78, 0.1), max(half_slot - geometry.relief_radius * 0.25, 0.1))
-        text_midpoint = (geometry.left_x - 17.0, geometry.base_y - 3.0)
     else:
         center = geometry.upper_radius_center
         dx = -min(max((half_slot + half_opening) / 2.0, 0.1), max(half_slot - geometry.relief_radius * 0.25, 0.1))
-        text_midpoint = (geometry.left_x - 13.0, geometry.top_y + 5.2)
     max_dx = _r_form_dimension_max_dx(geometry, radius, dx)
     if max_dx is not None:
         dx = -max_dx
     y = center[1] + (radius * radius - dx * dx) ** 0.5
-    return (center[0] + dx, y), text_midpoint
+    target = (center[0] + dx, y)
+    # Use a short outward leader that stays clear of the cavity instead of
+    # drawing a radial line from the distant arc center through the guide body.
+    if is_lower:
+        leader_end = (target[0] - 1.5, target[1] - 4.2)
+    else:
+        leader_end = (target[0] - 1.5, target[1] + 4.2)
+    text_midpoint = (leader_end[0] - 2.0, leader_end[1])
+    return target, text_midpoint
 
 
 def _radius_dimension_center(entity, geometry: SlotDimensionGeometry) -> tuple[float, float]:
@@ -968,24 +978,58 @@ def _sync_custom_dimension_block_layout(entity) -> None:
         return
     target = layout["target"]
     text_midpoint = layout["text_midpoint"]
+    leader_end = layout.get("leader_end")
     entity.dxf.text_midpoint = (text_midpoint[0], text_midpoint[1], 0.0)
-    center = entity.dxf.defpoint
-    radial_line_done = False
-    leader_line_done = False
-    for block_entity in doc.blocks[entity.dxf.geometry]:
+    block = doc.blocks[entity.dxf.geometry]
+    lines = []
+    solids = []
+    for block_entity in list(block):
         if block_entity.dxftype() == "MTEXT":
             block_entity.dxf.insert = (text_midpoint[0], text_midpoint[1], 0.0)
         elif block_entity.dxftype() == "TEXT":
             block_entity.dxf.insert = (text_midpoint[0], text_midpoint[1], 0.0)
         elif block_entity.dxftype() == "LINE":
-            if not radial_line_done:
-                block_entity.dxf.start = (center.x, center.y, center.z)
-                block_entity.dxf.end = (target[0], target[1], 0.0)
-                radial_line_done = True
-            elif not leader_line_done:
-                block_entity.dxf.start = (target[0], target[1], 0.0)
-                block_entity.dxf.end = (text_midpoint[0], text_midpoint[1], 0.0)
-                leader_line_done = True
+            lines.append(block_entity)
+        elif block_entity.dxftype() == "SOLID":
+            solids.append(block_entity)
+
+    first_end = leader_end if leader_end is not None else text_midpoint
+    if lines:
+        lines[0].dxf.start = (target[0], target[1], 0.0)
+        lines[0].dxf.end = (first_end[0], first_end[1], 0.0)
+        if leader_end is not None:
+            if len(lines) >= 2:
+                lines[1].dxf.start = (leader_end[0], leader_end[1], 0.0)
+                lines[1].dxf.end = (text_midpoint[0], text_midpoint[1], 0.0)
+                for extra_line in lines[2:]:
+                    block.delete_entity(extra_line)
+            else:
+                block.add_line(
+                    (leader_end[0], leader_end[1], 0.0),
+                    (text_midpoint[0], text_midpoint[1], 0.0),
+                    dxfattribs={"layer": lines[0].dxf.layer},
+                )
+        else:
+            for extra_line in lines[1:]:
+                block.delete_entity(extra_line)
+
+    dx = float(first_end[0]) - float(target[0])
+    dy = float(first_end[1]) - float(target[1])
+    length = (dx * dx + dy * dy) ** 0.5
+    if solids and length > 1e-9:
+        ux = dx / length
+        uy = dy / length
+        arrow_len = 1.0
+        arrow_half_w = arrow_len / 6.0
+        base_x = float(target[0]) + ux * arrow_len
+        base_y = float(target[1]) + uy * arrow_len
+        px = -uy * arrow_half_w
+        py = ux * arrow_half_w
+        solid = solids[0]
+        solid.dxf.vtx0 = (target[0], target[1], 0.0)
+        solid.dxf.vtx1 = (base_x + px, base_y + py, 0.0)
+        solid.dxf.vtx2 = (base_x - px, base_y - py, 0.0)
+        solid.dxf.vtx3 = (base_x - px, base_y - py, 0.0)
 
 
 def _add_native_linear_dimension(
