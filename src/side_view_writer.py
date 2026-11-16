@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from math import atan2, cos, hypot, radians, sin
+from math import atan2, cos, degrees, hypot, radians, sin
 from pathlib import Path
 
 from .block_geometry import BlockGuideSection
@@ -15,6 +15,7 @@ from .dimension_writer import (
     TEXT_HEIGHT,
     add_linear_dimension_with_text,
     copy_template_dimension_without_associations,
+    sync_aligned_radius_block,
 )
 from .dimension_roles import (
     LOWER_WHEEL_KEY_PROCESS_HEIGHT,
@@ -346,21 +347,33 @@ def _bind_r80_dimensions_to_formal_arcs(
             target_y,
             float(old_target.z),
         )
+        ux = (float(center.x) - target_x) / radius
+        uy = (float(center.y) - target_y) / radius
+        line_deg = degrees(atan2(uy, ux))
+        text_rotation = ((line_deg + 90.0) % 180.0) - 90.0
+        leader_len = min(radius * 0.36, 28.0)
+        leader_end = (target_x + ux * leader_len, target_y + uy * leader_len)
+        rot_rad = radians(text_rotation)
+        text_midpoint = (
+            target_x + ux * (leader_len * 0.65) - sin(rot_rad) * 1.4,
+            target_y + uy * (leader_len * 0.65) + cos(rot_rad) * 1.4,
+        )
         if dimension.dxf.hasattr("text_midpoint"):
-            # Position the label partway along the diagonal radial leader,
-            # clear of the guide outline and adjacent station dimensions.
-            text_r = max(radius * 0.65, radius - 22.0)
-            dimension.dxf.text_midpoint = (
-                float(center.x) + text_r * cos(angle),
-                float(center.y) + text_r * sin(angle),
-                float(old_target.z),
-            )
+            dimension.dxf.text_midpoint = (text_midpoint[0], text_midpoint[1], float(old_target.z))
         _set_actual_measurement(dimension, radius)
         dimension.dxf.text = f"R{radius:.2f}"
         try:
             dimension.render()
         except Exception:
             pass
+        sync_aligned_radius_block(
+            dimension,
+            (target_x, target_y),
+            leader_end,
+            text_midpoint,
+            text_rotation,
+            arrow_len=2.2,
+        )
         _sync_dimension_block_text(dimension)
 
 

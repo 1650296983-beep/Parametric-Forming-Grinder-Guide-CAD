@@ -475,18 +475,18 @@ def add_bed_618_r_form_dimensions(
         copied = copy_template_dimension_without_associations(source)
         copied.dxf.layer = DIMENSION_LAYER
         center = geometry.lower_radius_center if is_lower else geometry.upper_radius_center
-        target, text_midpoint = _r_form_dimension_layout(
+        target, leader_end, text_midpoint, text_rotation = _r_form_dimension_layout(
             geometry,
             tile_section.forming_spec.R_form,
             is_lower=is_lower,
         )
-        leader_end = (text_midpoint[0] + 2.0, text_midpoint[1])
         _set_radius_definition_to_target(copied, center, target)
         copied._cad_custom_dimension_layout = {
             "kind": "radius",
             "target": target,
             "leader_end": leader_end,
             "text_midpoint": text_midpoint,
+            "text_rotation": text_rotation,
         }
         copied.dxf.text = f"R{tile_section.forming_spec.R_form:.2f}"
         copied.dxf.text_midpoint = (text_midpoint[0], text_midpoint[1], 0.0)
@@ -644,34 +644,76 @@ def _update_section_dimension(
         old_center = entity.dxf.defpoint if entity.dxf.hasattr("defpoint") else None
         old_text_midpoint = entity.dxf.text_midpoint if entity.dxf.hasattr("text_midpoint") else None
         is_center_transition = text.startswith("2-")
-        new_center = _relief_dimension_center(
-            entity,
-            geometry,
-            center_transition=is_center_transition,
-        )
-        _set_relief_radius_definition(
-            entity,
-            new_center,
-            geometry,
-            center_transition=is_center_transition,
-        )
-        if old_center is not None and old_text_midpoint is not None and entity.dxf.hasattr("text_midpoint"):
-            text_midpoint = (
-                new_center[0] + (old_text_midpoint.x - old_center.x),
-                new_center[1] + (old_text_midpoint.y - old_center.y),
-                0.0,
-            )
-            entity.dxf.text_midpoint = text_midpoint
-            entity._cad_custom_dimension_layout = {
-                "kind": "relief_text",
-                "text_midpoint": (text_midpoint[0], text_midpoint[1]),
-            }
         if is_center_transition:
+            new_center = _relief_dimension_center(
+                entity,
+                geometry,
+                center_transition=True,
+            )
+            _set_relief_radius_definition(
+                entity,
+                new_center,
+                geometry,
+                center_transition=True,
+            )
+            if old_center is not None and old_text_midpoint is not None and entity.dxf.hasattr("text_midpoint"):
+                text_midpoint = (
+                    new_center[0] + (old_text_midpoint.x - old_center.x),
+                    new_center[1] + (old_text_midpoint.y - old_center.y),
+                    0.0,
+                )
+                entity.dxf.text_midpoint = text_midpoint
+                entity._cad_custom_dimension_layout = {
+                    "kind": "relief_text",
+                    "text_midpoint": (text_midpoint[0], text_midpoint[1]),
+                }
             _set_dimension_text(
                 entity,
                 f"2-R{format_dimension(geometry.center_transition_radius)}",
             )
             return SECTION_RELIEF_RADIUS
+        new_center = (geometry.right_x, geometry.top_y)
+        relief_angle_deg = 58.0
+        ux = cos(radians(relief_angle_deg))
+        uy = sin(radians(relief_angle_deg))
+        if (int(entity.dxf.dimtype) & 15) == 3 and entity.dxf.hasattr("defpoint4"):
+            entity.dxf.defpoint = (
+                new_center[0] - ux * geometry.relief_radius,
+                new_center[1] - uy * geometry.relief_radius,
+                0.0,
+            )
+            entity.dxf.defpoint4 = (
+                new_center[0] + ux * geometry.relief_radius,
+                new_center[1] + uy * geometry.relief_radius,
+                0.0,
+            )
+        else:
+            _set_radius_definition_to_target(
+                entity,
+                new_center,
+                (
+                    new_center[0] + ux * geometry.relief_radius,
+                    new_center[1] + uy * geometry.relief_radius,
+                ),
+            )
+        target = (
+            new_center[0] + ux * geometry.relief_radius,
+            new_center[1] + uy * geometry.relief_radius,
+        )
+        leader_end = (target[0] + ux * 7.5, target[1] + uy * 7.5)
+        text_midpoint = (
+            target[0] + ux * 4.8 - uy * 0.9,
+            target[1] + uy * 4.8 + ux * 0.9,
+        )
+        if entity.dxf.hasattr("text_midpoint"):
+            entity.dxf.text_midpoint = (text_midpoint[0], text_midpoint[1], 0.0)
+        entity._cad_custom_dimension_layout = {
+            "kind": "radius",
+            "target": target,
+            "leader_end": leader_end,
+            "text_midpoint": text_midpoint,
+            "text_rotation": relief_angle_deg,
+        }
         _set_dimension_text(entity, tile_section.guide_spec.relief.relief_label)
         return SECTION_RELIEF_DIAMETER
     elif abs(measurement - 17.45) < 0.05 or (
@@ -683,18 +725,18 @@ def _update_section_dimension(
             else entity.dxf.defpoint.y < 31.7
         )
         center = geometry.lower_radius_center if is_lower else geometry.upper_radius_center
-        target, text_midpoint = _r_form_dimension_layout(
+        target, leader_end, text_midpoint, text_rotation = _r_form_dimension_layout(
             geometry,
             tile_section.forming_spec.R_form,
             is_lower=is_lower,
         )
-        leader_end = (text_midpoint[0] + 2.0, text_midpoint[1])
         _set_radius_definition_to_target(entity, center, target)
         entity._cad_custom_dimension_layout = {
             "kind": "radius",
             "target": target,
             "leader_end": leader_end,
             "text_midpoint": text_midpoint,
+            "text_rotation": text_rotation,
         }
         if entity.dxf.hasattr("text_midpoint"):
             entity.dxf.text_midpoint = (text_midpoint[0], text_midpoint[1], 0.0)
@@ -879,28 +921,32 @@ def _r_form_dimension_layout(
     geometry: SlotDimensionGeometry,
     radius: float,
     is_lower: bool,
-) -> tuple[tuple[float, float], tuple[float, float]]:
+) -> tuple[tuple[float, float], tuple[float, float], tuple[float, float], float]:
     half_slot = geometry.slot_width / 2.0
     half_opening = geometry.center_opening / 2.0
     if is_lower:
         center = geometry.lower_radius_center
-        dx = -min(max(half_slot * 0.78, 0.1), max(half_slot - geometry.relief_radius * 0.25, 0.1))
+        dx = min(max(half_slot * 0.78, 0.1), max(half_slot - geometry.relief_radius * 0.25, 0.1))
     else:
         center = geometry.upper_radius_center
-        dx = -min(max((half_slot + half_opening) / 2.0, 0.1), max(half_slot - geometry.relief_radius * 0.25, 0.1))
+        dx = min(max((half_slot + half_opening) / 2.0, 0.1), max(half_slot - geometry.relief_radius * 0.25, 0.1))
     max_dx = _r_form_dimension_max_dx(geometry, radius, dx)
     if max_dx is not None:
-        dx = -max_dx
+        dx = max_dx
     y = center[1] + (radius * radius - dx * dx) ** 0.5
     target = (center[0] + dx, y)
-    # Use a short outward leader that stays clear of the cavity instead of
-    # drawing a radial line from the distant arc center through the guide body.
-    if is_lower:
-        leader_end = (target[0] - 1.5, target[1] - 4.2)
-    else:
-        leader_end = (target[0] - 1.5, target[1] + 4.2)
-    text_midpoint = (leader_end[0] - 2.0, leader_end[1])
-    return target, text_midpoint
+    # Use a short outward leader that stays clear of the cavity with text
+    # aligned along the leader line (matching CAD angled radial style).
+    angle_deg = -65.0 if is_lower else 78.0
+    ux = cos(radians(angle_deg))
+    uy = sin(radians(angle_deg))
+    leader_end = (target[0] + ux * 7.5, target[1] + uy * 7.5)
+    rot_rad = radians(angle_deg)
+    text_midpoint = (
+        target[0] + ux * 4.8 - sin(rot_rad) * 0.9,
+        target[1] + uy * 4.8 + cos(rot_rad) * 0.9,
+    )
+    return target, leader_end, text_midpoint, angle_deg
 
 
 def _radius_dimension_center(entity, geometry: SlotDimensionGeometry) -> tuple[float, float]:
@@ -976,9 +1022,26 @@ def _sync_custom_dimension_block_layout(entity) -> None:
         return
     if layout.get("kind") != "radius":
         return
-    target = layout["target"]
-    text_midpoint = layout["text_midpoint"]
-    leader_end = layout.get("leader_end")
+    sync_aligned_radius_block(
+        entity,
+        layout["target"],
+        layout.get("leader_end") or layout["text_midpoint"],
+        layout["text_midpoint"],
+        float(layout.get("text_rotation", 0.0)),
+    )
+
+
+def sync_aligned_radius_block(
+    entity,
+    target: tuple[float, float],
+    leader_end: tuple[float, float],
+    text_midpoint: tuple[float, float],
+    text_rotation: float = 0.0,
+    arrow_len: float = 1.0,
+) -> None:
+    doc = getattr(entity, "doc", None)
+    if doc is None or not entity.dxf.hasattr("geometry") or entity.dxf.geometry not in doc.blocks:
+        return
     entity.dxf.text_midpoint = (text_midpoint[0], text_midpoint[1], 0.0)
     block = doc.blocks[entity.dxf.geometry]
     lines = []
@@ -986,40 +1049,27 @@ def _sync_custom_dimension_block_layout(entity) -> None:
     for block_entity in list(block):
         if block_entity.dxftype() == "MTEXT":
             block_entity.dxf.insert = (text_midpoint[0], text_midpoint[1], 0.0)
+            block_entity.dxf.rotation = text_rotation
         elif block_entity.dxftype() == "TEXT":
             block_entity.dxf.insert = (text_midpoint[0], text_midpoint[1], 0.0)
+            block_entity.dxf.rotation = text_rotation
         elif block_entity.dxftype() == "LINE":
             lines.append(block_entity)
         elif block_entity.dxftype() == "SOLID":
             solids.append(block_entity)
 
-    first_end = leader_end if leader_end is not None else text_midpoint
     if lines:
         lines[0].dxf.start = (target[0], target[1], 0.0)
-        lines[0].dxf.end = (first_end[0], first_end[1], 0.0)
-        if leader_end is not None:
-            if len(lines) >= 2:
-                lines[1].dxf.start = (leader_end[0], leader_end[1], 0.0)
-                lines[1].dxf.end = (text_midpoint[0], text_midpoint[1], 0.0)
-                for extra_line in lines[2:]:
-                    block.delete_entity(extra_line)
-            else:
-                block.add_line(
-                    (leader_end[0], leader_end[1], 0.0),
-                    (text_midpoint[0], text_midpoint[1], 0.0),
-                    dxfattribs={"layer": lines[0].dxf.layer},
-                )
-        else:
-            for extra_line in lines[1:]:
-                block.delete_entity(extra_line)
+        lines[0].dxf.end = (leader_end[0], leader_end[1], 0.0)
+        for extra_line in lines[1:]:
+            block.delete_entity(extra_line)
 
-    dx = float(first_end[0]) - float(target[0])
-    dy = float(first_end[1]) - float(target[1])
+    dx = float(leader_end[0]) - float(target[0])
+    dy = float(leader_end[1]) - float(target[1])
     length = (dx * dx + dy * dy) ** 0.5
     if solids and length > 1e-9:
         ux = dx / length
         uy = dy / length
-        arrow_len = 1.0
         arrow_half_w = arrow_len / 6.0
         base_x = float(target[0]) + ux * arrow_len
         base_y = float(target[1]) + uy * arrow_len
