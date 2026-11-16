@@ -209,6 +209,8 @@ export type DrawingPrimitive = {
       text: string;
       height: number;
       rotation?: number;
+      anchor?: "start" | "middle" | "end";
+      baseline?: "alphabetic" | "central" | "hanging";
     }
 );
 export type GenerationStage =

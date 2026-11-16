@@ -6,7 +6,7 @@ from src.dimension_layout import (
     resolve_dimension_text_overlaps,
 )
 from src.dual_guide_release_audit import build_dimension_definition_point_audit
-from src.dxf_writer import write_dxf
+from src.dxf_writer import _extract_template_anchor, write_dxf
 from src.guide_design_input import build_single_guide_profile_from_input
 from src.machine_config import load_machine_config
 
@@ -192,5 +192,71 @@ def test_slot_width_and_side_clearance_extend_outside_geometry(
             assert float(side_dim.dxf.text_midpoint.y) > upper_y
         else:
             assert float(side_dim.dxf.text_midpoint.y) < lower_y
+
+
+def test_cross_machine_radial_and_process_dimensions_clear_geometry(tmp_path):
+    # double_head_up_up same_r_tile: upper R_form extends above outer_top
+    machine_uu = load_machine_config("double_head_up_up")
+    _, _, profile_uu, _ = build_single_guide_profile_from_input(
+        {
+            "machine_type": machine_uu.machine_id,
+            "guide_rail_type": machine_uu.guide_type,
+            "wheel_sequence": list(machine_uu.wheel_positions),
+            "first_wheel_side": "upper",
+            "template_coordinate_system": machine_uu.template_coordinate_system,
+            "finished_spec": "R23.57*R23.57*6.6(+0.01/-0.01)*13.73*2.4(+0.01/-0.01)",
+            "pre_grinding_spec": "R23.57*R23.57*6.6(+0.01/-0.01)*13.73*2.4(+0.01/-0.01)",
+            "product_shape_after": "tile",
+            "product_shape_before": "same_r_tile",
+            "guide_profile_source": "pre_grinding_spec",
+            "relief": "4-1",
+        },
+        machine_uu,
+    )
+    path_uu = tmp_path / "uu_same_r.dxf"
+    write_dxf(profile_uu, path_uu, output_mode="release", machine_id="double_head_up_up")
+    doc_uu = ezdxf.readfile(path_uu)
+    outer_top = _extract_template_anchor(doc_uu.modelspace(), profile_uu).top
+    r_dims_uu = [
+        d for d in doc_uu.modelspace().query("DIMENSION")
+        if d.dxf.layer == "DIMENSION" and (d.dxf.text or "").startswith("R23.57")
+    ]
+    assert any(float(d.dxf.text_midpoint.y) > outer_top for d in r_dims_uu)
+
+    # triple_single_down_up block_to_tile: R_form right, 4-phi1.00 left, notch opening & local cut-in outside
+    machine_du = load_machine_config("triple_single_down_up")
+    _, _, profile_du, _ = build_single_guide_profile_from_input(
+        {
+            "machine_type": machine_du.machine_id,
+            "guide_rail_type": machine_du.guide_type,
+            "wheel_sequence": list(machine_du.wheel_positions),
+            "first_wheel_side": "lower",
+            "template_coordinate_system": machine_du.template_coordinate_system,
+            "finished_spec": "R27.03*R23.53*5.24*40*3.5",
+            "pre_grinding_spec": "40*5.28(+0.01/-0.01)*3.65(+0.01/-0.01)",
+            "product_shape_after": "tile",
+            "product_shape_before": "block",
+            "relief": "4-1",
+        },
+        machine_du,
+    )
+    path_du = tmp_path / "du_block_tile.dxf"
+    write_dxf(profile_du, path_du, output_mode="release", machine_id="triple_single_down_up")
+    doc_du = ezdxf.readfile(path_du)
+    relief_dim = next(
+        d for d in doc_du.modelspace().query("DIMENSION")
+        if d.dxf.layer == "DIMENSION" and d.dxf.text == "4-<>"
+    )
+    assert float(relief_dim.dxf.text_midpoint.x) < 3220.0
+    side_texts = {
+        float(d.get_measurement()): d
+        for d in doc_du.modelspace().query("DIMENSION")
+        if d.dxf.layer == "SIDE_DIMENSION"
+    }
+    notch_dim = next(d for m, d in side_texts.items() if abs(m - 24.0) < 0.05)
+    assert float(notch_dim.dxf.text_midpoint.y) < machine_du.side_layout.lower_y
+    cut_dim = next(d for m, d in side_texts.items() if 0.5 < m < 1.5)
+    assert float(cut_dim.dxf.text_midpoint.y) > machine_du.side_layout.upper_y
+
 
 

@@ -59,7 +59,35 @@ def _entities(entity: Any, group: str | None = None, identity: str = '') -> list
     if kind in {'TEXT', 'MTEXT'}:
         insert = entity.dxf.insert
         text = entity.plain_text() if hasattr(entity, 'plain_text') else entity.dxf.text
-        return [{**base, 'kind': 'text', 'position': [insert.x, -insert.y], 'text': text, 'height': float(entity.dxf.get('char_height' if kind == 'MTEXT' else 'height', 1)), 'rotation': -float(entity.dxf.get('rotation', 0))}]
+        anchor = 'start'
+        baseline = 'alphabetic'
+        if kind == 'MTEXT':
+            attach = int(entity.dxf.get('attachment_point', 1))
+            if attach in {2, 5, 8}:
+                anchor = 'middle'
+            elif attach in {3, 6, 9}:
+                anchor = 'end'
+            if attach in {4, 5, 6}:
+                baseline = 'central'
+            elif attach in {1, 2, 3}:
+                baseline = 'hanging'
+        else:
+            halign = int(entity.dxf.get('halign', 0))
+            valign = int(entity.dxf.get('valign', 0))
+            if halign in {1, 4}:
+                anchor = 'middle'
+            elif halign == 2:
+                anchor = 'end'
+            if valign == 2:
+                baseline = 'central'
+            elif valign == 3:
+                baseline = 'hanging'
+            if (halign or valign) and entity.dxf.hasattr('align_point'):
+                align_point = entity.dxf.align_point
+                if any(abs(v) > 1e-6 for v in (align_point.x, align_point.y)):
+                    insert = align_point
+        rotation = entity.get_rotation() if kind == 'MTEXT' and hasattr(entity, 'get_rotation') else float(entity.dxf.get('rotation', 0))
+        return [{**base, 'kind': 'text', 'position': [insert.x, -insert.y], 'text': text, 'height': float(entity.dxf.get('char_height' if kind == 'MTEXT' else 'height', 1)), 'rotation': -float(rotation), 'anchor': anchor, 'baseline': baseline}]
     if kind not in {'LINE', 'ARC', 'CIRCLE', 'LWPOLYLINE', 'POLYLINE', 'SPLINE', 'ELLIPSE', 'SOLID'}:
         return []
     try:

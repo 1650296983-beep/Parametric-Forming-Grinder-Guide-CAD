@@ -19,6 +19,7 @@ from .dimension_writer import (
     TEMPLATE_DIMENSION_TEXT_HEIGHT,
     add_linear_dimension_with_text,
     apply_linear_outside_extension,
+    sync_aligned_radius_block,
 )
 from .dimension_roles import SECTION_CENTER_OPENING
 from .dimension_layout import resolve_dimension_text_overlaps
@@ -610,6 +611,17 @@ class DualGuideTemplateEngine:
                 slot_width_dim,
                 geometry,
             )
+            if float(slot_width_dim.dxf.defpoint.y) > geometry.outer_bottom - 1.0:
+                slot_width_dim.dxf.defpoint = (
+                    geometry.left_x,
+                    geometry.outer_bottom - 4.5,
+                    0.0,
+                )
+                apply_linear_outside_extension(slot_width_dim, "right")
+                stacked_text = profile.guide_spec.slot_width_dimension_text.replace(
+                    "\u00b10.01", r"{\H0.7x;\S+0.01^ -0.01;} "
+                )
+                _set_dimension_block_text(doc, slot_width_dim, stacked_text)
         else:
             slot_width_dim = _add_slot_width_dimension(
                 modelspace,
@@ -1320,12 +1332,12 @@ class DualGuideTemplateEngine:
                         # association data; their definition points and block
                         # text are still updated deterministically below.
                         pass
-                    if not is_local_cut_in:
-                        apply_linear_outside_extension(
-                            dimension,
-                            "up" if is_upper_wheel else "down",
-                        )
-                    _set_dimension_block_text(doc, dimension, dimension.dxf.text)
+                    apply_linear_outside_extension(
+                        dimension,
+                        "up" if is_upper_wheel else "down",
+                        gap_from_boundary=5.5 if is_local_cut_in else 2.0,
+                    )
+                    _set_dimension_block_text(modelspace.doc, dimension, dimension.dxf.text)
                     continue
 
     def _strip_nonrelease_text_layers(self, modelspace: Any) -> None:
@@ -1375,7 +1387,7 @@ class DualGuideTemplateEngine:
             else:
                 dimension.dxf.layer = PRODUCT_REFERENCE_LAYER
                 dimension.dxf.text = f"产品厚度 {product_label}（参考）"
-                _set_dimension_block_text(doc, dimension, dimension.dxf.text)
+                _set_dimension_block_text(modelspace.doc, dimension, dimension.dxf.text)
 
     def _add_lower_cavity_notch_opening_dimension(
         self,
@@ -1411,6 +1423,7 @@ class DualGuideTemplateEngine:
             dimension.dxf.defpoint2 = (left, base_y, 0.0)
             dimension.dxf.defpoint3 = (right, base_y, 0.0)
             _set_dimension_actual_measurement(dimension, opening)
+            apply_linear_outside_extension(dimension, "right")
 
     def _add_guide_length_dimension(self, modelspace: Any) -> None:
         template = self.build_template()
@@ -1520,6 +1533,30 @@ class DualGuideTemplateEngine:
                 dimension.render()
             except Exception:
                 pass
+            is_upper_wheel = crown_y < float(center.y)
+            target_pt = (float(center.x), crown_y)
+            leader_end = (
+                float(center.x) - 10.0,
+                crown_y + (24.0 if is_upper_wheel else -24.0),
+            )
+            line_deg = degrees(
+                atan2(leader_end[1] - target_pt[1], leader_end[0] - target_pt[0])
+            )
+            text_rotation = ((line_deg + 90.0) % 180.0) - 90.0
+            rot_rad = radians(text_rotation)
+            text_midpoint = (
+                target_pt[0] + (leader_end[0] - target_pt[0]) * 0.65 - sin(rot_rad) * 1.4,
+                target_pt[1] + (leader_end[1] - target_pt[1]) * 0.65 + cos(rot_rad) * 1.4,
+            )
+            sync_aligned_radius_block(
+                dimension,
+                target_pt,
+                leader_end,
+                text_midpoint,
+                text_rotation,
+                arrow_len=2.2,
+            )
+            _set_dimension_block_text(modelspace.doc, dimension, dimension.dxf.text)
 
     def _bind_section_radius_dimensions(self, modelspace: Any) -> None:
         """Bind R-form dimensions to an actual regenerated slot-arc endpoint."""
@@ -2228,16 +2265,27 @@ def _bind_relief_dimension(
     dimension: Any,
     geometry: Any,
 ) -> None:
-    old_center = dimension.dxf.defpoint
-    old_text_midpoint = (
-        dimension.dxf.text_midpoint
-        if dimension.dxf.hasattr("text_midpoint")
-        else old_center
-    )
-    center = (geometry.left_x, geometry.top_y)
+    center = (geometry.right_x, geometry.top_y)
+    relief_angle_deg = 40.0
+    ux = cos(radians(relief_angle_deg))
+    uy = sin(radians(relief_angle_deg))
     target = (
-        geometry.left_x,
-        geometry.top_y - geometry.relief_radius,
+        center[0] + ux * geometry.relief_radius,
+        center[1] + uy * geometry.relief_radius,
+    )
+    rise_past_top = (geometry.outer_top - target[1]) + 4.5
+    text_dist = (
+        max(5.5, rise_past_top / max(uy, 1e-6))
+        if (geometry.outer_top - target[1]) < 6.0
+        else 5.5
+    )
+    leader_end = (
+        target[0] + ux * (text_dist + 3.0),
+        target[1] + uy * (text_dist + 3.0),
+    )
+    text_midpoint = (
+        target[0] + ux * text_dist - uy * 0.9,
+        target[1] + uy * text_dist + ux * 0.9,
     )
     dimension.dxf.defpoint = (*center, 0.0)
     dimension.dxf.defpoint4 = (*target, 0.0)
@@ -2245,11 +2293,7 @@ def _bind_relief_dimension(
     # a radius callout, so retain DXF flags but switch its base type to radius.
     dimension.dxf.dimtype = (int(dimension.dxf.dimtype) & ~0x0F) | 4
     dimension.dxf.text = f"4-R{geometry.relief_radius:.2f}"
-    dimension.dxf.text_midpoint = (
-        center[0] + float(old_text_midpoint.x) - float(old_center.x),
-        center[1] + float(old_text_midpoint.y) - float(old_center.y),
-        0.0,
-    )
+    dimension.dxf.text_midpoint = (text_midpoint[0], text_midpoint[1], 0.0)
     _set_dimension_actual_measurement(
         dimension,
         geometry.relief_radius,
@@ -2257,6 +2301,13 @@ def _bind_relief_dimension(
     # Re-render the native block after moving the definition points. Updating
     # only DIMENSION attributes leaves the archived leader and arrow in place.
     dimension.render()
+    sync_aligned_radius_block(
+        dimension,
+        target,
+        leader_end,
+        text_midpoint,
+        relief_angle_deg,
+    )
     _set_dimension_block_text(doc, dimension, dimension.dxf.text)
 
 

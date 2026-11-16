@@ -200,7 +200,7 @@ def test_exact_block_spec_uses_ratio_cut_in_and_expected_side_styles(
         assert len(slot_dimensions) == 2
         assert all(
             abs(float(dimension.dxf.defpoint.y) - float(dimension.dxf.defpoint2.y))
-            < 15.0
+            < 30.0
             for dimension in slot_dimensions
         )
 

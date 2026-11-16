@@ -984,9 +984,9 @@ def _update_down_up_flat_arc_r_dimension(
         new_center[1] + (target_y_offset if target_points_upward else -target_y_offset),
         0.0,
     )
-    leader_y = geometry.top_y + 5.0 if upper_arc else geometry.base_y + 7.0
-    leader_end = (geometry.outer_right + 1.0, leader_y, 0.0)
-    text_insert = (geometry.outer_right + 3.0, leader_y - 0.3, 0.0)
+    leader_y = geometry.top_y + 6.5 if upper_arc else geometry.outer_top - 4.0
+    leader_end = (geometry.outer_right + 2.5, leader_y, 0.0)
+    text_insert = (geometry.outer_right + 8.5, leader_y, 0.0)
     dimension.dxf.defpoint = (new_center[0], new_center[1], old_center.z)
     dimension.dxf.defpoint4 = target
     dimension.dxf.text_midpoint = text_insert
@@ -1013,9 +1013,14 @@ def _set_radius_dimension_block_layout(
         if entity.dxftype() == "TEXT":
             entity.dxf.text = label
             entity.dxf.insert = text_insert
+            entity.dxf.rotation = 0.0
         elif entity.dxftype() == "MTEXT":
             entity.text = label
             entity.dxf.insert = text_insert
+            entity.dxf.rotation = 0.0
+            if entity.dxf.hasattr("text_direction"):
+                entity.dxf.text_direction = (1.0, 0.0, 0.0)
+            entity.dxf.attachment_point = 5
         elif entity.dxftype() == "LINE" and not line_updated:
             entity.dxf.start = target
             entity.dxf.end = leader_end
@@ -1750,6 +1755,23 @@ def _update_flat_arc_relief_diameter_dimension(
         ),
     )
     _set_dimension_block_text(doc, dimension, f"4-\u2205{radius * 2.0:.2f}")
+    block = doc.blocks.get(dimension.dxf.geometry) if dimension.dxf.hasattr("geometry") else None
+    if block is not None:
+        leader_end = (geometry.outer_left - 2.0, geometry.top_y + 4.5, 0.0)
+        text_insert = (geometry.outer_left - 11.5, geometry.top_y + 4.5, 0.0)
+        dimension.dxf.text_midpoint = text_insert
+        line_updated = False
+        for entity in list(block):
+            if entity.dxftype() in {"TEXT", "MTEXT"}:
+                entity.dxf.insert = text_insert
+                entity.dxf.rotation = 0.0
+            elif entity.dxftype() == "LINE":
+                if not line_updated:
+                    entity.dxf.start = (new_center[0] - ux * radius, new_center[1] - uy * radius, 0.0)
+                    entity.dxf.end = leader_end
+                    line_updated = True
+                else:
+                    block.delete_entity(entity)
 
 
 def _update_block_top_gap_dimension(doc, dimension, geometry: SlotDimensionGeometry) -> None:

@@ -53,6 +53,8 @@ function Primitive({ primitive }: { primitive: DrawingPrimitive }) {
       strokeLinejoin="round"
       paintOrder="stroke"
       fontSize={primitive.height}
+      textAnchor={primitive.anchor ?? "start"}
+      dominantBaseline={primitive.baseline ?? "alphabetic"}
       transform={
         primitive.rotation
           ? `rotate(${primitive.rotation} ${primitive.position[0]} ${primitive.position[1]})`

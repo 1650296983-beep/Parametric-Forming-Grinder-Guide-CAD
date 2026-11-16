@@ -273,7 +273,9 @@ summary {
 }
 .app-shell {
   display: flex;
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
 }
 .sidebar {
   position: sticky;
@@ -420,12 +422,15 @@ summary {
 .main-content {
   flex: 1;
   min-width: 0;
-  min-height: 100dvh;
+  height: 100dvh;
+  min-height: 0;
+  overflow-y: auto;
   display: flex;
   flex-direction: column;
 }
 .topbar {
   height: 76px;
+  flex: 0 0 auto;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -743,6 +748,7 @@ summary {
   flex: 1;
   height: auto;
   min-height: 0;
+  overflow: hidden;
   display: flex;
   flex-direction: column;
 }
@@ -842,7 +848,7 @@ summary {
 }
 .rail-heading .elapsed {
   display: block;
-  margin-top: -8px;
+  margin-top: -2px;
   margin-bottom: 12px;
   font-family: var(--font-mono);
 }
@@ -1382,7 +1388,8 @@ summary {
   font-family: var(--font-mono);
   font-size: 10px;
 }
-.formal-file .artifact-actions {
+.formal-file .artifact-actions,
+.secondary-files .artifact-actions {
   justify-content: flex-start;
 }
 .formal-file .artifact-open button {
@@ -1772,6 +1779,7 @@ summary {
 .artifact-actions {
   display: flex;
   flex-wrap: wrap;
+  align-items: flex-start;
   gap: 8px;
   justify-content: flex-end;
   min-width: 0;
@@ -1779,12 +1787,18 @@ summary {
 .artifact-open,
 .artifact-save {
   display: grid;
+  align-content: start;
   gap: 5px;
   justify-items: start;
+  flex: 0 0 auto;
   min-width: 0;
 }
 .artifact-open button,
 .artifact-save button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 34px;
   min-height: 34px;
   padding: 0 12px;
   border-radius: var(--radius-sm);
@@ -1792,6 +1806,7 @@ summary {
   background: var(--surface);
   color: var(--link);
   font-size: 12px;
+  white-space: nowrap;
 }
 .artifact-open button:hover,
 .artifact-save button:hover {
@@ -1799,8 +1814,9 @@ summary {
 }
 .artifact-open small,
 .artifact-save small {
-  max-width: 240px;
+  max-width: 165px;
   font-size: 10px;
+  line-height: 1.45;
   overflow-wrap: anywhere;
   color: var(--success);
 }
@@ -2033,7 +2049,9 @@ summary {
     padding: 0 30px;
   }
   .workbench {
-    height: calc(100dvh - 82px);
+    flex: 1;
+    min-height: 0;
+    overflow: hidden;
   }
   .workbench-steps {
     flex-basis: 64px;
@@ -2148,6 +2166,16 @@ summary {
   }
 }
 @media (max-width: 999px) {
+  .app-shell {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+  .main-content {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
   .sidebar {
     width: 72px;
     flex-basis: 72px;
@@ -2203,6 +2231,7 @@ summary {
   .workbench {
     height: auto;
     min-height: calc(100dvh - 76px);
+    overflow: visible;
   }
   .workbench-steps {
     height: 60px;

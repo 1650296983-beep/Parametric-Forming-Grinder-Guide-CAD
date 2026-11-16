@@ -944,20 +944,30 @@ def _r_form_dimension_layout(
     if max_dx is not None:
         dx = max_dx
     y = center[1] + (radius * radius - dx * dx) ** 0.5
-    if not is_lower and prefer_left:
-        target = (center[0] - dx, y)
-        angle_deg = 108.0
-        text_rotation = -72.0
+    if not is_lower:
+        if prefer_left:
+            target = (center[0] - dx, y)
+            angle_deg = 126.0
+            text_rotation = -54.0
+        else:
+            target = (center[0] + dx, y)
+            angle_deg = 58.0
+            text_rotation = 58.0
+        ux = cos(radians(angle_deg))
+        uy = sin(radians(angle_deg))
+        # Extend upper R_form leaders cleanly past outer_top so the label never
+        # sits on the top frame line or the wire-entry walls.
+        rise_past_top = max(6.5 * uy, (geometry.outer_top - target[1]) + 5.2)
+        text_dist = rise_past_top / max(uy, 1e-6)
+        leader_len = text_dist + 3.0
     else:
         target = (center[0] + dx, y)
-        # Use a short outward leader that stays clear of the cavity with text
-        # aligned along the leader line (matching CAD angled radial style).
-        angle_deg = -65.0 if is_lower else 78.0
+        angle_deg = -65.0
         text_rotation = angle_deg
-    ux = cos(radians(angle_deg))
-    uy = sin(radians(angle_deg))
-    leader_len = 7.5 if is_lower else 9.5
-    text_dist = 4.8 if is_lower else 6.5
+        ux = cos(radians(angle_deg))
+        uy = sin(radians(angle_deg))
+        leader_len = 7.5
+        text_dist = 4.8
     leader_end = (target[0] + ux * leader_len, target[1] + uy * leader_len)
     rot_rad = radians(text_rotation)
     text_midpoint = (

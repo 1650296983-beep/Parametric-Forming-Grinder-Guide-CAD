@@ -97,8 +97,8 @@ def _add_triple_single_down_up_process_dimensions(modelspace, geometry: SideView
     lower_opening = derived.lower_cavity_notch_opening
     lower_left = layout.center_a_x - lower_opening / 2.0
     lower_right = layout.center_a_x + lower_opening / 2.0
-    lower_dim_y = base_y - 4.7
-    add_linear_dimension_with_text(
+    lower_dim_y = layout.lower_y - 6.0
+    lower_opening_dim = add_linear_dimension_with_text(
         modelspace,
         (lower_left, base_y),
         (lower_right, base_y),
@@ -113,6 +113,12 @@ def _add_triple_single_down_up_process_dimensions(modelspace, geometry: SideView
         dimstyle=TEMPLATE_DIMENSION_STYLE,
         dimension_text_height=TEMPLATE_DIMENSION_TEXT_HEIGHT,
     )
+    if lower_opening_dim is not None:
+        apply_linear_outside_extension(lower_opening_dim, "left")
+        lower_opening_dim._cad_custom_dimension_layout = {
+            "kind": "linear_outside",
+            "direction": "left",
+        }
     lower_top_y = layout.lower_y + derived.wheel_notch_depth
     lower_dim_x = layout.center_a_x + 49.5
     lower_key_dim = add_linear_dimension_with_text(
@@ -158,8 +164,8 @@ def _add_triple_single_down_up_process_dimensions(modelspace, geometry: SideView
         apply_linear_outside_extension(upper_key_dim, "up")
 
     upper_cut_in = derived.wheel_cut_allowance
-    upper_dim_x = layout.center_b_x + 11.5
-    add_linear_dimension_with_text(
+    upper_dim_x = layout.center_b_x - 18.0
+    upper_cut_dim = add_linear_dimension_with_text(
         modelspace,
         (layout.center_b_x, upper_low_y),
         (layout.center_b_x, slot_top_y),
@@ -176,6 +182,12 @@ def _add_triple_single_down_up_process_dimensions(modelspace, geometry: SideView
         dimstyle=TEMPLATE_DIMENSION_STYLE,
         dimension_text_height=TEMPLATE_DIMENSION_TEXT_HEIGHT,
     )
+    if upper_cut_dim is not None:
+        apply_linear_outside_extension(
+            upper_cut_dim,
+            "up",
+            gap_from_boundary=max(2.0, layout.upper_y - slot_top_y + 2.0),
+        )
 
 
 def _add_triple_single_down_up_block_bread_process_dimensions(

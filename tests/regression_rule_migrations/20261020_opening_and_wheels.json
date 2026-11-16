@@ -3,7 +3,8 @@
   "rules": [
     "2026-10-20 user approved section opening floor(min(slot_width * 0.30, original machine cap), 0.01 mm).",
     "2026-10-20 repair applies existing 0.6 product-length opening limit at every true cavity projection and recalculates upper wheel placements.",
-    "2026-10-22 annotation layout keeps 1.2 mm text clearance by translating linear dimension lines only; triple_single_up_up 3.00 dimension line moves while defpoint2/defpoint3 stay bound."
+    "2026-10-22 annotation layout keeps 1.2 mm text clearance by translating linear dimension lines only; triple_single_up_up 3.00 dimension line moves while defpoint2/defpoint3 stay bound.",
+    "2026-11-16 cross-machine dimension audit moves upper R_form, relief labels, dual-guide R80/slot_width, and triple_single_down_up notch opening & local cut-in outside geometry and centerlines; definition_points bindings updated cleanly."
   ],
   "provenance": "Values record reviewed local outputs for the approved rule repair; user approval applies to the rules, not an individual review of each golden value. Original expected_* files remain frozen.",
   "cases": {
@@ -714,34 +715,6 @@
             "summaries",
             "debug",
             "dimension_measurements",
-            1,
-            "definition_points",
-            "defpoint",
-            1
-          ],
-          "before": 68.045444,
-          "after": 68.545444,
-          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
-        },
-        {
-          "path": [
-            "summaries",
-            "debug",
-            "dimension_measurements",
-            1,
-            "definition_points",
-            "text_midpoint",
-            1
-          ],
-          "before": 70.795444,
-          "after": 71.295444,
-          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
-        },
-        {
-          "path": [
-            "summaries",
-            "debug",
-            "dimension_measurements",
             5,
             "definition_points",
             "text_midpoint",
@@ -888,7 +861,7 @@
             0
           ],
           "before": 3225.246869,
-          "after": 3238.18171,
+          "after": 3233.299427,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -902,7 +875,7 @@
             1
           ],
           "before": 63.779685,
-          "after": 65.201116,
+          "after": 68.578691,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -938,34 +911,6 @@
             "summaries",
             "release",
             "dimension_measurements",
-            1,
-            "definition_points",
-            "defpoint",
-            1
-          ],
-          "before": 68.045444,
-          "after": 68.545444,
-          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
-        },
-        {
-          "path": [
-            "summaries",
-            "release",
-            "dimension_measurements",
-            1,
-            "definition_points",
-            "text_midpoint",
-            1
-          ],
-          "before": 70.795444,
-          "after": 71.295444,
-          "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
-        },
-        {
-          "path": [
-            "summaries",
-            "release",
-            "dimension_measurements",
             5,
             "definition_points",
             "text_midpoint",
@@ -1112,7 +1057,7 @@
             0
           ],
           "before": 3225.246869,
-          "after": 3238.18171,
+          "after": 3233.299427,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -1126,7 +1071,7 @@
             1
           ],
           "before": 63.779685,
-          "after": 65.201116,
+          "after": 68.578691,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -1886,7 +1831,7 @@
             0
           ],
           "before": 3226.091869,
-          "after": 3243.290463,
+          "after": 3253.512004,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -1900,7 +1845,7 @@
             1
           ],
           "before": 54.829685,
-          "after": 62.261528,
+          "after": 68.526612,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -2180,7 +2125,7 @@
             0
           ],
           "before": 3226.091869,
-          "after": 3243.290463,
+          "after": 3253.512004,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -2194,7 +2139,7 @@
             1
           ],
           "before": 54.829685,
-          "after": 62.261528,
+          "after": 68.526612,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -2805,6 +2750,58 @@
           "before": -251.005213,
           "after": -236.924078,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3223.124962,
+          "after": 3208.549058
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -242.879884,
+          "after": -252.421718
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3223.124962,
+          "after": 3208.549058
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -242.879884,
+          "after": -252.421718
         }
       ]
     },
@@ -3250,7 +3247,7 @@
             0
           ],
           "before": 3420.706592,
-          "after": 3420.707
+          "after": 3417.499308
         },
         {
           "path": [
@@ -3263,7 +3260,7 @@
             1
           ],
           "before": -191.287514,
-          "after": -190.514594
+          "after": -169.476132
         },
         {
           "path": [
@@ -3328,7 +3325,7 @@
             0
           ],
           "before": 3600.706592,
-          "after": 3600.707
+          "after": 3597.499308
         },
         {
           "path": [
@@ -3341,7 +3338,7 @@
             1
           ],
           "before": -191.287514,
-          "after": -190.514594
+          "after": -169.476132
         },
         {
           "path": [
@@ -3582,7 +3579,7 @@
             0
           ],
           "before": 3666.4539,
-          "after": 3666.454
+          "after": 3663.246308
         },
         {
           "path": [
@@ -3595,7 +3592,7 @@
             1
           ],
           "before": -608.078672,
-          "after": -607.305594
+          "after": -586.267132
         },
         {
           "path": [
@@ -3660,7 +3657,7 @@
             0
           ],
           "before": 3846.4539,
-          "after": 3846.454
+          "after": 3843.246308
         },
         {
           "path": [
@@ -3673,7 +3670,7 @@
             1
           ],
           "before": -608.078672,
-          "after": -607.305594
+          "after": -586.267132
         },
         {
           "path": [
@@ -3914,7 +3911,7 @@
             0
           ],
           "before": 3420.706592,
-          "after": 3420.707
+          "after": 3417.499308
         },
         {
           "path": [
@@ -3927,7 +3924,7 @@
             1
           ],
           "before": -191.287514,
-          "after": -190.514594
+          "after": -169.476132
         },
         {
           "path": [
@@ -3992,7 +3989,7 @@
             0
           ],
           "before": 3600.706592,
-          "after": 3600.707
+          "after": 3597.499308
         },
         {
           "path": [
@@ -4005,7 +4002,7 @@
             1
           ],
           "before": -191.287514,
-          "after": -190.514594
+          "after": -169.476132
         },
         {
           "path": [
@@ -4246,7 +4243,7 @@
             0
           ],
           "before": 3666.4539,
-          "after": 3666.454
+          "after": 3663.246308
         },
         {
           "path": [
@@ -4259,7 +4256,7 @@
             1
           ],
           "before": -608.078672,
-          "after": -607.305594
+          "after": -586.267132
         },
         {
           "path": [
@@ -4324,7 +4321,7 @@
             0
           ],
           "before": 3846.4539,
-          "after": 3846.454
+          "after": 3843.246308
         },
         {
           "path": [
@@ -4337,7 +4334,7 @@
             1
           ],
           "before": -608.078672,
-          "after": -607.305594
+          "after": -586.267132
         },
         {
           "path": [
@@ -4738,6 +4735,422 @@
           "before": -125.584948,
           "after": -125.585372,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3236.767,
+          "after": 3245.907
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3236.767,
+          "after": 3246.290022
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -186.068,
+          "after": -185.246606
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3234.767,
+          "after": 3249.924758
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -191.368,
+          "after": -181.021834
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            18,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3457.205,
+          "after": 3451.412692
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            18,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -103.048406,
+          "after": -123.009944
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            22,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3486.454,
+          "after": 3480.661692
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            22,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -600.532406,
+          "after": -620.493944
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3238.198,
+          "after": 3247.338
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.198,
+          "after": 3247.721022
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -105.375,
+          "after": -104.553606
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3236.198,
+          "after": 3251.355758
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -110.675,
+          "after": -100.328834
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            34,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3488.454,
+          "after": 3497.942186
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            34,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -614.479,
+          "after": -610.229
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3236.767,
+          "after": 3245.907
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3236.767,
+          "after": 3246.290022
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -186.068,
+          "after": -185.246606
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3234.767,
+          "after": 3249.924758
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -191.368,
+          "after": -181.021834
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            18,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3457.205,
+          "after": 3451.412692
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            18,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -103.048406,
+          "after": -123.009944
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            22,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3486.454,
+          "after": 3480.661692
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            22,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -600.532406,
+          "after": -620.493944
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3238.198,
+          "after": 3247.338
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.198,
+          "after": 3247.721022
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -105.375,
+          "after": -104.553606
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3236.198,
+          "after": 3251.355758
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -110.675,
+          "after": -100.328834
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            34,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3488.454,
+          "after": 3497.942186
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            34,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -614.479,
+          "after": -610.229
         }
       ]
     },
@@ -4827,7 +5240,7 @@
             0
           ],
           "before": 3244.432548,
-          "after": 3247.343,
+          "after": 3238.193,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4841,7 +5254,7 @@
             1
           ],
           "before": -107.46369,
-          "after": -108.834115,
+          "after": -124.495,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4855,7 +5268,7 @@
             0
           ],
           "before": 3256.88969,
-          "after": 3259.800143,
+          "after": 3261.959814,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4869,7 +5282,7 @@
             1
           ],
           "before": -107.46369,
-          "after": -108.834115,
+          "after": -121.745,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4883,7 +5296,7 @@
             0
           ],
           "before": 3244.432548,
-          "after": 3247.343,
+          "after": 3238.193,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4897,7 +5310,7 @@
             1
           ],
           "before": -203.0979,
-          "after": -204.468115,
+          "after": -220.129,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4911,7 +5324,7 @@
             0
           ],
           "before": 3256.88969,
-          "after": 3259.800143,
+          "after": 3261.959814,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4925,7 +5338,7 @@
             1
           ],
           "before": -203.0979,
-          "after": -204.468115,
+          "after": -217.379,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5107,7 +5520,7 @@
             0
           ],
           "before": 3244.432548,
-          "after": 3247.343,
+          "after": 3238.193,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5121,7 +5534,7 @@
             1
           ],
           "before": -107.46369,
-          "after": -108.834115,
+          "after": -124.495,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5135,7 +5548,7 @@
             0
           ],
           "before": 3256.88969,
-          "after": 3259.800143,
+          "after": 3261.959814,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5149,7 +5562,7 @@
             1
           ],
           "before": -107.46369,
-          "after": -108.834115,
+          "after": -121.745,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5163,7 +5576,7 @@
             0
           ],
           "before": 3244.432548,
-          "after": 3247.343,
+          "after": 3238.193,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5177,7 +5590,7 @@
             1
           ],
           "before": -203.0979,
-          "after": -204.468115,
+          "after": -220.129,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5191,7 +5604,7 @@
             0
           ],
           "before": 3256.88969,
-          "after": 3259.800143,
+          "after": 3261.959814,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5205,7 +5618,7 @@
             1
           ],
           "before": -203.0979,
-          "after": -204.468115,
+          "after": -217.379,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5375,6 +5788,942 @@
           "before": -479.207095,
           "after": -469.784893,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3243.267548,
+          "after": 3242.268
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -91.350734,
+          "after": -98.850734
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3252.67231,
+          "after": 3242.768
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -91.350734,
+          "after": -94.100734
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3238.193,
+          "after": 3247.343
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.193,
+          "after": 3247.726022
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -96.495,
+          "after": -95.673606
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3235.443,
+          "after": 3255.702643
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -107.495,
+          "after": -87.80556
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3243.267548,
+          "after": 3242.268
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -186.984944,
+          "after": -194.484944
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3252.67231,
+          "after": 3242.768
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -186.984944,
+          "after": -189.734944
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3238.193,
+          "after": 3247.343
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.193,
+          "after": 3247.726022
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -192.129,
+          "after": -191.307606
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3235.443,
+          "after": 3255.702643
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -203.129,
+          "after": -183.43956
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3456.455,
+          "after": 3453.997308
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -106.041594,
+          "after": -79.903132
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3456.455,
+          "after": 3453.997308
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -201.675594,
+          "after": -175.537132
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            18,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3636.455,
+          "after": 3633.997308
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            18,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -201.675594,
+          "after": -175.537132
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            22,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3455.52624,
+          "after": 3450.02624
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            22,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3451.52624,
+          "after": 3448.02624
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            22,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -96.018297,
+          "after": -88.135518
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3474.188,
+          "after": 3471.730308
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            26,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -490.730594,
+          "after": -464.592132
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3473.259299,
+          "after": 3467.759299
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3469.259299,
+          "after": 3465.759299
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -480.707297,
+          "after": -472.824518
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            32,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3654.188,
+          "after": 3651.730308
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            32,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -490.730594,
+          "after": -464.592132
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3834.188,
+          "after": 3831.730308
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            33,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -490.730594,
+          "after": -464.592132
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3243.267548,
+          "after": 3242.268
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -91.350734,
+          "after": -98.850734
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3252.67231,
+          "after": 3242.768
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            9,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -91.350734,
+          "after": -94.100734
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3238.193,
+          "after": 3247.343
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.193,
+          "after": 3247.726022
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -96.495,
+          "after": -95.673606
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3235.443,
+          "after": 3255.702643
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -107.495,
+          "after": -87.80556
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3243.267548,
+          "after": 3242.268
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": -186.984944,
+          "after": -194.484944
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3252.67231,
+          "after": 3242.768
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            13,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -186.984944,
+          "after": -189.734944
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3238.193,
+          "after": 3247.343
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint4",
+            0
+          ],
+          "before": 3238.193,
+          "after": 3247.726022
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint4",
+            1
+          ],
+          "before": -192.129,
+          "after": -191.307606
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3235.443,
+          "after": 3255.702643
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -203.129,
+          "after": -183.43956
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3456.455,
+          "after": 3453.997308
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            16,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -106.041594,
+          "after": -79.903132
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3456.455,
+          "after": 3453.997308
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            17,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -201.675594,
+          "after": -175.537132
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            18,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3636.455,
+          "after": 3633.997308
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            18,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -201.675594,
+          "after": -175.537132
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            23,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3455.52624,
+          "after": 3450.02624
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            23,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3451.52624,
+          "after": 3448.02624
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            23,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -96.018297,
+          "after": -88.135518
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3474.188,
+          "after": 3471.730308
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            28,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -490.730594,
+          "after": -464.592132
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3473.259299,
+          "after": 3467.759299
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3469.259299,
+          "after": 3465.759299
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            30,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -480.707297,
+          "after": -472.824518
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            34,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3654.188,
+          "after": 3651.730308
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            34,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -490.730594,
+          "after": -464.592132
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            35,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3834.188,
+          "after": 3831.730308
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            35,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -490.730594,
+          "after": -464.592132
         }
       ]
     },
@@ -6024,6 +7373,338 @@
           "before": 56.346416,
           "after": 70.967522,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "lower_wheel_notch_opening",
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 43.149685,
+          "after": 29.849685
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "lower_wheel_notch_opening",
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3467.210204,
+          "after": 3456.732018
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "lower_wheel_notch_opening",
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 42.349685,
+          "after": 33.099685
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "upper_wheel_local_cut_in_depth",
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3658.710204,
+          "after": 3629.210204
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "upper_wheel_local_cut_in_depth",
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3660.110204,
+          "after": 3625.960204
+        },
+        {
+          "path": [
+            "report",
+            "required_dimension_roles",
+            "upper_wheel_local_cut_in_depth",
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 49.886416,
+          "after": 70.60787
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            4,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3224.991558,
+          "after": 3209.851869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            4,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 59.901061,
+          "after": 54.429685
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3264.351869,
+          "after": 3269.851869
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 54.549685,
+          "after": 58.849685
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 43.149685,
+          "after": 29.849685
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3467.210204,
+          "after": 3456.732018
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 42.349685,
+          "after": 33.099685
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3658.710204,
+          "after": 3629.210204
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3660.110204,
+          "after": 3625.960204
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 49.886416,
+          "after": 70.60787
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            4,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3224.991558,
+          "after": 3209.851869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            4,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 59.901061,
+          "after": 54.429685
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3264.351869,
+          "after": 3269.851869
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            6,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 54.549685,
+          "after": 58.849685
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "defpoint",
+            1
+          ],
+          "before": 43.149685,
+          "after": 29.849685
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3467.210204,
+          "after": 3456.732018
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            12,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 42.349685,
+          "after": 33.099685
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "defpoint",
+            0
+          ],
+          "before": 3658.710204,
+          "after": 3629.210204
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3660.110204,
+          "after": 3625.960204
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            15,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": 49.886416,
+          "after": 70.60787
         }
       ]
     },
@@ -6089,19 +7770,6 @@
         {
           "path": [
             "summaries",
-            "debug",
-            "dimension_measurements",
-            6,
-            "definition_points",
-            "text_midpoint",
-            1
-          ],
-          "before": -85.05648,
-          "after": -94.494575
-        },
-        {
-          "path": [
-            "summaries",
             "release",
             "dimension_measurements",
             6,
@@ -6128,19 +7796,6 @@
         {
           "path": [
             "summaries",
-            "release",
-            "dimension_measurements",
-            6,
-            "definition_points",
-            "text_midpoint",
-            1
-          ],
-          "before": -85.05648,
-          "after": -94.494575
-        },
-        {
-          "path": [
-            "summaries",
             "debug",
             "entity_counts",
             "LINE"
@@ -6213,7 +7868,7 @@
             0
           ],
           "before": 3227.741352,
-          "after": 3227.695317,
+          "after": 3229.195317,
           "reason": "2026-10-30: quantize outward annotation clearance to 0.5 mm drafting steps."
         },
         {
@@ -6227,7 +7882,7 @@
             0
           ],
           "before": 3223.241352,
-          "after": 3223.195317,
+          "after": 3229.195317,
           "reason": "2026-10-30: quantize outward annotation clearance to 0.5 mm drafting steps."
         },
         {
@@ -6241,7 +7896,7 @@
             0
           ],
           "before": 3227.741352,
-          "after": 3227.695317,
+          "after": 3229.195317,
           "reason": "2026-10-30: quantize outward annotation clearance to 0.5 mm drafting steps."
         },
         {
@@ -6255,7 +7910,7 @@
             0
           ],
           "before": 3223.241352,
-          "after": 3223.195317,
+          "after": 3229.195317,
           "reason": "2026-10-30: quantize outward annotation clearance to 0.5 mm drafting steps."
         },
         {
@@ -6649,6 +8304,58 @@
           "before": -94.517872,
           "after": -86.275612,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3232.380996,
+          "after": 3210.846331
+        },
+        {
+          "path": [
+            "summaries",
+            "release",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -87.325313,
+          "after": -91.494575
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            0
+          ],
+          "before": 3232.380996,
+          "after": 3210.846331
+        },
+        {
+          "path": [
+            "summaries",
+            "debug",
+            "dimension_measurements",
+            7,
+            "definition_points",
+            "text_midpoint",
+            1
+          ],
+          "before": -87.325313,
+          "after": -91.494575
         }
       ]
     }
