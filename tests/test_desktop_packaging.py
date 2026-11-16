@@ -87,10 +87,13 @@ def test_windows_release_hides_console_and_downloads_use_save_dialog() -> None:
 def test_windows_ui_uses_native_smooth_chinese_font_stack() -> None:
     styles = (ROOT / "frontend" / "src" / "styles.css").read_text(encoding="utf-8")
 
+    assert '"Noto Sans SC Variable"' in styles
     assert '"Segoe UI Variable Text"' in styles
     assert '"Microsoft YaHei UI"' in styles
     assert '"Cascadia Mono"' in styles
     assert "font-weight: 800" not in styles
+    assert (ROOT / "frontend" / "src" / "noto-sans-sc.css").exists()
+    assert list((ROOT / "frontend" / "public" / "fonts" / "noto-sans-sc").glob("*.woff2"))
 
 
 def test_release_workflow_is_tag_gated_and_checks_all_release_blockers() -> None:

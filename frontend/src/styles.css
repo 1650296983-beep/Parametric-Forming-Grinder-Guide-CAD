@@ -7,11 +7,11 @@
 }
 :root {
   --font-sans:
-    "Inter", "PingFang SC", "Segoe UI Variable Text", "Microsoft YaHei UI", "MiSans",
-    "HarmonyOS Sans SC", "Noto Sans CJK SC", system-ui, sans-serif;
+    "Inter", "PingFang SC", "Noto Sans SC Variable", "Segoe UI Variable Text",
+    "Microsoft YaHei UI", system-ui, sans-serif;
   --font-mono:
     "SFMono-Regular", "Cascadia Mono", "JetBrains Mono", Consolas,
-    "PingFang SC", monospace;
+    "PingFang SC", "Noto Sans SC Variable", "Microsoft YaHei UI", monospace;
   --bg: #eef2f7;
   --bg-subtle: #f5f7fa;
   --surface: #ffffff;
@@ -504,14 +504,14 @@ button:not(.is-static):active:not(:disabled) {
   border-radius: 3px;
   color: #91a6bb;
   font-family: var(--font-sans);
-  font-size: 10px;
+  font-size: 11px;
 }
 .sidebar-bottom {
   margin-top: auto;
   display: flex;
   align-items: center;
   padding: 22px 20px;
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
   color: #9fb2c5;
   letter-spacing: 0.01em;
@@ -763,7 +763,7 @@ button:not(.is-static):active:not(:disabled) {
   border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
   border-radius: var(--radius-md);
   background: color-mix(in srgb, var(--accent) 8%, var(--surface));
-  font-size: 11px;
+  font-size: 12px;
 }
 .draft-notice > svg {
   color: var(--accent);
@@ -817,7 +817,7 @@ button:not(.is-static):active:not(:disabled) {
   align-items: flex-start;
   gap: 5px;
   margin: 0;
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .field-error {
@@ -829,7 +829,7 @@ button:not(.is-static):active:not(:disabled) {
 .field-error svg,
 .field-warning svg {
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 .inline-error {
   display: flex;
@@ -839,7 +839,7 @@ button:not(.is-static):active:not(:disabled) {
   border-radius: var(--radius-sm);
   background: var(--danger-soft);
   color: var(--danger);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.45;
 }
 .inline-error > span {
@@ -971,7 +971,7 @@ button:not(.is-static):active:not(:disabled) {
   border-bottom: 1px solid var(--border);
 }
 .rail-form-section small {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.55;
 }
 .parameter-rail select,
@@ -984,7 +984,7 @@ button:not(.is-static):active:not(:disabled) {
   gap: 12px;
 }
 .rail-note {
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
   color: var(--muted);
   margin: 20px 0 0;
@@ -1015,7 +1015,7 @@ button:not(.is-static):active:not(:disabled) {
   gap: 2px;
 }
 .check-option small {
-  font-size: 11px;
+  font-size: 12px;
 }
 .check-option:has(input:disabled) {
   opacity: 0.55;
@@ -1077,12 +1077,12 @@ button:not(.is-static):active:not(:disabled) {
   grid-column: 2;
   margin: 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.6;
 }
 .calculation-rows .main-value p {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
 }
 .parsed-details {
   margin-top: 10px;
@@ -1104,7 +1104,7 @@ button:not(.is-static):active:not(:disabled) {
 .parsed-details dd {
   overflow-wrap: anywhere;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
 }
 .parsed-details dd {
   margin: 0;
@@ -1274,7 +1274,7 @@ button:not(.is-static):active:not(:disabled) {
   background: var(--surface-hover);
 }
 .zoom-controls output {
-  font-size: 11px;
+  font-size: 12px;
   min-width: 44px;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -1308,18 +1308,18 @@ button:not(.is-static):active:not(:disabled) {
   z-index: 1;
   max-width: calc(100% - 28px);
   color: var(--cad-text);
-  font-size: 10px;
+  font-size: 12px;
   pointer-events: none;
-  line-height: 1.6;
+  line-height: 1.5;
   background: color-mix(in srgb, var(--cad-bg-deep) 82%, transparent);
-  padding: 4px 7px;
+  padding: 4px 8px;
   border-radius: 3px;
 }
 .cad-source small {
   display: block;
   color: var(--cad-text);
   font-family: var(--font-mono);
-  font-size: 9px;
+  font-size: 11px;
   overflow-wrap: anywhere;
 }
 .cad-readout {
@@ -1336,7 +1336,7 @@ button:not(.is-static):active:not(:disabled) {
   background: color-mix(in srgb, var(--cad-bg-deep) 86%, transparent);
   color: var(--cad-text);
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
   pointer-events: none;
   font-variant-numeric: tabular-nums;
 }
@@ -1399,7 +1399,7 @@ button:not(.is-static):active:not(:disabled) {
   color: var(--cad-text);
   background: var(--cad-bg-deep);
   border-top: 1px solid color-mix(in srgb, var(--cad-grid) 80%, transparent);
-  font-size: 10px;
+  font-size: 12px;
 }
 .cad-legend > span {
   display: flex;
@@ -1453,15 +1453,15 @@ button:not(.is-static):active:not(:disabled) {
   display: grid;
   place-items: center;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 11px;
 }
 .true-progress li strong {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 500;
 }
 .true-progress li small {
   display: block;
-  font-size: 10px;
+  font-size: 12px;
   margin-top: 4px;
 }
 .true-progress li.running {
@@ -1490,7 +1490,7 @@ button:not(.is-static):active:not(:disabled) {
   align-items: center;
   gap: 6px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   overflow-wrap: anywhere;
   color: var(--muted);
   margin: 8px 0;
@@ -1522,7 +1522,7 @@ button:not(.is-static):active:not(:disabled) {
   display: block;
   margin: 5px 0 12px;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
 }
 .formal-file .artifact-actions,
 .secondary-files .artifact-actions {
@@ -1557,23 +1557,23 @@ button:not(.is-static):active:not(:disabled) {
 }
 .panel-title {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 12px;
-  margin-bottom: 20px;
+  margin-bottom: 18px;
 }
 .panel-title > span {
-  padding: 4px 7px;
+  padding: 4px 8px;
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
   color: var(--link);
   background: var(--surface-muted);
-  font-size: 10px;
+  font-size: 11px;
   letter-spacing: 0.04em;
 }
 .panel-title h2 {
   margin: 0;
   font-size: 19px;
-  font-weight: 620;
+  font-weight: 600;
   color: var(--text-strong);
 }
 .panel-title p {
@@ -1590,7 +1590,7 @@ button:not(.is-static):active:not(:disabled) {
 .eyebrow {
   margin: 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .history-page {
@@ -1602,9 +1602,12 @@ button:not(.is-static):active:not(:disabled) {
 .history-heading {
   display: flex;
   gap: 12px;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  padding: 20px 20px 0;
+  padding: 18px 20px;
+}
+.history-heading .panel-title {
+  margin-bottom: 0;
 }
 .history-filters {
   display: grid;
@@ -1628,7 +1631,7 @@ button:not(.is-static):active:not(:disabled) {
   font-size: 12px;
 }
 .history-bulk-actions small {
-  font-size: 11px;
+  font-size: 12px;
 }
 .table-head,
 .task-row {
@@ -1642,11 +1645,11 @@ button:not(.is-static):active:not(:disabled) {
   min-width: 790px;
   padding: 14px 20px;
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  font-size: 13px;
 }
 .table-head {
   background: var(--surface-muted);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   font-weight: 550;
 }
@@ -1670,11 +1673,11 @@ button:not(.is-static):active:not(:disabled) {
 .task-name strong {
   font-family: var(--font-mono);
   font-weight: 500;
-  font-size: 12px;
+  font-size: 13px;
   overflow-wrap: anywhere;
 }
 .task-name small {
-  font-size: 10px;
+  font-size: 12px;
   overflow-wrap: anywhere;
 }
 .task-selector input {
@@ -1689,8 +1692,8 @@ button:not(.is-static):active:not(:disabled) {
 .task-status {
   display: inline-block;
   border-radius: 4px;
-  padding: 4px 7px;
-  font-size: 11px;
+  padding: 4px 8px;
+  font-size: 12px;
   white-space: nowrap;
 }
 .task-status.passed {
@@ -1840,7 +1843,7 @@ button:not(.is-static):active:not(:disabled) {
   overflow-wrap: anywhere;
 }
 .task-detail-header small {
-  font-size: 11px;
+  font-size: 12px;
 }
 .task-detail-grid {
   display: grid;
@@ -1874,7 +1877,7 @@ button:not(.is-static):active:not(:disabled) {
   margin: 0;
   overflow-wrap: anywhere;
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
 }
 .task-error {
   padding: 12px;
@@ -1913,12 +1916,12 @@ button:not(.is-static):active:not(:disabled) {
   align-items: center;
 }
 .task-file-row > span {
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 .task-file-row > small {
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: 12px;
   overflow-wrap: anywhere;
 }
 .task-file-row > .artifact-actions {
@@ -1963,7 +1966,7 @@ button:not(.is-static):active:not(:disabled) {
 .artifact-open small,
 .artifact-save small {
   max-width: 165px;
-  font-size: 10px;
+  font-size: 12px;
   line-height: 1.45;
   overflow-wrap: anywhere;
   color: var(--success);
@@ -1971,14 +1974,6 @@ button:not(.is-static):active:not(:disabled) {
 .artifact-open.error small,
 .artifact-save.error small {
   color: var(--danger);
-}
-.artifact-library-note {
-  padding: 10px 12px !important;
-  margin: 0 !important;
-  background: var(--surface-muted);
-  color: var(--muted) !important;
-  font-size: 11px !important;
-  line-height: 1.6;
 }
 .template-tools {
   display: flex;
@@ -1991,7 +1986,7 @@ button:not(.is-static):active:not(:disabled) {
 }
 .template-tools span {
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   white-space: nowrap;
 }
 .template-table {
@@ -2008,14 +2003,14 @@ button:not(.is-static):active:not(:disabled) {
   min-width: 650px;
   padding: 13px 14px;
   border-bottom: 1px solid var(--border);
-  font-size: 12px;
+  font-size: 13px;
 }
 .template-row:last-child {
   border-bottom: 0;
 }
 .template-head {
   background: var(--surface-muted);
-  font-size: 11px;
+  font-size: 12px;
   color: var(--muted);
   font-weight: 550;
 }
@@ -2033,16 +2028,16 @@ button:not(.is-static):active:not(:disabled) {
   align-items: center;
   gap: 5px;
   flex-wrap: wrap;
-  font-size: 10px;
+  font-size: 12px;
 }
 .template-name code {
   font-family: var(--font-mono);
   color: var(--muted);
 }
 .support-badge {
-  padding: 2px 6px;
+  padding: 2px 7px;
   border-radius: 999px;
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.5;
 }
 .support-badge.ok {
@@ -2251,7 +2246,7 @@ button:not(.is-static):active:not(:disabled) {
   }
   .sidebar-bottom {
     padding: 20px 16px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .topbar {
     padding: 0 20px;
@@ -2290,7 +2285,7 @@ button:not(.is-static):active:not(:disabled) {
   }
   .view-tabs button {
     padding: 7px 8px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .zoom-controls {
     gap: 4px;
@@ -2309,7 +2304,7 @@ button:not(.is-static):active:not(:disabled) {
     padding: 12px 18px;
   }
   .action-state {
-    font-size: 11px;
+    font-size: 12px;
   }
   .action-buttons {
     gap: 8px;
@@ -2425,7 +2420,7 @@ button:not(.is-static):active:not(:disabled) {
     gap: 10px;
   }
   .action-state {
-    font-size: 10px;
+    font-size: 12px;
   }
   .action-buttons {
     gap: 8px;
@@ -2547,7 +2542,7 @@ button:not(.is-static):active:not(:disabled) {
   .settings-list dt,
   .settings-list dd {
     padding: 10px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .settings-actions .button {
     font-size: 12px;
@@ -2711,7 +2706,7 @@ button:not(.is-static):active:not(:disabled) {
     display: none;
   }
   .cad-source {
-    font-size: 9px;
+    font-size: 11px;
     left: 8px;
     top: 8px;
   }
@@ -2719,7 +2714,7 @@ button:not(.is-static):active:not(:disabled) {
     min-height: 44px;
     padding: 8px 10px;
     gap: 12px;
-    font-size: 10px;
+    font-size: 12px;
   }
   .cad-legend small {
     font-size: 9px;
@@ -2733,7 +2728,7 @@ button:not(.is-static):active:not(:disabled) {
     padding: 10px 12px;
   }
   .action-state {
-    font-size: 10px;
+    font-size: 12px;
   }
   .action-state p {
     line-height: 1.6;
@@ -2903,7 +2898,7 @@ dialog[open]::backdrop {
 .command-group h3 {
   margin: 8px 8px 4px;
   color: var(--muted);
-  font-size: 10px;
+  font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -2919,7 +2914,7 @@ dialog[open]::backdrop {
   border-radius: var(--radius-sm);
   background: transparent;
   color: var(--text);
-  font-size: 12px;
+  font-size: 13px;
   text-align: left;
 }
 .command-item:hover,
@@ -2948,8 +2943,8 @@ dialog[open]::backdrop {
   background: var(--surface-muted);
   color: var(--muted);
   font-family: var(--font-sans);
-  font-size: 9px;
-  line-height: 1.6;
+  font-size: 11px;
+  line-height: 1.5;
   text-align: center;
   box-shadow: 0 1px 0 var(--border);
 }
@@ -2966,7 +2961,7 @@ dialog[open]::backdrop {
   border-top: 1px solid var(--border);
   background: var(--surface-muted);
   color: var(--muted);
-  font-size: 10px;
+  font-size: 12px;
 }
 .command-footer span {
   display: flex;
@@ -3073,13 +3068,13 @@ dialog[open]::backdrop {
 }
 .toast-copy strong {
   display: block;
-  font-size: 12px;
+  font-size: 13px;
   font-weight: 600;
 }
 .toast-copy p {
   margin: 2px 0 0;
   color: var(--muted);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
   overflow-wrap: anywhere;
 }
@@ -3169,7 +3164,7 @@ dialog[open]::backdrop {
   background: var(--surface-muted);
   color: var(--muted-strong);
   font-family: var(--font-mono);
-  font-size: 11px;
+  font-size: 12px;
   text-align: left;
   white-space: pre-wrap;
 }

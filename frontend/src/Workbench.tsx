@@ -596,6 +596,9 @@ export function Workbench({
     !!design.pre_grinding_spec.trim() &&
     !parseSpec(design.finished_spec, "finished", design.product_shape_after).error &&
     !parseSpec(design.pre_grinding_spec, "preform", design.product_shape_before).error &&
+    Boolean(parseRelief(design.relief)) &&
+    Number.isFinite(design.wheel_radius) &&
+    design.wheel_radius > 0 &&
     !job.validating;
   const back = () => {
     job.invalidate();
@@ -783,7 +786,6 @@ export function Workbench({
                     <WifiOff size={14} aria-hidden="true" />
                     进度连接中断：{job.connectionError}
                   </p>
-                  <p>后台任务可能仍在执行，重新连接将读取同一任务。</p>
                   <button
                     className="button secondary with-icon"
                     onClick={job.reconnect}

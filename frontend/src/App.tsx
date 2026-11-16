@@ -70,19 +70,15 @@ const PAGE_COPY: Record<Page, { title: string; subtitle?: string }> = {
   },
   history: {
     title: "历史任务",
-    subtitle: "任务输入、校验结果与交付图纸",
   },
   templates: {
     title: "机台模板",
-    subtitle: "固定结构参数只读视图",
   },
   rules: {
     title: "规则与说明",
-    subtitle: "生成、几何校验与 release 门禁",
   },
   settings: {
     title: "设置与更新",
-    subtitle: "CAD 引擎、外观主题与签名更新",
   },
 };
 
@@ -363,7 +359,6 @@ export default function App() {
     toast.push({
       tone: "success",
       title: "已填入示例规格",
-      description: "可直接确认计算，或继续修改参数。",
     });
   };
 
@@ -613,14 +608,14 @@ function PanelTitle({
 }: {
   number: string;
   title: string;
-  subtitle: string;
+  subtitle?: string;
 }) {
   return (
     <div className="panel-title">
       <span>{number}</span>
       <div>
         <h2>{title}</h2>
-        <p>{subtitle}</p>
+        {subtitle && <p>{subtitle}</p>}
       </div>
     </div>
   );
@@ -935,11 +930,7 @@ function History({
     <section className="history-page">
       <section className="panel history-list-panel">
         <div className="history-heading">
-          <PanelTitle
-            number="任务"
-            title="历史任务"
-            subtitle={`直接读取本地任务输入、校验结果与授权文件；${history?.retention_days === 0 ? "桌面任务长期保留。" : `完成任务自动保留 ${history?.retention_days ?? 30} 天。`}`}
-          />
+          <PanelTitle number="任务" title="历史任务" />
           <button
             className="button secondary mini"
             onClick={onRefresh}
@@ -1012,7 +1003,6 @@ function History({
               </>
             )}
           </button>
-          <small>执行中任务不可删除。</small>
         </div>
         <div className="table-head selectable">
           <label className="task-selector">
@@ -1188,11 +1178,7 @@ function TaskEmpty({ filtered = false }: { filtered?: boolean }) {
       </span>
       <div>
         <strong>{filtered ? "没有符合条件的任务" : "暂无任务记录"}</strong>
-        <p>
-          {filtered
-            ? "请调整搜索词或状态筛选。"
-            : "新建任务后，这里会显示输入快照、生成状态和 report.json 摘要。"}
-        </p>
+        {filtered && <p>请调整搜索词或状态筛选。</p>}
       </div>
     </div>
   );
@@ -1402,9 +1388,6 @@ function TaskDetailContent({ detail }: { detail: TaskDetail }) {
           <p>该任务没有可打开的授权文件。</p>
         ) : (
           <>
-            <p className="artifact-library-note">
-              直接打开任务内原文件；仅在需要交付副本时使用“另存副本”。
-            </p>
             {files.map(([key, file]) => (
               <div className="task-file-row" key={key}>
                 <span>{file.label}</span>
@@ -1481,11 +1464,7 @@ function Templates({ machines }: { machines: Machine[] }) {
   );
   return (
     <section className="panel page-panel">
-      <PanelTitle
-        number="配置"
-        title="机台模板"
-        subtitle="来自 templates/&lt;machine_id&gt;/config.yaml，仅供查看。"
-      />
+      <PanelTitle number="配置" title="机台模板" />
       <div className="template-tools">
         <input
           aria-label="搜索机台模板"
@@ -1545,11 +1524,7 @@ function Templates({ machines }: { machines: Machine[] }) {
 function Rules() {
   return (
     <section className="panel page-panel">
-      <PanelTitle
-        number="规则"
-        title="生成与 release 门禁"
-        subtitle="规则源于项目文档并由 Python 校验器执行。"
-      />
+      <PanelTitle number="规则" title="生成与 release 门禁" />
       <div className="rule-list">
         {[
           [
@@ -1591,7 +1566,7 @@ function DesktopSettingsPage({
   const toast = useToast();
   const [settings, setSettings] = useState<DesktopSettings | null>(null);
   const [settingsError, setSettingsError] = useState<string | null>(null);
-  const [version, setVersion] = useState("1.2.4-dev");
+  const [version, setVersion] = useState("1.2.8-dev");
   const [availableUpdate, setAvailableUpdate] = useState<Update | null>(null);
   const [updateMessage, setUpdateMessage] = useState("尚未检查更新。");
   const [checking, setChecking] = useState(false);
@@ -1743,11 +1718,7 @@ function DesktopSettingsPage({
   return (
     <section className="settings-page">
       <section className="panel page-panel">
-        <PanelTitle
-          number="外观"
-          title="界面主题"
-          subtitle="主题只影响工作台界面，不改变导出图纸。"
-        />
+        <PanelTitle number="外观" title="界面主题" />
         <div className="theme-options" role="group" aria-label="界面主题">
           {(
             [
@@ -1775,11 +1746,7 @@ function DesktopSettingsPage({
         </div>
       </section>
       <section className="panel page-panel">
-        <PanelTitle
-          number="本机"
-          title="AutoCAD 与数据目录"
-          subtitle="DWG 只调用本机 AutoCAD；未安装时仍可正常生成 DXF。"
-        />
+        <PanelTitle number="本机" title="AutoCAD 与数据目录" />
         {settingsError && <div className="alert error">{settingsError}</div>}
         <dl className="settings-list">
           <dt>应用数据目录</dt>
@@ -1799,7 +1766,7 @@ function DesktopSettingsPage({
           <dd>
             {settings?.autocad.available
               ? `已检测到 AutoCAD ${settings.autocad.version ?? "未知版本"}`
-              : "未检测到；仍可生成和下载 DXF"}
+              : "未检测到"}
           </dd>
           <dt>AcCoreConsole</dt>
           <dd className="setting-value">
@@ -1842,7 +1809,6 @@ function DesktopSettingsPage({
         <PanelTitle
           number="更新"
           title={`Forming Grinder CAD ${version}`}
-          subtitle="更新包必须通过 Tauri 公钥签名验证，失败时保留当前版本。"
         />
         <p className="update-status">{updateMessage}</p>
         {availableUpdate && (
