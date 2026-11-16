@@ -673,7 +673,7 @@ def _update_section_dimension(
             )
             return SECTION_RELIEF_RADIUS
         new_center = (geometry.right_x, geometry.top_y)
-        relief_angle_deg = 58.0
+        relief_angle_deg = 40.0
         ux = cos(radians(relief_angle_deg))
         uy = sin(radians(relief_angle_deg))
         if (int(entity.dxf.dimtype) & 15) == 3 and entity.dxf.hasattr("defpoint4"):
@@ -700,10 +700,10 @@ def _update_section_dimension(
             new_center[0] + ux * geometry.relief_radius,
             new_center[1] + uy * geometry.relief_radius,
         )
-        leader_end = (target[0] + ux * 7.5, target[1] + uy * 7.5)
+        leader_end = (target[0] + ux * 8.5, target[1] + uy * 8.5)
         text_midpoint = (
-            target[0] + ux * 4.8 - uy * 0.9,
-            target[1] + uy * 4.8 + ux * 0.9,
+            target[0] + ux * 5.5 - uy * 0.9,
+            target[1] + uy * 5.5 + ux * 0.9,
         )
         if entity.dxf.hasattr("text_midpoint"):
             entity.dxf.text_midpoint = (text_midpoint[0], text_midpoint[1], 0.0)
@@ -940,11 +940,13 @@ def _r_form_dimension_layout(
     angle_deg = -65.0 if is_lower else 78.0
     ux = cos(radians(angle_deg))
     uy = sin(radians(angle_deg))
-    leader_end = (target[0] + ux * 7.5, target[1] + uy * 7.5)
+    leader_len = 7.5 if is_lower else 9.5
+    text_dist = 4.8 if is_lower else 6.5
+    leader_end = (target[0] + ux * leader_len, target[1] + uy * leader_len)
     rot_rad = radians(angle_deg)
     text_midpoint = (
-        target[0] + ux * 4.8 - sin(rot_rad) * 0.9,
-        target[1] + uy * 4.8 + cos(rot_rad) * 0.9,
+        target[0] + ux * text_dist - sin(rot_rad) * 0.9,
+        target[1] + uy * text_dist + cos(rot_rad) * 0.9,
     )
     return target, leader_end, text_midpoint, angle_deg
 
