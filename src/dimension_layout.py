@@ -4,8 +4,9 @@ from dataclasses import dataclass
 from math import atan2, degrees, ceil
 from typing import Any
 
-from ezdxf import bbox
 from ezdxf.math import Vec3
+
+from .annotation_metrics import annotation_text_extents
 
 
 # A little air between neighbouring annotations; drawings are read at plot
@@ -58,7 +59,7 @@ def _text_bounds(doc: Any, dimension: Any) -> tuple[float, float, float, float] 
         )
         if not text.strip():
             continue
-        extent = bbox.extents([entity])
+        extent = annotation_text_extents(entity)
         if extent.has_data:
             boxes.append(
                 (

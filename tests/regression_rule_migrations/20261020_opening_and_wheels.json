@@ -4,7 +4,8 @@
     "2026-10-20 user approved section opening floor(min(slot_width * 0.30, original machine cap), 0.01 mm).",
     "2026-10-20 repair applies existing 0.6 product-length opening limit at every true cavity projection and recalculates upper wheel placements.",
     "2026-10-22 annotation layout keeps 1.2 mm text clearance by translating linear dimension lines only; triple_single_up_up 3.00 dimension line moves while defpoint2/defpoint3 stay bound.",
-    "2026-11-16 cross-machine dimension audit moves upper R_form, relief labels, dual-guide R80/slot_width, and triple_single_down_up notch opening & local cut-in outside geometry and centerlines; definition_points bindings updated cleanly."
+    "2026-11-16 cross-machine dimension audit moves upper R_form, relief labels, dual-guide R80/slot_width, and triple_single_down_up notch opening & local cut-in outside geometry and centerlines; definition_points bindings updated cleanly.",
+    "2026-11-16 v1.2.6 uses Matplotlib-bundled STIXGeneral.ttf metrics only for annotation layout; measurement endpoints, product geometry and all live release gates remain unchanged."
   ],
   "provenance": "Values record reviewed local outputs for the approved rule repair; user approval applies to the rules, not an individual review of each golden value. Original expected_* files remain frozen.",
   "cases": {
@@ -721,7 +722,7 @@
             0
           ],
           "before": 3241.351869,
-          "after": 3259.900935,
+          "after": 3259.822967,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -917,7 +918,7 @@
             0
           ],
           "before": 3241.351869,
-          "after": 3259.900935,
+          "after": 3259.822967,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -1336,7 +1337,7 @@
             1
           ],
           "before": 56.213756,
-          "after": 70.967522,
+          "after": 70.691673,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -1575,7 +1576,7 @@
             1
           ],
           "before": 56.213756,
-          "after": 70.967522,
+          "after": 70.691673,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -1691,7 +1692,7 @@
             0
           ],
           "before": 3241.351869,
-          "after": 3250.302183,
+          "after": 3250.268769,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -1929,7 +1930,7 @@
             1
           ],
           "before": 41.875613,
-          "after": 27.731847,
+          "after": 28.007696,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -1985,7 +1986,7 @@
             0
           ],
           "before": 3241.351869,
-          "after": 3250.302183,
+          "after": 3250.268769,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -2223,7 +2224,7 @@
             1
           ],
           "before": 41.875613,
-          "after": 27.731847,
+          "after": 28.007696,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -2440,7 +2441,7 @@
             1
           ],
           "before": -251.005213,
-          "after": -236.924078,
+          "after": -237.199928,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -2524,7 +2525,7 @@
             1
           ],
           "before": -251.005213,
-          "after": -236.924078,
+          "after": -237.199928,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -2664,7 +2665,7 @@
             1
           ],
           "before": -251.005213,
-          "after": -236.924078,
+          "after": -237.199928,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -2748,7 +2749,7 @@
             1
           ],
           "before": -251.005213,
-          "after": -236.924078,
+          "after": -237.199928,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -3071,7 +3072,7 @@
             1
           ],
           "before": -180.037514,
-          "after": -169.939561,
+          "after": -170.018375,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -3159,7 +3160,7 @@
             1
           ],
           "before": -180.037514,
-          "after": -169.939561,
+          "after": -170.018375,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -3403,7 +3404,7 @@
             1
           ],
           "before": -596.828672,
-          "after": -586.730718,
+          "after": -586.809533,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -3491,7 +3492,7 @@
             1
           ],
           "before": -596.828672,
-          "after": -586.730718,
+          "after": -586.809533,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -3735,7 +3736,7 @@
             1
           ],
           "before": -180.037514,
-          "after": -169.939561,
+          "after": -170.018375,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -3823,7 +3824,7 @@
             1
           ],
           "before": -180.037514,
-          "after": -169.939561,
+          "after": -170.018375,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4067,7 +4068,7 @@
             1
           ],
           "before": -596.828672,
-          "after": -586.730718,
+          "after": -586.809533,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4155,7 +4156,7 @@
             1
           ],
           "before": -596.828672,
-          "after": -586.730718,
+          "after": -586.809533,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4481,7 +4482,7 @@
             1
           ],
           "before": -113.971491,
-          "after": -123.742529,
+          "after": -123.663715,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4509,7 +4510,7 @@
             1
           ],
           "before": -611.455539,
-          "after": -621.226626,
+          "after": -621.147812,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4649,7 +4650,7 @@
             1
           ],
           "before": -113.971491,
-          "after": -123.742529,
+          "after": -123.663715,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4677,7 +4678,7 @@
             1
           ],
           "before": -611.455539,
-          "after": -621.226626,
+          "after": -621.147812,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -4929,7 +4930,7 @@
             0
           ],
           "before": 3488.454,
-          "after": 3497.942186
+          "after": 3497.727769
         },
         {
           "path": [
@@ -5137,7 +5138,7 @@
             0
           ],
           "before": 3488.454,
-          "after": 3497.942186
+          "after": 3497.727769
         },
         {
           "path": [
@@ -5268,7 +5269,7 @@
             0
           ],
           "before": 3256.88969,
-          "after": 3261.959814,
+          "after": 3261.837436,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5324,7 +5325,7 @@
             0
           ],
           "before": 3256.88969,
-          "after": 3261.959814,
+          "after": 3261.837436,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5366,7 +5367,7 @@
             1
           ],
           "before": -94.518085,
-          "after": -85.095871,
+          "after": -85.249026,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5394,7 +5395,7 @@
             1
           ],
           "before": -190.15219,
-          "after": -180.730081,
+          "after": -180.883236,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5422,7 +5423,7 @@
             1
           ],
           "before": -190.15219,
-          "after": -180.730081,
+          "after": -180.883236,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5450,7 +5451,7 @@
             1
           ],
           "before": -479.207095,
-          "after": -469.784893,
+          "after": -469.938048,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5478,7 +5479,7 @@
             1
           ],
           "before": -479.207095,
-          "after": -469.784893,
+          "after": -469.938048,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5506,7 +5507,7 @@
             1
           ],
           "before": -479.207095,
-          "after": -469.784893,
+          "after": -469.938048,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5548,7 +5549,7 @@
             0
           ],
           "before": 3256.88969,
-          "after": 3261.959814,
+          "after": 3261.837436,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5604,7 +5605,7 @@
             0
           ],
           "before": 3256.88969,
-          "after": 3261.959814,
+          "after": 3261.837436,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5646,7 +5647,7 @@
             1
           ],
           "before": -94.518085,
-          "after": -85.095871,
+          "after": -85.249026,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5674,7 +5675,7 @@
             1
           ],
           "before": -190.15219,
-          "after": -180.730081,
+          "after": -180.883236,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5702,7 +5703,7 @@
             1
           ],
           "before": -190.15219,
-          "after": -180.730081,
+          "after": -180.883236,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5730,7 +5731,7 @@
             1
           ],
           "before": -479.207095,
-          "after": -469.784893,
+          "after": -469.938048,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5758,7 +5759,7 @@
             1
           ],
           "before": -479.207095,
-          "after": -469.784893,
+          "after": -469.938048,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -5786,7 +5787,7 @@
             1
           ],
           "before": -479.207095,
-          "after": -469.784893,
+          "after": -469.938048,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -6112,7 +6113,7 @@
             0
           ],
           "before": 3455.52624,
-          "after": 3450.02624
+          "after": 3455.52624
         },
         {
           "path": [
@@ -6125,7 +6126,7 @@
             0
           ],
           "before": 3451.52624,
-          "after": 3448.02624
+          "after": 3453.52624
         },
         {
           "path": [
@@ -6138,7 +6139,7 @@
             1
           ],
           "before": -96.018297,
-          "after": -88.135518
+          "after": -88.19678
         },
         {
           "path": [
@@ -6177,7 +6178,7 @@
             0
           ],
           "before": 3473.259299,
-          "after": 3467.759299
+          "after": 3473.259299
         },
         {
           "path": [
@@ -6190,7 +6191,7 @@
             0
           ],
           "before": 3469.259299,
-          "after": 3465.759299
+          "after": 3471.259299
         },
         {
           "path": [
@@ -6203,7 +6204,7 @@
             1
           ],
           "before": -480.707297,
-          "after": -472.824518
+          "after": -472.88578
         },
         {
           "path": [
@@ -6580,7 +6581,7 @@
             0
           ],
           "before": 3455.52624,
-          "after": 3450.02624
+          "after": 3455.52624
         },
         {
           "path": [
@@ -6593,7 +6594,7 @@
             0
           ],
           "before": 3451.52624,
-          "after": 3448.02624
+          "after": 3453.52624
         },
         {
           "path": [
@@ -6606,7 +6607,7 @@
             1
           ],
           "before": -96.018297,
-          "after": -88.135518
+          "after": -88.19678
         },
         {
           "path": [
@@ -6645,7 +6646,7 @@
             0
           ],
           "before": 3473.259299,
-          "after": 3467.759299
+          "after": 3473.259299
         },
         {
           "path": [
@@ -6658,7 +6659,7 @@
             0
           ],
           "before": 3469.259299,
-          "after": 3465.759299
+          "after": 3471.259299
         },
         {
           "path": [
@@ -6671,7 +6672,7 @@
             1
           ],
           "before": -480.707297,
-          "after": -472.824518
+          "after": -472.88578
         },
         {
           "path": [
@@ -6953,7 +6954,7 @@
             1
           ],
           "before": 41.892953,
-          "after": 27.731847,
+          "after": 28.007697,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -6979,7 +6980,7 @@
             1
           ],
           "before": 56.346416,
-          "after": 70.967522,
+          "after": 70.691673,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -7147,7 +7148,7 @@
             1
           ],
           "before": 41.892953,
-          "after": 27.731847,
+          "after": 28.007697,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -7175,7 +7176,7 @@
             1
           ],
           "before": 56.346416,
-          "after": 70.967522,
+          "after": 70.691673,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -7343,7 +7344,7 @@
             1
           ],
           "before": 41.892953,
-          "after": 27.731847,
+          "after": 28.007697,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -7371,7 +7372,7 @@
             1
           ],
           "before": 56.346416,
-          "after": 70.967522,
+          "after": 70.691673,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -7396,7 +7397,7 @@
             0
           ],
           "before": 3467.210204,
-          "after": 3456.732018
+          "after": 3456.946435
         },
         {
           "path": [
@@ -7444,7 +7445,7 @@
             1
           ],
           "before": 49.886416,
-          "after": 70.60787
+          "after": 70.393453
         },
         {
           "path": [
@@ -7522,7 +7523,7 @@
             0
           ],
           "before": 3467.210204,
-          "after": 3456.732018
+          "after": 3456.946435
         },
         {
           "path": [
@@ -7574,7 +7575,7 @@
             1
           ],
           "before": 49.886416,
-          "after": 70.60787
+          "after": 70.393453
         },
         {
           "path": [
@@ -7652,7 +7653,7 @@
             0
           ],
           "before": 3467.210204,
-          "after": 3456.732018
+          "after": 3456.946435
         },
         {
           "path": [
@@ -7704,7 +7705,7 @@
             1
           ],
           "before": 49.886416,
-          "after": 70.60787
+          "after": 70.393453
         }
       ]
     },
@@ -8078,7 +8079,7 @@
             1
           ],
           "before": -94.517872,
-          "after": -86.275612,
+          "after": -86.398136,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -8106,7 +8107,7 @@
             1
           ],
           "before": -94.517872,
-          "after": -86.275612,
+          "after": -86.398136,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -8274,7 +8275,7 @@
             1
           ],
           "before": -94.517872,
-          "after": -86.275612,
+          "after": -86.398136,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {
@@ -8302,7 +8303,7 @@
             1
           ],
           "before": -94.517872,
-          "after": -86.275612,
+          "after": -86.398136,
           "reason": "2026-11-16: align radial leaders and extend slot_width / side clearance annotations outside geometry."
         },
         {

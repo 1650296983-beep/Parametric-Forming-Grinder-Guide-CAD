@@ -45,3 +45,12 @@ a temporary directory and confirms that changing a fixed dimension, moving a
 wheel in release/debug, detaching an opening definition point, or modifying a
 frozen source is rejected. It checks that all original fixture hashes survive
 generation and comparison unchanged.
+
+The v1.2.6 cross-platform annotation repair uses the STIX font shipped with
+Matplotlib for layout measurements only. The overlay records 70 changed
+coordinate leaves relative to the preceding layout: text midpoints and four
+linear annotation-line offsets (two in each output mode). Real measurement
+endpoints, displayed values, product/machine geometry and frozen source hashes
+remain unchanged. These generated coordinate values document the authorized
+repair; they are not represented as individually reviewed production goldens.
+The exact comparison and every independent physical release audit still apply.

@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from math import acos, asin, atan2, cos, radians, sin
 from pathlib import Path
 
+from .annotation_metrics import annotation_text_extents
 from .geometry import TileSection
 from .dimension_roles import (
     SECTION_CENTER_OPENING,
@@ -1087,8 +1088,6 @@ def apply_linear_outside_extension(
     if doc is None:
         return
 
-    from ezdxf import bbox
-
     saved_text = dimension.dxf.text if dimension.dxf.hasattr("text") else ""
     if not dimension.dxf.hasattr("geometry") or dimension.dxf.geometry not in doc.blocks:
         try:
@@ -1110,7 +1109,7 @@ def apply_linear_outside_extension(
     text_entities = [e for e in block if e.dxftype() in {"MTEXT", "TEXT"}]
     text_span = None
     if text_entities:
-        extent = bbox.extents([text_entities[0]])
+        extent = annotation_text_extents(text_entities[0])
         if extent.has_data:
             text_span = (
                 float(extent.size.x)

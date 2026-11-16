@@ -1,6 +1,7 @@
 import ezdxf
 import pytest
 
+from src.annotation_metrics import MEASUREMENT_FONT, annotation_text_extents
 from src.dimension_layout import (
     find_dimension_text_overlaps,
     resolve_dimension_text_overlaps,
@@ -9,6 +10,63 @@ from src.dual_guide_release_audit import build_dimension_definition_point_audit
 from src.dxf_writer import _extract_template_anchor, write_dxf
 from src.guide_design_input import build_single_guide_profile_from_input
 from src.machine_config import load_machine_config
+
+
+@pytest.mark.parametrize("kind", ["TEXT", "MTEXT"])
+@pytest.mark.parametrize("rotation", [0, 90])
+def test_annotation_measurements_do_not_use_installed_fonts(monkeypatch, kind, rotation):
+    from ezdxf.fonts import fonts
+
+    doc = ezdxf.new("R2010")
+    doc.styles.get("Standard").dxf.font = "Arial.ttf"
+    if kind == "TEXT":
+        entity = doc.modelspace().add_text(
+            "8.56±0.01", dxfattribs={"height": 1.4, "rotation": rotation}
+        )
+    else:
+        entity = doc.modelspace().add_mtext(
+            "8.56±0.01", dxfattribs={"char_height": 1.4, "rotation": rotation}
+        )
+    original = entity.dxf.all_existing_dxf_attribs()
+    make_font = fonts.make_font
+    results = []
+    for host_width in (0.6, 1.4):
+        def host_font(name, cap_height, width_factor=1.0):
+            if name == MEASUREMENT_FONT:
+                return make_font(name, cap_height, width_factor)
+            return fonts.MonospaceFont(cap_height, host_width * width_factor)
+
+        monkeypatch.setattr(fonts, "make_font", host_font)
+        extent = annotation_text_extents(entity)
+        results.append((tuple(extent.extmin), tuple(extent.extmax)))
+    assert results[0] == results[1]
+    assert entity.dxf.all_existing_dxf_attribs() == original
+    assert doc.styles.get("Standard").dxf.font == "Arial.ttf"
+
+
+def test_outside_label_coordinates_are_independent_of_host_font(monkeypatch):
+    from ezdxf.fonts import fonts
+    from src.dimension_writer import apply_linear_outside_extension
+
+    make_font = fonts.make_font
+    positions = []
+    for host_width in (0.6, 1.4):
+        def host_font(name, cap_height, width_factor=1.0):
+            if name == MEASUREMENT_FONT:
+                return make_font(name, cap_height, width_factor)
+            return fonts.MonospaceFont(cap_height, host_width * width_factor)
+
+        monkeypatch.setattr(fonts, "make_font", host_font)
+        doc = ezdxf.new("R2010")
+        dimension = doc.modelspace().add_linear_dim(
+            base=(0, -5), p1=(0, 0), p2=(6.21, 0), text="6.21±0.01"
+        ).dimension
+        dimension.render()
+        apply_linear_outside_extension(dimension, "right")
+        positions.append(tuple(dimension.dxf.text_midpoint))
+        assert tuple(dimension.dxf.defpoint2) == (0, 0, 0)
+        assert tuple(dimension.dxf.defpoint3) == (6.21, 0, 0)
+    assert positions[0] == positions[1]
 
 
 def _build_profile(machine_id, first_wheel_side):
