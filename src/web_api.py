@@ -995,14 +995,24 @@ def _task_retention_days() -> int:
 def _add_autocad_2007_dwg_export(report: dict[str, Any]) -> None:
     """Add a verified AC1021 DWG without changing the DXF release gate."""
     report.setdefault("paths", {}).pop("release_dwg", None)
-    export = {
+    export: dict[str, Any] = {
         "format": AUTOCAD_2007_FORMAT_LABEL,
         "dwg_version": AUTOCAD_2007_DWG_VERSION,
         "generated": False,
-        "converter_available": dwg_conversion_available(),
+        "converter_available": False,
         "error": None,
     }
     report["dwg_export"] = export
+    try:
+        _populate_autocad_2007_dwg_export(report, export)
+    except Exception as error:  # DWG 是可选项，任何异常都不得推翻 DXF 的校验结论
+        report.setdefault("paths", {}).pop("release_dwg", None)
+        export["generated"] = False
+        export["error"] = f"DXF 已通过校验，但 DWG 转换遇到异常：{error}"
+
+
+def _populate_autocad_2007_dwg_export(report: dict[str, Any], export: dict[str, Any]) -> None:
+    export["converter_available"] = dwg_conversion_available()
     if not export["converter_available"]:
         export["error"] = "未安装或未配置 AutoCAD Core Console；保留通过校验的 release DXF。"
         return

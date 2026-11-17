@@ -486,6 +486,32 @@ def test_failed_dwg_audit_removes_stale_download_path(tmp_path: Path, monkeypatc
     assert "空白图纸" in report["dwg_export"]["error"]
 
 
+def test_unexpected_dwg_export_error_keeps_release_dxf(tmp_path: Path, monkeypatch) -> None:
+    release_dxf = tmp_path / "guide.dxf"
+    release_dxf.write_text("DXF", encoding="utf-8")
+    report = {
+        "release_allowed": True,
+        "paths": {"release_dxf": str(release_dxf)},
+    }
+    monkeypatch.setattr(web_api, "dwg_conversion_available", lambda: True)
+
+    def explode(*_args: object, **_kwargs: object) -> DwgConversionResult:
+        raise LookupError("unknown encoding: ascii")
+
+    monkeypatch.setattr(
+        web_api,
+        "convert_release_dxf_to_autocad_2007_dwg_with_audit",
+        explode,
+    )
+
+    web_api._add_autocad_2007_dwg_export(report)
+
+    assert report["release_allowed"] is True
+    assert "release_dwg" not in report["paths"]
+    assert report["dwg_export"]["generated"] is False
+    assert report["dwg_export"]["error"] == "DXF 已通过校验，但 DWG 转换遇到异常：unknown encoding: ascii"
+
+
 def test_local_administrator_file_payload_exposes_audit_artifacts(tmp_path: Path) -> None:
     task_dir = tmp_path / "abc123def456"
     dxf_dir = task_dir / "artifacts" / "dxf"
